@@ -1,0 +1,25 @@
+{
+  "name": "frontend-repo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:web": "pnpm --filter web dev",
+    "dev:mobile": "pnpm --filter minerva-app start"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.25.0",
+      "onFail": "download"
+    }
+  },
+
+  "private":true,
+  "packageManager": "pnpm@11.25.0",
+  "type": "module"
+}
