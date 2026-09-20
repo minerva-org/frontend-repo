@@ -1,49 +1,52 @@
 import { useState, type FormEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
+import '../styles/Login.css';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [attempts, setAttempts] = useState(0);
-  const MAX_ATTEMPTS = 3;
-  const blocked = attempts >= MAX_ATTEMPTS;
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+ const [modalMessage, setModalMessage] = useState<string | null>(null); 
   const { login } = useAuth();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setError('');
 
-    if (blocked){
+    const emailError = validateEmail(email);
+    if(emailError){
+        setModalMessage('Compruebe su correo y/o contraseña y vuelva a intentarlo');
         return;
     }
-
     const passwordError = validatePassword(password);
     if(passwordError){
-        setError(passwordError);
+        setModalMessage('Compruebe su correo y/o contraseña y vuelva a intentarlo');
         return;
     }
 
     setLoading(true);
     try {
-      const data = await login(username, password);
+      const data = await login(email, password);
       console.log('Login exitoso:', data);
-      setAttempts(0);
     } catch (err) {
-      const newAttempts = attempts + 1;
-      setAttempts(newAttempts);
-      if(newAttempts >= MAX_ATTEMPTS){
-        setError('Has alcanzado el máximo de intentos. Intenta más tarde.');
-      } else {
-        setError('Credenciales no validas');
-      }
+        setModalMessage('Compruebe su correo y/o contraseña y vuelva a intentarlo');
+        setPassword('');
     } finally {
       setLoading(false);
     }
   }
 
+  function closeModal() {
+    setModalMessage(null);
+  }
+
+    function validateEmail(email: string): string | null {
+        const emailRegex = /^[^\s@]+@chapala\.edu\.mx$/;
+        if(!emailRegex.test(email)){
+            return 'Ingrese un correo institucional válido';
+        }
+        return null;
+    }
 
     
 
@@ -63,47 +66,67 @@ export default function Login() {
     return null;
     }
 
-
-
-
   return (
-    <form onSubmit={handleSubmit}>
-      <h1>Iniciar sesión</h1>
+    <article className="login-screen">
+      <main className="login-panel">
+        <form className="login-form" onSubmit={handleSubmit} noValidate>
+          <h1 className="login-title">Iniciar sesión</h1>
+          <p className="login-subtitle">
+            Accede con tu correo institucional para continuar.
+          </p>
 
-      <label>
-        Usuario
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          required
-          disabled={blocked}
-        />
-      </label>
+          <label className="login-field">
+            <span className="login-field-label">Correo institucional</span>
+            <input
+              className="login-input"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="nombre@chapala.edu.mx"
+              autoComplete="username"
+              required
+            />
+          </label>
 
-      <label>
-        Contraseña
-          <input
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            disabled={blocked}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
-            disabled={blocked}
-          >
-            {showPassword ? 'Ocultar' : 'Mostrar'}
+          <label className="login-field">
+            <span className="login-field-label">Contraseña</span>
+            <article className="login-password-row">
+              <input
+                className="login-input"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                className="login-toggle"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                <i className={showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'}></i>
+              </button>
+            </article>
+          </label>
+
+          <button className="login-submit" type="submit" disabled={loading}>
+            {loading ? 'Ingresando…' : 'Ingresar'}
           </button>
-      </label>
+        </form>
+      </main>
 
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {modalMessage && (
+        <article className="login-modal-overlay">
+          <article className="login-modal">
+            <h2 className="login-modal-title">Correo y/o contraseña incorrecto</h2>
+            <p className="login-modal-message">{modalMessage}</p>
+            <button className="login-modal-button" onClick={closeModal}>
+              Aceptar
+            </button>
+          </article>
+        </article>
+      )}
 
-      <button type="submit" disabled={loading || blocked}>
-        {loading ? 'Ingresando...' : 'Ingresar'}
-      </button>
-    </form>
+    </article>
   );
 }

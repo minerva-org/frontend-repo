@@ -5,7 +5,7 @@ interface AuthContextType {
     token: string | null;
     role: 'alumno' | 'docente' | 'coordinador' | null;
     isAuthenticated: boolean;
-    login: (username: string, password: string) => Promise<LoginResponse>;
+    login: (email: string, password: string) => Promise<LoginResponse>;
     logout: () => void;
 }
 
@@ -20,8 +20,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (sessionStorage.getItem('role') as 'alumno' | 'docente' | 'coordinador') || null
     );
 
-async function login (username: string, password: string) {
-    const data: LoginResponse = await loginService(username, password);
+async function login (email: string, password: string) {
+    const data: LoginResponse = await loginService(email, password);
     setToken(data.token);
     setRole(data.role);
     sessionStorage.setItem('token', data.token);

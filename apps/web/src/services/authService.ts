@@ -4,23 +4,23 @@ export interface LoginResponse {
 }
 
 const MOCK_USERS = [
-    { username: 'alumno', password: 'Alumno#2024x', role: 'alumno' as const },
-    { username: 'docente', password: 'Docente#2024x', role: 'docente' as const },
-    { username: 'coordinador', password: 'Coordinador#2024x', role: 'coordinador' as const }
+ { email: 'alumno@chapala.edu.mx', password: 'Alumno#2024x', role: 'alumno' as const },
+  { email: 'docente@chapala.edu.mx', password: 'Docente#2024x', role: 'docente' as const },
+  { email: 'coordinador@chapala.edu.mx', password: 'Coordinador#2024x', role: 'coordinador' as const },
 ];
 
-export async function login(username:string, password:string): Promise<LoginResponse> {
+export async function login(email:string, password:string): Promise<LoginResponse> {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     const found = MOCK_USERS.find(
-        (user) => user.username === username && user.password === password
+        (user) => user.email === email && user.password === password
     );
     
     if (!found){
         throw new Error('Usuario y/o contraseña incorrecta');
     }
 
-    const fakeToken =`mock-jwt-${found.username}-${Date.now()}`;
+    const fakeToken =`mock-jwt-${found.email}-${Date.now()}`;
 
     return { token: fakeToken, role: found.role };
     
