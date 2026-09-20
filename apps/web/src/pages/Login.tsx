@@ -116,7 +116,7 @@ export default function Login() {
       </main>
 
       {modalMessage && (
-        <article className="login-modal-overlay">
+        <article className="login-modal-error ">
           <article className="login-modal">
             <h2 className="login-modal-title">Correo y/o contraseña incorrecto</h2>
             <p className="login-modal-message">{modalMessage}</p>
