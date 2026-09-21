@@ -1,0 +1,110 @@
+.create-group-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(36, 60, 76, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 20px;
+}
+
+.create-group-modal {
+  background: var(--seige-superficie);
+  border-radius: 12px;
+  padding: 28px 32px;
+  max-width: 440px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 12px 32px rgba(36, 60, 76, 0.25);
+}
+
+.create-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.create-group-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--seige-texto);
+  margin: 0;
+}
+
+.create-group-close {
+  cursor: pointer;
+  color: var(--seige-texto-secundario);
+  font-size: 16px;
+}
+
+.create-group-field {
+  display: block;
+  margin-bottom: 20px;
+}
+
+.create-group-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--seige-texto);
+}
+
+.create-group-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--seige-borde);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-family: sans-serif;
+  color: var(--seige-texto);
+  background: var(--seige-superficie);
+}
+
+.create-group-input:focus {
+  outline: none;
+  border-color: var(--seige-acento);
+}
+
+.create-group-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.create-group-cancel {
+  flex: 1;
+  background: var(--seige-superficie);
+  border: 1px solid var(--seige-borde);
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--seige-texto-secundario);
+  cursor: pointer;
+}
+
+.create-group-cancel:hover {
+  background: var(--seige-fondo);
+}
+
+.create-group-submit {
+  flex: 1;
+  background: var(--seige-acento);
+  border: none;
+  border-radius: 8px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--seige-superficie);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.create-group-submit:hover {
+  background: var(--seige-acento-oscuro);
+}

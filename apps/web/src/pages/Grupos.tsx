@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import '../styles/CatalogoGrupos.css';
+import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos';
+import '../styles/Grupos.css';
 
 interface Group {
   code: string;
@@ -10,7 +11,7 @@ interface Group {
   atRisk: number;
 }
 
-const MOCK_GROUPS: Group[] = [
+const INITIAL_GROUPS: Group[] = [
   {
     code: 'MAT3-A',
     subject: 'Matemáticas III — Grupo A',
@@ -39,11 +40,43 @@ const MOCK_GROUPS: Group[] = [
 
 type FilterKey = 'todos' | 'alertas' | 'sin_docente' | 'archivados';
 
-export default function GroupsCatalog() {
+function generateCode(subject: string, existing: Group[]): string {
+  const prefix = subject
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .split(' ')
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w.slice(0, 3))
+    .join('')
+    .toUpperCase();
+  let suffix = 1;
+  let code = `${prefix}-${suffix}`;
+  while (existing.some((g) => g.code === code)) {
+    suffix++;
+    code = `${prefix}-${suffix}`;
+  }
+  return code;
+}
+
+export default function Grupos() {
+  const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('todos');
+  const [showModal, setShowModal] = useState(false);
 
-  const filtered = MOCK_GROUPS.filter((group) => {
+  function handleCreateGroup(data: NewGroupData) {
+    const newGroup: Group = {
+      code: generateCode(data.subject, groups),
+      subject: `${data.subject} — ${data.grade}`,
+      teacher: data.teacher,
+      students: data.students.length,
+      status: data.teacher ? 'activo' : 'sin_docente',
+      atRisk: 0,
+    };
+    setGroups((prev) => [newGroup, ...prev]);
+  }
+
+  const filtered = groups.filter((group) => {
     const matchesSearch =
       group.code.toLowerCase().includes(search.toLowerCase()) ||
       group.subject.toLowerCase().includes(search.toLowerCase());
@@ -57,10 +90,10 @@ export default function GroupsCatalog() {
   });
 
   const counts = {
-    todos: MOCK_GROUPS.length,
-    alertas: MOCK_GROUPS.filter((g) => g.atRisk > 0).length,
-    sin_docente: MOCK_GROUPS.filter((g) => g.status === 'sin_docente').length,
-    archivados: MOCK_GROUPS.filter((g) => g.status === 'archivado').length,
+    todos: groups.length,
+    alertas: groups.filter((g) => g.atRisk > 0).length,
+    sin_docente: groups.filter((g) => g.status === 'sin_docente').length,
+    archivados: groups.filter((g) => g.status === 'archivado').length,
   };
 
   return (
@@ -85,13 +118,13 @@ export default function GroupsCatalog() {
       <main className="groups-content">
         <article className="groups-page-header">
           <article>
-            <h1 className="groups-title">Grupos</h1>
+            <h1 className="groups-title">Catálogo de grupos</h1>
             <p className="groups-subtitle">
-              Ciclo Activo 2026-B · {MOCK_GROUPS.length} grupos ·{' '}
-              {counts.alertas} con alertas
+              Ciclo Activo 2026-B · {groups.length} grupos · {counts.alertas}{' '}
+              con alertas
             </p>
           </article>
-          <button className="groups-new-button">
+          <button className="groups-new-button" onClick={() => setShowModal(true)}>
             <i className="bi bi-plus-lg"></i>
             Nuevo grupo
           </button>
@@ -121,8 +154,7 @@ export default function GroupsCatalog() {
             <button
               className={`groups-pill ${filter === 'todos' ? 'active' : ''}`}
               onClick={() => setFilter('todos')}
-            >
-              Todos <span className="groups-pill-count">{counts.todos}</span>
+            > Todos <span className="groups-pill-count">{counts.todos}</span>
             </button>
             <button
               className={`groups-pill ${filter === 'alertas' ? 'active' : ''}`}
@@ -204,6 +236,13 @@ export default function GroupsCatalog() {
           <p className="groups-empty">No se encontraron grupos.</p>
         )}
       </main>
+
+      {showModal && (
+        <CreateGroupModal
+          onClose={() => setShowModal(false)}
+          onCreate={handleCreateGroup}
+        />
+      )}
     </article>
   );
 }

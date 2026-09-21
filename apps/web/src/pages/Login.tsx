@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
 
@@ -7,8 +8,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
- const [modalMessage, setModalMessage] = useState<string | null>(null); 
+  const [modalMessage, setModalMessage] = useState<string | null>(null); 
   const { login } = useAuth();
+  const navigate = useNavigate();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -27,7 +29,7 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await login(email, password);
-      console.log('Login exitoso:', data);
+      navigate(data.role === 'alumno' ? '/alumno' : '/grupos');
     } catch (err) {
         setModalMessage('Compruebe su correo y/o contraseña y vuelva a intentarlo');
         setPassword('');
@@ -109,8 +111,8 @@ export default function Login() {
             </article>
           </label>
 
-          <button className="login-submit" type="submit" disabled={loading}>
-            {loading ? 'Ingresando…' : 'Ingresar'}
+          <button className="login-submit" type="submit" disabled={loading} style={{visibility: loading ? 'hidden' : 'visible'}}>
+            Ingresar
           </button>
         </form>
       </main>

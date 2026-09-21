@@ -1,9 +1,11 @@
 import {createContext, useState, type ReactNode, useContext} from 'react';
 import { login as loginService, type LoginResponse} from '../services/authService.ts';
 
+export type UserRole = 'alumno' | 'docente' | 'coordinador' | 'directorPlanta' | 'directorGeneral';
+
 interface AuthContextType {
     token: string | null;
-    role: 'alumno' | 'docente' | 'coordinador' | null;
+    role: UserRole | null;
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<LoginResponse>;
     logout: () => void;
@@ -16,8 +18,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         sessionStorage.getItem('token') || null
     );
 
-    const [role, setRole] = useState<'alumno' | 'docente' | 'coordinador' | null>(
-        (sessionStorage.getItem('role') as 'alumno' | 'docente' | 'coordinador') || null
+    const [role, setRole] = useState<UserRole | null>(
+        (sessionStorage.getItem('role') as UserRole) || null
     );
 
 async function login (email: string, password: string) {
