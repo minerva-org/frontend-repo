@@ -1,8 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import AutocompleteInput from './AutoCompleteInput';
 import '../styles/ModalGrupos.css';
 
-const MOCK_TEACHERS = [
+const MOCK_docenteS = [
   'Prof. García',
   'Prof. Ruiz',
   'Prof. Mendoza',
@@ -10,7 +10,7 @@ const MOCK_TEACHERS = [
   'Prof. Salinas',
 ];
 
-const MOCK_STUDENTS = [
+const MOCK_numeroEstudiantes = [
   'Ana López',
   'Carlos Pérez',
   'Diana Flores',
@@ -22,10 +22,10 @@ const MOCK_STUDENTS = [
 ];
 
 export interface NewGroupData {
-  subject: string;
-  grade: string;
-  teacher: string | null;
-  students: string[];
+  grupo: string;
+  grado: string;
+  docente: string | null;
+  numeroEstudiantes: string[];
 }
 
 interface CreateGroupModalProps {
@@ -34,20 +34,20 @@ interface CreateGroupModalProps {
 }
 
 export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModalProps) {
-  const [subject, setSubject] = useState('');
-  const [grade, setGrade] = useState('');
-  const [teacher, setTeacher] = useState<string[]>([]);
-  const [students, setStudents] = useState<string[]>([]);
+  const [grupo, setgrupo] = useState('');
+  const [grado, setgrado] = useState('');
+  const [docente, setdocente] = useState<string[]>([]);
+  const [numeroEstudiantes, setnumeroEstudiantes] = useState<string[]>([]);
 
-  function handleSubmit(e: FormEvent) {
+  function handleSubmit(e: SubmitEvent) {
     e.preventDefault();
-    if (!subject.trim() || !grade.trim()) return;
+    if (!grupo.trim() || !grado.trim()) return;
 
     onCreate({
-      subject: subject.trim(),
-      grade: grade.trim(),
-      teacher: teacher[0] ?? null,
-      students,
+      grupo: grupo.trim(),
+      grado: grado.trim(),
+      docente: docente[0] ?? null,
+      numeroEstudiantes,
     });
     onClose();
   }
@@ -56,8 +56,7 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
     <article className="create-group-overlay">
       <article className="create-group-modal">
         <article className="create-group-header">
-          <h2 className="create-group-title">Nuevo grupo</h2>
-          <i className="bi bi-x-lg create-group-close" onClick={onClose}></i>
+          <h2 className="create-group-title bi ">Nuevo grupo</h2>
         </article>
 
         <form onSubmit={handleSubmit} className="create-group-form" noValidate>
@@ -67,8 +66,8 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
               className="create-group-input"
               type="text"
               placeholder="Ej. Matemáticas III"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
+              value={grupo}
+              onChange={(e) => setgrupo(e.target.value)}
               required
             />
           </label>
@@ -79,8 +78,8 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
               className="create-group-input"
               type="text"
               placeholder="Ej. 3.° Bachillerato — Grupo A"
-              value={grade}
-              onChange={(e) => setGrade(e.target.value)}
+              value={grado}
+              onChange={(e) => setgrado(e.target.value)}
               required
             />
           </label>
@@ -88,18 +87,18 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
           <AutocompleteInput
             label="Docente"
             placeholder="Buscar docente..."
-            options={MOCK_TEACHERS}
-            selected={teacher}
-            onChange={setTeacher}
+            options={MOCK_docenteS}
+            selected={docente}
+            onChange={setdocente}
           />
 
           <AutocompleteInput
             label="Alumnos"
             placeholder="Buscar y agregar alumnos..."
-            options={MOCK_STUDENTS}
+            options={MOCK_numeroEstudiantes}
             multiple
-            selected={students}
-            onChange={setStudents}
+            selected={numeroEstudiantes}
+            onChange={setnumeroEstudiantes}
           />
 
           <article className="create-group-actions">

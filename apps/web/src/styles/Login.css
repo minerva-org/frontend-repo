@@ -163,7 +163,13 @@
 .login-toggle:hover {
   color: var(--seige-acento-oscuro);
 }
-
+.login-logo{
+  display: block;
+  width: 100px;
+  max-width: 100%;
+  height: auto; 
+  margin: 0 auto 16px
+}
 .login-modal-error   {
   background: var(--seige-error-fondo);
   color: var(--seige-error-texto);

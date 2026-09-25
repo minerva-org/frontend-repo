@@ -1,7 +1,8 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
+import logo from '../assets/logo.webp'
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -12,7 +13,7 @@ export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  async function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
 
     const emailError = validateEmail(email);
@@ -72,6 +73,7 @@ export default function Login() {
     <article className="login-screen">
       <main className="login-panel">
         <form className="login-form" onSubmit={handleSubmit} noValidate>
+          <img className="login-logo" src={logo} alt="Logo Seige" />
           <h1 className="login-title">Iniciar sesión</h1>
           <p className="login-subtitle">
             Accede con tu correo institucional para continuar.
@@ -96,6 +98,7 @@ export default function Login() {
               <input
                 className="login-input"
                 type={showPassword ? 'text' : 'password'}
+                placeholder='contraseña'
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"

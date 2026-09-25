@@ -15,7 +15,6 @@ export async function login(email: string, password: string): Promise<LoginRespo
 
 /* NO LO BORREN PUEDE SER NECESARIO PARA PRUEBAS */
 
-const USE_MOCK = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
 
 const MOCK_USERS = [
  { email: 'alumno@chapala.edu.mx', password: 'Alumno#2024x', role: 'alumno' as const },

@@ -3,45 +3,49 @@ import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos';
 import '../styles/Grupos.css';
 
 interface Group {
-  code: string;
-  subject: string;
-  teacher: string | null;
-  students: number;
+  routeCode: string;
+  grupo: string;
+  docente: string | null;
+  numeroEstudiantes: number;
   status: 'activo' | 'sin_docente' | 'archivado';
   atRisk: number;
+  nextQuiz?: string;
 }
 
 const INITIAL_GROUPS: Group[] = [
   {
-    code: 'MAT3-A',
-    subject: 'Matemáticas III — Grupo A',
-    teacher: 'Prof. García',
-    students: 36,
+    routeCode: 'MAT3-A',
+    grupo: 'Matemáticas III — Grupo A',
+    docente: 'Prof. García',
+    numeroEstudiantes: 36,
     status: 'activo',
     atRisk: 1,
+    nextQuiz: 'Lunes 28 de septiembre',
   },
   {
-    code: 'FIS2-B',
-    subject: 'Física II — Grupo B',
-    teacher: 'Prof. Ruiz',
-    students: 28,
+    routeCode: 'FIS2-B',
+    grupo: 'Física II — Grupo B',
+    docente: 'Prof. Ruiz',
+    numeroEstudiantes: 28,
     status: 'activo',
     atRisk: 0,
+    nextQuiz: 'martes 29 de septiembre',
   },
   {
-    code: 'PROG1-A',
-    subject: 'Programación I — Grupo A',
-    teacher: null,
-    students: 30,
+    routeCode: 'PROG1-A',
+    grupo: 'Programación I — Grupo A',
+    docente: null,
+    numeroEstudiantes: 30,
     status: 'sin_docente',
     atRisk: 0,
+    nextQuiz: 'miercoles 30 de septiembre',
   },
 ];
 
 type FilterKey = 'todos' | 'alertas' | 'sin_docente' | 'archivados';
 
-function generateCode(subject: string, existing: Group[]): string {
-  const prefix = subject
+function generaterouteCode(grupo: string, existing: Group[]): string {
+  const prefix = grupo
     .replace(/[^a-zA-Z0-9\s]/g, '')
     .split(' ')
     .filter(Boolean)
@@ -50,12 +54,12 @@ function generateCode(subject: string, existing: Group[]): string {
     .join('')
     .toUpperCase();
   let suffix = 1;
-  let code = `${prefix}-${suffix}`;
-  while (existing.some((g) => g.code === code)) {
+  let routecode = `${prefix}-${suffix}`;
+  while (existing.some((g) => g.routeCode === routecode)) {
     suffix++;
-    code = `${prefix}-${suffix}`;
+    routecode = `${prefix}-${suffix}`;
   }
-  return code;
+  return routecode;
 }
 
 export default function Grupos() {
@@ -66,11 +70,11 @@ export default function Grupos() {
 
   function handleCreateGroup(data: NewGroupData) {
     const newGroup: Group = {
-      code: generateCode(data.subject, groups),
-      subject: `${data.subject} — ${data.grade}`,
-      teacher: data.teacher,
-      students: data.students.length,
-      status: data.teacher ? 'activo' : 'sin_docente',
+      routeCode: generaterouteCode(data.grupo, groups),
+      grupo: `${data.grupo} — ${data.grado}`,
+      docente: data.docente,
+      numeroEstudiantes: data.numeroEstudiantes.length,
+      status: data.docente ? 'activo' : 'sin_docente',
       atRisk: 0,
     };
     setGroups((prev) => [newGroup, ...prev]);
@@ -78,8 +82,8 @@ export default function Grupos() {
 
   const filtered = groups.filter((group) => {
     const matchesSearch =
-      group.code.toLowerCase().includes(search.toLowerCase()) ||
-      group.subject.toLowerCase().includes(search.toLowerCase());
+      group.routeCode.toLowerCase().includes(search.toLowerCase()) ||
+      group.grupo.toLowerCase().includes(search.toLowerCase());
 
     if (!matchesSearch) return false;
 
@@ -151,11 +155,13 @@ export default function Grupos() {
           </button>
 
           <article className="groups-filter-pills">
+
             <button
               className={`groups-pill ${filter === 'todos' ? 'active' : ''}`}
               onClick={() => setFilter('todos')}
             > Todos <span className="groups-pill-count">{counts.todos}</span>
             </button>
+
             <button
               className={`groups-pill ${filter === 'alertas' ? 'active' : ''}`}
               onClick={() => setFilter('alertas')}
@@ -163,6 +169,7 @@ export default function Grupos() {
               Con alertas{' '}
               <span className="groups-pill-count">{counts.alertas}</span>
             </button>
+
             <button
               className={`groups-pill ${filter === 'sin_docente' ? 'active' : ''}`}
               onClick={() => setFilter('sin_docente')}
@@ -170,6 +177,7 @@ export default function Grupos() {
               Sin docente{' '}
               <span className="groups-pill-count">{counts.sin_docente}</span>
             </button>
+
             <button
               className={`groups-pill ${filter === 'archivados' ? 'active' : ''}`}
               onClick={() => setFilter('archivados')}
@@ -182,9 +190,9 @@ export default function Grupos() {
 
         <article className="groups-grid">
           {filtered.map((group) => (
-            <article className="group-card" key={group.code}>
+            <article className="group-card" key={group.routeCode}>
               <article className="group-card-top">
-                <span className="group-card-code">{group.code}</span>
+                <span className="group-card-routecode">{group.routeCode}</span>
                 {group.status === 'activo' && (
                   <span className="group-status group-status-activo">
                     <i className="bi bi-circle-fill"></i> Activo
@@ -197,15 +205,15 @@ export default function Grupos() {
                 )}
               </article>
 
-              <h3 className="group-card-subject">{group.subject}</h3>
+              <h3 className="group-card-grupo">{group.grupo}</h3>
 
               <hr className="group-card-divider" />
 
               <article className="group-card-footer">
                 <article className="group-card-info">
-                  {group.teacher ? (
-                    <span className="group-card-teacher">
-                      <i className="bi bi-person"></i> {group.teacher}
+                  {group.docente ? (
+                    <span className="group-card-docente">
+                      <i className="bi bi-person"></i> {group.docente}
                     </span>
                   ) : (
                     <span className="group-card-warning">
@@ -215,8 +223,8 @@ export default function Grupos() {
                   )}
 
                   <article className="group-card-bottom-row">
-                    <span className="group-card-students">
-                      <i className="bi bi-people"></i> {group.students} alumnos
+                    <span className="group-card-numeroEstudiantes">
+                      <i className="bi bi-people"></i> {group.numeroEstudiantes} alumnos
                     </span>
                     {group.atRisk > 0 && (
                       <span className="group-card-risk">
