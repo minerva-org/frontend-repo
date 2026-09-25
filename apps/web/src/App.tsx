@@ -21,6 +21,11 @@ export default function App() {
             <Alumnos />
           </ProtectedRoute>
         } />
+        <Route path="/grupos/:code" element={
+          <ProtectedRoute allowedRoles={['alumno','docente','coordinador']}>
+            <Grupos></Grupos>
+          </ProtectedRoute>
+        }></Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

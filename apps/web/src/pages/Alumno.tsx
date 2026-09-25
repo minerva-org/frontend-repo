@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from "react";
 import { useNavigate} from "react-router-dom";
+import {useAuth} from '../context/AuthContext'; 
 
 interface Group {
   routeCode: string;
@@ -9,6 +10,7 @@ interface Group {
   status: 'activo' | 'sin_docente' | 'archivado';
   atRisk: number;
   nextQuiz?: string;
+  alumnosEmail: string[];
 }
 
 const INITIAL_GROUPS: Group[] = [
@@ -20,6 +22,7 @@ const INITIAL_GROUPS: Group[] = [
     status: 'activo',
     atRisk: 1,
     nextQuiz: 'Lunes 28 de septiembre',
+    alumnosEmail: ['alumno@chapala.edu.mx'],
   },
   {
     routeCode: 'FIS2-B',
@@ -29,6 +32,7 @@ const INITIAL_GROUPS: Group[] = [
     status: 'activo',
     atRisk: 0,
     nextQuiz: 'martes 29 de septiembre',
+    alumnosEmail: [], // nuevo — este alumno no está inscrito aquí
   },
   {
     routeCode: 'PROG1-A',
@@ -38,6 +42,7 @@ const INITIAL_GROUPS: Group[] = [
     status: 'sin_docente',
     atRisk: 0,
     nextQuiz: 'miercoles 30 de septiembre',
+    alumnosEmail: [], // nuevo
   },
 ];
 
@@ -50,15 +55,20 @@ const JOIN_CODE_CATALOG: Record<string, Group> = {
     status: 'activo',
     atRisk: 0,
     nextQuiz: 'Viernes 10:00 AM',
+    alumnosEmail: [],
   },
 };
 
 export default function Alumno() {
+  const { email } = useAuth();
   const navigate =useNavigate();
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const [joinCode, setJoinCode] = useState('');
   const [error, setError] = useState<string | null>(null);
 
+  const myGroups = groups.filter((g) => email !== null && g.alumnosEmail.includes(email));
+  
+  
   function handleJoin(e: SubmitEvent){
     e.preventDefault();
     setError(null);
@@ -71,13 +81,23 @@ export default function Alumno() {
       setError('Código inválido. Verifica con tu profesor')
       return;
     }
-    const alreadyJoined = groups.some((c) => c.routeCode === match.routeCode);
+    const alreadyJoined = myGroups.some((g) => g.routeCode === match.routeCode);
     if(alreadyJoined){
       setError('Ya estás inscrito en este curso')
       return;
     }
 
-    setGroups((prev) => [...prev, match]);
+    const groupWithMe: Group = {
+      ...match,
+      alumnosEmail: email ? [...match.alumnosEmail,email] : match.alumnosEmail,
+    };
+
+    setGroups((prev) => {
+      const exist = prev.some((g) => g.routeCode === groupWithMe.routeCode);
+      return exist
+        ? prev.map((g) => (g.routeCode ===groupWithMe.routeCode ? groupWithMe : g))
+        : [...prev, groupWithMe];
+    });
     setJoinCode('');
   }
 
@@ -102,7 +122,7 @@ export default function Alumno() {
       </form>
 
       <article>
-        {groups.map((group) => (
+        {myGroups.map((group) => (
           <article key={group.routeCode} onClick={()  => navigate(`/grupos/${group.routeCode}`)}>
             <article>
               <span>{group.docente}</span>
@@ -113,7 +133,7 @@ export default function Alumno() {
           </article>
         ))}
 
-        {groups.length === 0 && <p>Aún no estas inscrito en ningun grupo</p>}
+        {myGroups.length === 0 && <p>Aún no estas inscrito en ningun grupo</p>}
       </article>
   </section>
    

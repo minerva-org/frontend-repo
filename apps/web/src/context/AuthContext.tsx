@@ -6,6 +6,7 @@ export type UserRole = 'alumno' | 'docente' | 'coordinador' | 'directorPlanta' |
 interface AuthContextType {
     token: string | null;
     role: UserRole | null;
+    email:string | null;
     isAuthenticated: boolean;
     login: (email: string, password: string) => Promise<LoginResponse>;
     logout: () => void;
@@ -22,25 +23,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         (sessionStorage.getItem('role') as UserRole) || null
     );
 
-async function login (email: string, password: string) {
-    const data: LoginResponse = await loginService(email, password);
+    const [email, setEmail] = useState<string | null>(
+        sessionStorage.getItem('email') || null
+    )
+
+async function login (emailInput: string, password: string) {
+    const data: LoginResponse = await loginService(emailInput, password);
     setToken(data.token);
     setRole(data.role);
+    setEmail(emailInput);
     sessionStorage.setItem('token', data.token);
     sessionStorage.setItem('role', data.role);
+    sessionStorage.setItem('email',emailInput)
     return data;
 }
 
 function logout() {
     setToken(null);
     setRole(null);
+    setEmail(null)
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('role');
+    sessionStorage.removeItem('email');
 }   
 
 return (
     <AuthContext.Provider
-     value={{ token, role, isAuthenticated: !!token, login, logout }}
+     value={{ token, role, email,isAuthenticated: !!token, login, logout }}
      >
         {children}
     </AuthContext.Provider>

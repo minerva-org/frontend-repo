@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import {useAuth} from '../context/AuthContext';
 import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos';
 import '../styles/Grupos.css';
 
@@ -6,6 +7,8 @@ interface Group {
   routeCode: string;
   grupo: string;
   docente: string | null;
+  docenteEmail: string | null;
+  coordinadoresEmail: string [];
   numeroEstudiantes: number;
   status: 'activo' | 'sin_docente' | 'archivado';
   atRisk: number;
@@ -17,28 +20,31 @@ const INITIAL_GROUPS: Group[] = [
     routeCode: 'MAT3-A',
     grupo: 'Matemáticas III — Grupo A',
     docente: 'Prof. García',
+    docenteEmail: 'docente@chapala.edu.mx',
+    coordinadoresEmail: [],
     numeroEstudiantes: 36,
     status: 'activo',
     atRisk: 1,
-    nextQuiz: 'Lunes 28 de septiembre',
   },
   {
     routeCode: 'FIS2-B',
     grupo: 'Física II — Grupo B',
     docente: 'Prof. Ruiz',
+    docenteEmail: null, // el docente titular no tiene login mock propio
+    coordinadoresEmail: ['coordinador@chapala.edu.mx'],
     numeroEstudiantes: 28,
     status: 'activo',
     atRisk: 0,
-    nextQuiz: 'martes 29 de septiembre',
   },
   {
     routeCode: 'PROG1-A',
     grupo: 'Programación I — Grupo A',
     docente: null,
+    docenteEmail: null,
+    coordinadoresEmail: [],
     numeroEstudiantes: 30,
     status: 'sin_docente',
     atRisk: 0,
-    nextQuiz: 'miercoles 30 de septiembre',
   },
 ];
 
@@ -64,15 +70,24 @@ function generaterouteCode(grupo: string, existing: Group[]): string {
 
 export default function Grupos() {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
+  const {role, email} = useAuth();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('todos');
   const [showModal, setShowModal] = useState(false);
+
+  const relatedGroups = groups.filter((g) => {
+    if (role === 'docente') return g.docenteEmail === email;
+    if (role === 'coordinador') return g.coordinadoresEmail.includes(email ?? '');
+    return true;
+  }) ;
 
   function handleCreateGroup(data: NewGroupData) {
     const newGroup: Group = {
       routeCode: generaterouteCode(data.grupo, groups),
       grupo: `${data.grupo} — ${data.grado}`,
       docente: data.docente,
+      docenteEmail: role === 'docente' ? email :null,
+      coordinadoresEmail: role === 'coordinador' && email ? [email] : [],
       numeroEstudiantes: data.numeroEstudiantes.length,
       status: data.docente ? 'activo' : 'sin_docente',
       atRisk: 0,
@@ -80,7 +95,7 @@ export default function Grupos() {
     setGroups((prev) => [newGroup, ...prev]);
   }
 
-  const filtered = groups.filter((group) => {
+  const filtered = relatedGroups.filter((group) => {
     const matchesSearch =
       group.routeCode.toLowerCase().includes(search.toLowerCase()) ||
       group.grupo.toLowerCase().includes(search.toLowerCase());
@@ -94,10 +109,10 @@ export default function Grupos() {
   });
 
   const counts = {
-    todos: groups.length,
-    alertas: groups.filter((g) => g.atRisk > 0).length,
-    sin_docente: groups.filter((g) => g.status === 'sin_docente').length,
-    archivados: groups.filter((g) => g.status === 'archivado').length,
+    todos: relatedGroups.length,
+    alertas: relatedGroups.filter((g) => g.atRisk > 0).length,
+    sin_docente: relatedGroups.filter((g) => g.status === 'sin_docente').length,
+    archivados: relatedGroups.filter((g) => g.status === 'archivado').length,
   };
 
   return (
