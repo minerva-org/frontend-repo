@@ -1,6 +1,6 @@
 import {useState, useEffect, useMemo} from 'react';
 import { useParams,useNavigate } from 'react-router-dom';
-import '..styles/QuizAlumno.css';
+import '../styles/QuizAlumno.css';
 
 interface QuestionOptions{
     id: string;
