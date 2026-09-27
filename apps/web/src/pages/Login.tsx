@@ -1,4 +1,4 @@
-import { useState, type SubmitEvent } from 'react';
+import { useState, type SubmitEvent, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
@@ -69,6 +69,15 @@ export default function Login() {
     return null;
     }
 
+    const btnAceptar =  useRef<HTMLButtonElement>(null);
+
+    
+    useEffect(()=>{
+      if (modalMessage){
+        btnAceptar.current?.focus();
+      }
+    }, [modalMessage]);
+
   return (
     <article className="login-screen">
       <main className="login-panel">
@@ -125,7 +134,7 @@ export default function Login() {
           <article className="login-modal">
             <h2 className="login-modal-title">Correo y/o contraseña incorrecto</h2>
             <p className="login-modal-message">{modalMessage}</p>
-            <button className="login-modal-button" onClick={closeModal}>
+            <button  ref={btnAceptar} className="login-modal-button" onClick={closeModal}>
               Aceptar
             </button>
           </article>
