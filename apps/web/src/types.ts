@@ -3,6 +3,7 @@ export type UserRole =
   | 'docente'
   | 'coordinador'
   | 'directorGeneral'
+  | 'directorPlantel'
   | 'admin'
   | 'dev';
 

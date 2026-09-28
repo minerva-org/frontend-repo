@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
+import { useSidebar } from '../context/SidebarContext.tsx';
 import ModalAgregarAlumnos from '../components/ModalAlumnos.tsx';
-import '../styles/DetalleGrupo.css';
+import '../styles/Detallegrupo.css';
 
 interface QuizItemAlumno {
   id: string;
@@ -343,6 +344,7 @@ function VistaDocente({ code }: { code: string }) {
 
 export default function GroupDetail() {
   const { role } = useAuth();
+  const { toggleSidebar } = useSidebar();
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const isStudent = role === 'alumno';
@@ -357,7 +359,9 @@ export default function GroupDetail() {
     <article className="gd-screen">
       <header className="gd-topbar">
         <article className="gd-topbar-side">
-          <i className="bi bi-list gd-icon"></i>
+          <button className="gd-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
+            <i className="bi bi-list gd-icon"></i>
+          </button>
           <span className="gd-topbar-title">{isStudent ? 'Alumno' : 'Docente'}</span>
         </article>
         <article className="gd-topbar-side">
@@ -369,7 +373,7 @@ export default function GroupDetail() {
       <nav className="gd-breadcrumb">
         <span>Inicio</span>
         <span className="gd-breadcrumb-sep">/</span>
-        <span className="gd-breadcrumb-link" onClick={() => navigate(isStudent ? '/alumno' : '/grupos')}>
+        <span className="gd-breadcrumb-link" onClick={() => navigate(isStudent ? '/alumno/grupos' : '/grupos')}>
           {isStudent ? 'Mis Grupos' : 'Grupos'}
         </span>
         <span className="gd-breadcrumb-sep">/</span>

@@ -7,7 +7,6 @@
   background: var(--seige-fondo);
 }
 
-/* ---------- Topbar y breadcrumb ---------- */
 .gd-topbar {
   position: sticky;
   top: 0;
@@ -23,6 +22,14 @@
 .gd-topbar-title { font-size: 1.1rem; font-weight: 700; }
 .gd-icon { padding: 0.4rem; font-size: 1.35rem; line-height: 1; border-radius: 0.5rem; cursor: pointer; }
 .gd-icon:hover { background: color-mix(in srgb, white 15%, transparent); }
+.gd-icon-btn-plain {
+  display: inline-flex;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
 
 .gd-breadcrumb,
 .gd-content { width: 100%; max-width: 72rem; margin-inline: auto; }
@@ -34,7 +41,6 @@
 
 .gd-content { display: flex; flex-direction: column; gap: 1rem; padding: 0 1rem 2rem; }
 
-/* ---------- Hero ---------- */
 .gd-hero {
   display: flex;
   flex-direction: column;
@@ -56,7 +62,6 @@
 .gd-hero-title { margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 .gd-hero-cycle { font-size: 0.85rem; opacity: 0.85; }
 
-/* ---------- Barra de datos + tabs ---------- */
 .gd-info {
   display: flex;
   flex-direction: column;
@@ -112,7 +117,6 @@
   border-color: var(--gd-borde);
 }
 
-/* ---------- Layout principal ---------- */
 .gd-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1rem; }
 .gd-card {
   display: flex;
@@ -147,7 +151,6 @@
 
 .gd-section-label { margin: 0.5rem 0 0; font-size: 0.75rem; font-weight: 700; color: var(--gd-suave); }
 
-/* ---------- Quizzes ---------- */
 .gd-quiz {
   display: flex;
   align-items: center;
@@ -187,7 +190,6 @@
 .no_disponible { padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 700; color: var(--gd-suave); background: var(--gd-panel); border-radius: 999px; }
 .disponible { padding: 0.15rem 0.6rem; font-size: 0.75rem; font-weight: 700; border-radius: 999px; }
 
-/* ---------- Alumnos ---------- */
 .gd-student {
   display: flex;
   align-items: center;
@@ -232,7 +234,6 @@
 .gd-tab:focus-visible,
 .gd-icon-btn:focus-visible { outline: 2px solid var(--seige-acento); outline-offset: 2px; }
 
-/* ---------- Responsive ---------- */
 @media (min-width: 641px) {
   .gd-topbar { padding: 0.85rem 2rem; }
   .gd-breadcrumb { padding-inline: 2rem; }

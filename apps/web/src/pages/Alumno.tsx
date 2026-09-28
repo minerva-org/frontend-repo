@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Alumno.css';
 import AlumnoNav from '../components/AlumnosNav.tsx';
+import { useSidebar } from '../context/SidebarContext.tsx';
 
 interface QuizAlumno {
   id: string;
@@ -19,7 +20,6 @@ const HORA = 60 * MIN;
 const DIA = 24 * HORA;
 const BASE = Date.now();
 
-// TODO: reemplazar por los datos reales del alumno
 const NOMBRE_ALUMNO = 'Carlos';
 
 const MOCK_QUIZZES: QuizAlumno[] = [
@@ -57,9 +57,9 @@ function textoSaludo(activos: number): string {
 
 export default function AlumnoInicio() {
   const navigate = useNavigate();
+  const { toggleSidebar } = useSidebar();
   const [ahora, setAhora] = useState(() => Date.now());
 
-  // Refresca los contadores cada minuto
   useEffect(() => {
     const id = setInterval(() => setAhora(Date.now()), MIN);
     return () => clearInterval(id);
@@ -75,16 +75,18 @@ export default function AlumnoInicio() {
   const ordenados = [...activos, ...proximos];
 
   return (
-    <div className="al-screen">
+    <article className="al-screen">
       <header className="al-topbar">
-        <div className="al-topbar-side">
-          <i className="bi bi-list al-icon"></i>
+        <article className="al-topbar-side">
+          <button className="al-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
+            <i className="bi bi-list al-icon"></i>
+          </button>
           <span className="al-topbar-title">Alumno</span>
-        </div>
-        <div className="al-topbar-side">
+        </article>
+        <article className="al-topbar-side">
           <i className="bi bi-bell al-icon"></i>
           <i className="bi bi-person-circle al-icon"></i>
-        </div>
+        </article>
       </header>
       <AlumnoNav />
 
@@ -94,20 +96,20 @@ export default function AlumnoInicio() {
           <p className="al-greeting">
             Hola, {NOMBRE_ALUMNO}. {textoSaludo(activos.length)}
           </p>
-          <div className="al-counters">
+          <article className="al-counters">
             <span className="al-counter">Activos <strong>{activos.length}</strong></span>
             <span className="al-counter">Próximos <strong>{proximos.length}</strong></span>
-          </div>
+          </article>
         </section>
 
         <h2 className="al-section-label">TUS QUIZZES MÁS CERCANOS</h2>
 
         {ordenados.length === 0 && <p className="al-empty">No tienes quizzes pendientes.</p>}
 
-        <div className="al-list">
+        <article className="al-list">
           {ordenados.map((q) => (
             <article key={`${q.grupoCode}-${q.id}`} className={`al-card ${q.activo ? 'al-card-activo' : ''}`}>
-              <div className="al-card-top">
+              <article className="al-card-top">
                 <span className={`al-status ${q.activo ? 'al-status-activo' : 'al-status-proximo'}`}>
                   {q.activo && <i className="bi bi-circle-fill"></i>}
                   {q.activo ? 'ACTIVO' : 'PRÓXIMO'}
@@ -115,7 +117,7 @@ export default function AlumnoInicio() {
                 <button className="al-group-link" onClick={() => navigate(`/grupos/${q.grupoCode}`)}>
                   {q.grupoNombre} →
                 </button>
-              </div>
+              </article>
 
               <h3 className="al-card-title">{q.titulo}</h3>
 
@@ -135,8 +137,8 @@ export default function AlumnoInicio() {
               </button>
             </article>
           ))}
-        </div>
+        </article>
       </main>
-    </div>
+    </article>
   );
 }
