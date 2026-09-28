@@ -42,6 +42,14 @@
 .groups-icon-button:hover {
   background: color-mix(in srgb, white 15%, transparent);
 }
+.groups-icon-btn-plain {
+  display: inline-flex;
+  padding: 0;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
 
 .groups-breadcrumb,
 .groups-content {

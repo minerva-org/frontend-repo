@@ -34,7 +34,11 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await login(correo, password);
-      navigate(data.role === 'alumno' ? '/alumno' : '/grupos');
+      navigate(
+          data.role === 'alumno' ? '/alumno' 
+        : data.role === 'directorPlantel' ?  '/plantel/dashboard' 
+        : data.role === 'directorGeneral' ? '/planteles'
+        : '/grupos');
     } catch (err) {
       setModalMessage(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
       setPassword('');

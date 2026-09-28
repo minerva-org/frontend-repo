@@ -1,0 +1,146 @@
+.sd-sidebar {
+  --sd-fondo: var(--ar-profundo);
+  --sd-borde: color-mix(in srgb, white 12%, transparent);
+  --sd-texto-suave: color-mix(in srgb, var(--ar-nieve) 65%, var(--ar-acero));
+  display: flex;
+  flex-direction: column;
+  width: 17.5rem;
+  min-height: 100dvh;
+  overflow: hidden;
+  color: var(--ar-nieve);
+  background: var(--sd-fondo);
+  border-right: 1px solid var(--sd-borde);
+  transition: width 0.2s ease, min-width 0.2s ease, border-color 0.2s ease;
+}
+
+.sd-sidebar-collapsed {
+  width: 0;
+  min-width: 0;
+  border-right-color: transparent;
+}
+.sd-sidebar-collapsed .sd-brand,
+.sd-sidebar-collapsed .sd-nav,
+.sd-sidebar-collapsed .sd-user {
+  opacity: 0;
+}
+.sd-brand,
+.sd-nav,
+.sd-user {
+  flex: none;
+  width: 17.5rem;
+  transition: opacity 0.15s ease;
+}
+
+.sd-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.1rem 1rem;
+  border-bottom: 1px solid var(--sd-borde);
+}
+.sd-brand-logo {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: none;
+  font-size: 1.2rem;
+  color: var(--ar-profundo);
+  background: var(--ar-nieve);
+  border-radius: 0.6rem;
+}
+.sd-brand-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.sd-brand-title { font-size: 0.95rem; font-weight: 700; line-height: 1.2; }
+.sd-brand-subtitle { font-size: 0.75rem; color: var(--sd-texto-suave); }
+
+.sd-nav { display: flex; flex-direction: column; gap: 0.15rem; padding: 1rem 0.75rem; flex: 1; overflow-y: auto; }
+.sd-nav-group { display: flex; flex-direction: column; gap: 0.15rem; margin-top: 0.85rem; }
+.sd-nav-group:first-child { margin-top: 0; }
+.sd-nav-label {
+  margin: 0.25rem 0.5rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--sd-texto-suave);
+}
+.sd-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--ar-nieve) 85%, var(--ar-azul));
+  text-decoration: none;
+  border-radius: 0.55rem;
+}
+.sd-nav-link i { flex: none; font-size: 1rem; }
+.sd-nav-link:hover { background: color-mix(in srgb, white 8%, transparent); }
+.sd-nav-link.active {
+  color: var(--ar-nieve);
+  background: color-mix(in srgb, var(--ar-azul) 55%, transparent);
+}
+.sd-nav-link:focus-visible { outline: 2px solid var(--ar-nieve); outline-offset: -2px; }
+
+.sd-user {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  border-top: 1px solid var(--sd-borde);
+}
+.sd-user-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ar-nieve);
+  background: color-mix(in srgb, var(--ar-azul) 55%, var(--ar-acero));
+  border-radius: 999px;
+}
+.sd-user-text { display: flex; flex-direction: column; gap: 0.05rem; min-width: 0; flex: 1; }
+.sd-user-name {
+  overflow: hidden;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.sd-user-role { font-size: 0.72rem; color: var(--sd-texto-suave); }
+.sd-user-logout {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 1.9rem;
+  height: 1.9rem;
+  font-size: 1rem;
+  color: var(--sd-texto-suave);
+  background: transparent;
+  border: 0;
+  border-radius: 0.4rem;
+  cursor: pointer;
+}
+.sd-user-logout:hover { color: var(--ar-nieve); background: color-mix(in srgb, white 10%, transparent); }
+.sd-user-logout:focus-visible { outline: 2px solid var(--ar-nieve); outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .sd-sidebar {
+    width: 100%;
+    min-height: auto;
+    flex-direction: row;
+    align-items: center;
+    border-right: 0;
+    border-bottom: 1px solid var(--sd-borde);
+  }
+  .sd-brand { border-bottom: 0; }
+  .sd-brand-subtitle { display: none; }
+  .sd-nav { flex-direction: row; padding: 0.5rem; overflow-x: auto; }
+  .sd-nav-label { display: none; }
+  .sd-nav-link span { display: none; }
+  .sd-user { border-top: 0; }
+  .sd-user-text { display: none; }
+}

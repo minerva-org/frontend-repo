@@ -17,6 +17,7 @@ const Roles: Record<string,UserRole> ={
     DOCENTE: 'docente',
     COORDINADOR: 'coordinador',
     DIRECTOR_GENERAL: 'directorGeneral',
+    DIRECTOR_PLANTEL: 'directorPlantel',
     ADMIN: 'admin',
     DEV: 'dev',
 };
@@ -27,7 +28,8 @@ export const MOCK_USERS: Record<string, { password: string; role: UserRole }> = 
   'alumno@chapala.edu.mx': { password: 'Alumno#2024x', role: 'alumno' },
   'docente@chapala.edu.mx': { password: 'Docente#2024x', role: 'docente' },
   'coordinador@chapala.edu.mx': { password: 'Coordinador#2024x', role: 'coordinador' },
-  'directorgeneral@chapala.edu.mx': { password: 'DirectorGeneral#2024x', role: 'directorGeneral' },
+  'directorgeneral@chapala.edu.mx': { password: 'DirGeneral#2024x', role: 'directorGeneral' },
+  'directorplantel@chapala.edu.mx': {password:'DirPlantel#2024x', role:'directorPlantel'},
 };
 
 async function mockLogin(email: string, password: string): Promise<LoginResponse> {

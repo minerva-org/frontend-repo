@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {useAuth} from '../context/AuthContext.tsx';
+import { useSidebar } from '../context/SidebarContext.tsx';
 import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos.tsx';
 import '../styles/Grupos.css';
 import type{Group } from  "../types.ts"
@@ -20,7 +21,7 @@ const INITIAL_GROUPS: Group[] = [
     routeCode: 'FIS2-B',
     grupo: 'Física II — Grupo B',
     docente: 'Prof. Ruiz',
-    docenteEmail: null, // el docente titular no tiene login mock propio
+    docenteEmail: null,
     coordinadoresEmail: ['coordinador@chapala.edu.mx'],
     numeroEstudiantes: 28,
     status: 'activo',
@@ -37,6 +38,10 @@ const INITIAL_GROUPS: Group[] = [
     atRisk: 0,
   },
 ];
+
+interface GruposProps {
+  soloMisGrupos?: boolean;
+}
 
 type FilterKey = 'todos' | 'alertas' | 'sin_docente' | 'archivados';
 
@@ -58,15 +63,17 @@ function generaterouteCode(grupo: string, existing: Group[]): string {
   return routecode;
 }
 
-export default function Grupos() {
+export default function Grupos({soloMisGrupos = false }: GruposProps) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const navigate = useNavigate();
   const {role, email} = useAuth();
+  const { toggleSidebar } = useSidebar();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('todos');
   const [showModal, setShowModal] = useState(false);
 
   const relatedGroups = groups.filter((g) => {
+    if(soloMisGrupos) return g.docenteEmail===email;
     if (role === 'docente') return g.docenteEmail === email;
     if (role === 'coordinador') return g.coordinadoresEmail.includes(email ?? '');
     return true;
@@ -110,7 +117,9 @@ export default function Grupos() {
     <article className="groups-screen">
       <header className="groups-topbar">
         <article className="groups-topbar-left">
-          <i className="bi bi-list groups-icon-button"></i>
+          <button className="groups-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
+            <i className="bi bi-list groups-icon-button"></i>
+          </button>
           <span className="groups-topbar-title">Grupos</span>
         </article>
         <article className="groups-topbar-right">
@@ -140,11 +149,6 @@ export default function Grupos() {
           </button>
         </article>
 
-        {(role === 'coordinador' || role === 'directorPlanta') && (
-      <button type="button" onClick={() => navigate('/materias')}>
-        Catálogo de materias
-      </button>
-  )}
 
         <article className="groups-search-row">
           <i className="bi bi-search groups-search-icon"></i>

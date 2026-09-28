@@ -1,7 +1,6 @@
 import {createContext, useState, type ReactNode, useContext} from 'react';
 import { login as loginService, type LoginResponse} from '../services/authService.ts';
-
-export type UserRole = 'alumno' | 'docente' | 'coordinador' | 'directorPlanta' | 'directorGeneral';
+import type { UserRole} from  '../types.ts'
 
 interface AuthContextType {
     token: string | null;
