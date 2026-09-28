@@ -181,14 +181,14 @@ return (
           <article key={pregunta.id}>
             <article>
               <span>Pregunta {index + 1}</span>
-              {preguntas.length > 1 && (
+              {
                 <button
                   type="button"
                   onClick={() => deleteQuestion(pregunta.id)}
                 >
                   <i className="bi bi-trash"></i> Eliminar pregunta
                 </button>
-              )}
+              }
             </article>
 
             <input
