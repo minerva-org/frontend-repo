@@ -1,3 +1,11 @@
+export type UserRole =
+  | 'alumno'
+  | 'docente'
+  | 'coordinador'
+  | 'directorGeneral'
+  | 'admin'
+  | 'dev';
+
 export interface Concepto {
   id: string;
   nombre: string;
@@ -35,4 +43,12 @@ export interface Group {
   status: 'activo' | 'sin_docente' | 'archivado';
   atRisk: number;
   nextQuiz?: string;
+}
+
+export interface Plantel {
+  id: number;
+  nombre: string;
+  direccion: string;
+  universidadId: number;
+  activo: boolean;
 }

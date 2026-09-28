@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import ModalAgregarAlumnos from '../components/ModalAlumnos.tsx';
-
-
+import '../styles/DetalleGrupo.css';
 
 interface QuizItemAlumno {
   id: string;
@@ -91,7 +90,7 @@ const MOCK_DETALLE_DOCENTE: Record<string, DetalleDocenteData> = {
 };
 
 function claseCalificacion(cal: number): string {
-  if (cal >= 80) return 'puntuacionALta';
+  if (cal >= 80) return 'puntuacionAlta';
   if (cal >= 60) return 'puntuacionMedia';
   return 'puntuacionBaja';
 }
@@ -101,71 +100,72 @@ function obtenerTitulo(isStudent: boolean, code: string): string {
   return data?.titulo ?? code;
 }
 
-
 function VistaAlumno({ code }: { code: string }) {
   const [tab, setTab] = useState<'proximos' | 'pasados'>('proximos');
   const data = MOCK_DETALLE_ALUMNO[code];
-  const navigate =useNavigate();
+  const navigate = useNavigate();
 
-  if (!data) return <p>Grupo no encontrado.</p>;
+  if (!data) return <p className="gd-empty">Grupo no encontrado.</p>;
 
   const quizzes = tab === 'proximos' ? data.proximos : data.pasados;
 
   return (
     <>
-      <article>
-        <span>ID: {data.idVisible}</span>
-        <article>
-          <h1>{data.titulo}</h1>
-          <span>Ciclo: {data.ciclo}</span>
+      <section className="gd-hero">
+        <span className="gd-hero-id">ID: {data.idVisible}</span>
+        <article className="gd-hero-row">
+          <h1 className="gd-hero-title">{data.titulo}</h1>
+          <span className="gd-hero-cycle">Ciclo: {data.ciclo}</span>
         </article>
-      </article>
+      </section>
 
-      <article>
-        <span><strong>Docente:</strong> {data.docente}</span>
-        <span><strong>Materia:</strong> {data.materia}</span>
-        <span><strong>Grado:</strong> {data.grado}</span>
-      </article>
+      <section className="gd-info">
+        <article className="gd-meta">
+          <span className="gd-meta-item"><strong className="gd-meta-label">Docente:</strong> {data.docente}</span>
+          <span className="gd-meta-item"><strong className="gd-meta-label">Materia:</strong> {data.materia}</span>
+          <span className="gd-meta-item"><strong className="gd-meta-label">Grado:</strong> {data.grado}</span>
+        </article>
+      </section>
 
-      <article>
-        <article>
-          <span>
-            <i className="bi bi-journal-text"></i> Mis Quizzes
-          </span>
-          <article>
-            <button className={`${tab === 'proximos' ? 'active' : ''}`} onClick={() => setTab('proximos')}>
+      <section className="gd-card">
+        <article className="gd-card-header">
+          <span className="gd-card-title"><i className="bi bi-journal-text"></i> Mis Quizzes</span>
+          <article className="gd-tabs">
+            <button className={`gd-tab ${tab === 'proximos' ? 'active' : ''}`} onClick={() => setTab('proximos')}>
               Próximos
             </button>
-            <button className={`${tab === 'pasados' ? 'active' : ''}`} onClick={() => setTab('pasados')}>
+            <button className={`gd-tab ${tab === 'pasados' ? 'active' : ''}`} onClick={() => setTab('pasados')}>
               Pasados
             </button>
           </article>
         </article>
 
-        {quizzes.length === 0 && <p>No hay quizzes en esta sección.</p>}
+        {quizzes.length === 0 && <p className="gd-empty">No hay quizzes en esta sección.</p>}
 
         {quizzes.map((quiz) => (
-          <article key={quiz.id}>
-            <article>
-              <span>{quiz.titulo}</span>
-              <span>{quiz.preguntas} preguntas · {quiz.meta}</span>
+          <article key={quiz.id} className={`gd-quiz ${tab === 'pasados' ? 'gd-quiz-past' : ''}`}>
+            <article className="gd-quiz-info">
+              <span className="gd-quiz-title">{quiz.titulo}</span>
+              <span className="gd-quiz-meta">{quiz.preguntas} preguntas · {quiz.meta}</span>
             </article>
-            <article>
-              <span className={`${quiz.estado}`}>
+            <article className="gd-quiz-side">
+              <span className={quiz.estado}>
                 {quiz.estado === 'disponible' ? 'Disponible' : 'Cerrado'}
               </span>
-              <button disabled={quiz.estado !== 'disponible'}
-              onClick={() => navigate(`/grupos/${code}/quizzes/${quiz.id}/resolver`)}>
+              <button
+                className="gd-btn gd-btn-primary"
+                disabled={quiz.estado !== 'disponible'}
+                onClick={() => navigate(`/grupos/${code}/quizzes/${quiz.id}/resolver`)}
+              >
                 Contestar
               </button>
             </article>
           </article>
         ))}
-      </article>
+      </section>
     </>
   );
 }
-
 
 function VistaDocente({ code }: { code: string }) {
   const [tab, setTab] = useState<'general' | 'settings'>('general');
@@ -173,9 +173,15 @@ function VistaDocente({ code }: { code: string }) {
   const [modalAgregarAlumnos, setModalAgregarAlumnos] = useState(false);
   const inicial = MOCK_DETALLE_DOCENTE[code];
   const [alumnos, setAlumnos] = useState<AlumnoEntry[]>(inicial?.alumnos ?? []);
-  const navigate =useNavigate();
+  const [quizzesProximos, setQuizzesProximos] = useState<QuizItemDocente[]>(inicial?.quizzesProximos ?? []);
+  const navigate = useNavigate();
 
-  if (!inicial) return <p>Grupo no encontrado.</p>;
+  if (!inicial) return <p className="gd-empty">Grupo no encontrado.</p>;
+
+  function handleBorrarQuiz(id: string, titulo: string) {
+    if (!window.confirm(`¿Borrar "${titulo}"? Esta acción no se puede deshacer.`)) return;
+    setQuizzesProximos((prev) => prev.filter((q) => q.id !== id));
+  }
 
   function handleAprove(id: string) {
     setAlumnos((prev) => prev.map((a) => (a.id === id ? { ...a, estado: 'normal' as const } : a)));
@@ -191,10 +197,10 @@ function VistaDocente({ code }: { code: string }) {
     setTimeout(() => setCopiado(false), 1500);
   }
 
-  function handleSendInvitations(correos: string[]){
-    const nuevos = correos.map((correos, i) =>({
-      id:`invitado-${Date.now()}-${i}`,
-      nombre:correos,
+  function handleSendInvitations(correos: string[]) {
+    const nuevos = correos.map((correo, i) => ({
+      id: `invitado-${Date.now()}-${i}`,
+      nombre: correo,
       estado: 'pendiente' as const,
     }));
     setAlumnos((prev) => [...nuevos, ...prev]);
@@ -202,27 +208,28 @@ function VistaDocente({ code }: { code: string }) {
 
   return (
     <>
-    {modalAgregarAlumnos && (
-      <ModalAgregarAlumnos 
-      onClose={() => setModalAgregarAlumnos(false)}
-      onEnviar={handleSendInvitations}
-      />
-    )}
-      <article>
-        <span>ID: {inicial.idVisible}</span>
-        <article>
-          <h1>{inicial.titulo}</h1>
-          <span>Ciclo: {inicial.ciclo}</span>
-        </article>
-      </article>
+      {modalAgregarAlumnos && (
+        <ModalAgregarAlumnos
+          onClose={() => setModalAgregarAlumnos(false)}
+          onEnviar={handleSendInvitations}
+        />
+      )}
 
-      <article>
-        <article>
-          <span><strong>Grado:</strong> {inicial.grado}</span>
-          <span><strong>Materia:</strong> {inicial.materia}</span>
-          <span>
-            <strong>Código:</strong>
-            <span>
+      <section className="gd-hero">
+        <span className="gd-hero-id">ID: {inicial.idVisible}</span>
+        <article className="gd-hero-row">
+          <h1 className="gd-hero-title">{inicial.titulo}</h1>
+          <span className="gd-hero-cycle">Ciclo: {inicial.ciclo}</span>
+        </article>
+      </section>
+
+      <section className="gd-info">
+        <article className="gd-meta">
+          <span className="gd-meta-item"><strong className="gd-meta-label">Grado:</strong> {inicial.grado}</span>
+          <span className="gd-meta-item"><strong className="gd-meta-label">Materia:</strong> {inicial.materia}</span>
+          <span className="gd-meta-item">
+            <strong className="gd-meta-label">Código:</strong>
+            <span className="gd-code">
               {inicial.codigoInscripcion}
               <i
                 className={`bi ${copiado ? 'bi-check-lg' : 'bi-clipboard'}`}
@@ -233,94 +240,106 @@ function VistaDocente({ code }: { code: string }) {
           </span>
         </article>
 
-        <article>
-          <button className={`${tab === 'general' ? 'active' : ''}`} onClick={() => setTab('general')}>
+        <article className="gd-tabs">
+          <button className={`gd-tab ${tab === 'general' ? 'active' : ''}`} onClick={() => setTab('general')}>
             <i className="bi bi-card-list"></i> General
           </button>
-          <button className={`${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>
+          <button className={`gd-tab ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>
             <i className="bi bi-gear"></i> Settings de Grupo y Examen
           </button>
         </article>
-      </article>
+      </section>
 
       {tab === 'settings' ? (
-        <article>
-          <p>Settings de grupo y examen — en construcción.</p>
-        </article>
+        <section className="gd-card">
+          <p className="gd-empty">Settings de grupo y examen — en construcción.</p>
+        </section>
       ) : (
-        <article>
-          <article>
-            <article>
-              <span>
-                <i className="bi bi-journal-text"></i> Gestión de Quizzes
-              </span>
-              <button onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}>
+        <article className="gd-grid">
+          <section className="gd-card">
+            <article className="gd-card-header">
+              <span className="gd-card-title"><i className="bi bi-journal-text"></i> Gestión de Quizzes</span>
+              <button className="gd-btn gd-btn-primary" onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}>
                 <i className="bi bi-plus-lg"></i> Nuevo Quiz
               </button>
             </article>
 
-            <p>PRÓXIMOS</p>
-            {inicial.quizzesProximos.map((q) => (
-              <article key={q.id}>
-                <article>
-                  <span>{q.titulo}</span>
-                  <span>{q.meta}</span>
+            <p className="gd-section-label">PRÓXIMOS</p>
+            {quizzesProximos.length === 0 && <p className="gd-empty">No hay quizzes próximos.</p>}
+            {quizzesProximos.map((q) => (
+              <article key={q.id} className="gd-quiz gd-quiz-stack">
+                <article className="gd-quiz-row">
+                  <article className="gd-quiz-info">
+                    <span className="gd-quiz-title">{q.titulo}</span>
+                    <span className="gd-quiz-meta">{q.meta}</span>
+                  </article>
+                  <span className="gd-badge gd-badge-fecha">{q.etiquetaDerecha}</span>
                 </article>
-                <span>{q.etiquetaDerecha}</span>
+                <article className="gd-quiz-actions">
+                  <button
+                    className="gd-btn"
+                    onClick={() => navigate(`/grupos/${code}/quizzes/${q.id}/editar`)}
+                  >
+                    <i className="bi bi-pencil"></i> Editar
+                  </button>
+                  <button
+                    className="gd-btn gd-btn-danger"
+                    onClick={() => handleBorrarQuiz(q.id, q.titulo)}
+                  >
+                    <i className="bi bi-trash"></i> Borrar
+                  </button>
+                </article>
               </article>
             ))}
 
-            <p>PASADOS</p>
+            <p className="gd-section-label">PASADOS</p>
             {inicial.quizzesPasados.map((q) => (
-              <article key={q.id}>
-                <article>
-                  <span>{q.titulo}</span>
+              <article key={q.id} className="gd-quiz gd-quiz-past">
+                <article className="gd-quiz-info">
+                  <span className="gd-quiz-title">{q.titulo}</span>
                 </article>
-                <span>{q.etiquetaDerecha}</span>
+                <span className="gd-badge gd-badge-ok">{q.etiquetaDerecha}</span>
               </article>
             ))}
-          </article>
+          </section>
 
-          <article>
-            <article>
-              <span>
-                <i className="bi bi-people"></i> Lista de Alumnos ({alumnos.length})
-              </span>
-              <button onClick={() => setModalAgregarAlumnos(true)}>
+          <section className="gd-card">
+            <article className="gd-card-header">
+              <span className="gd-card-title"><i className="bi bi-people"></i> Lista de Alumnos ({alumnos.length})</span>
+              <button className="gd-btn" onClick={() => setModalAgregarAlumnos(true)}>
                 <i className="bi bi-plus-lg"></i> Agregar
               </button>
             </article>
 
             {alumnos.map((a) =>
               a.estado === 'pendiente' ? (
-                <article key={a.id}>
+                <article key={a.id} className="gd-student gd-student-pending">
                   <span>{a.nombre} <em>(Solicitud)</em></span>
-                  <article>
-                    <button onClick={() => handleAprove(a.id)}>
+                  <article className="gd-student-actions">
+                    <button className="gd-icon-btn approve" onClick={() => handleAprove(a.id)} title="Aprobar">
                       <i className="bi bi-check-lg"></i>
                     </button>
-                    <button onClick={() => handleReject(a.id)}>
+                    <button className="gd-icon-btn reject" onClick={() => handleReject(a.id)} title="Rechazar">
                       <i className="bi bi-x-lg"></i>
                     </button>
                   </article>
                 </article>
               ) : (
-                <article key={a.id}>
+                <article key={a.id} className="gd-student">
                   <span>{a.nombre}</span>
                   {typeof a.calificacion === 'number' && (
-                    <span className={`${claseCalificacion(a.calificacion)}`}>{a.calificacion}%</span>
+                    <span className={claseCalificacion(a.calificacion)}>{a.calificacion}%</span>
                   )}
                 </article>
               )
             )}
-            {alumnos.length === 0 && <p>Sin alumnos inscritos.</p>}
-          </article>
+            {alumnos.length === 0 && <p className="gd-empty">Sin alumnos inscritos.</p>}
+          </section>
         </article>
       )}
     </>
   );
 }
-
 
 export default function GroupDetail() {
   const { role } = useAuth();
@@ -329,35 +348,35 @@ export default function GroupDetail() {
   const isStudent = role === 'alumno';
 
   if (!code) {
-    return <p>Código de grupo no especificado.</p>;
+    return <p className="gd-empty">Código de grupo no especificado.</p>;
   }
 
   const titulo = obtenerTitulo(isStudent, code);
 
   return (
-    <article>
-      <header>
-        <article>
-          <i className="bi bi-list"></i>
-          <span>{isStudent ? 'Alumno' : 'Docente'}</span>
+    <article className="gd-screen">
+      <header className="gd-topbar">
+        <article className="gd-topbar-side">
+          <i className="bi bi-list gd-icon"></i>
+          <span className="gd-topbar-title">{isStudent ? 'Alumno' : 'Docente'}</span>
         </article>
-        <article>
-          <i className="bi bi-bell"></i>
-          <i className="bi bi-person-circle"></i>
+        <article className="gd-topbar-side">
+          <i className="bi bi-bell gd-icon"></i>
+          <i className="bi bi-person-circle gd-icon"></i>
         </article>
       </header>
 
-      <nav>
+      <nav className="gd-breadcrumb">
         <span>Inicio</span>
-        <span>/</span>
-        <span onClick={() => navigate(isStudent ? '/alumno' : '/grupos')} style={{ cursor: 'pointer' }}>
+        <span className="gd-breadcrumb-sep">/</span>
+        <span className="gd-breadcrumb-link" onClick={() => navigate(isStudent ? '/alumno' : '/grupos')}>
           {isStudent ? 'Mis Grupos' : 'Grupos'}
         </span>
-        <span>/</span>
-        <span>{titulo}</span>
+        <span className="gd-breadcrumb-sep">/</span>
+        <span className="gd-breadcrumb-current">{titulo}</span>
       </nav>
 
-      <main>
+      <main className="gd-content">
         {isStudent ? <VistaAlumno code={code} /> : <VistaDocente code={code} />}
       </main>
     </article>
