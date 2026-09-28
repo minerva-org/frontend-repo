@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {useAuth} from '../context/AuthContext';
 import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos';
 import '../styles/Grupos.css';
@@ -70,6 +71,7 @@ function generaterouteCode(grupo: string, existing: Group[]): string {
 
 export default function Grupos() {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
+  const navigate = useNavigate();
   const {role, email} = useAuth();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('todos');
@@ -139,7 +141,7 @@ export default function Grupos() {
           <article>
             <h1 className="groups-title">Catálogo de grupos</h1>
             <p className="groups-subtitle">
-              Ciclo Activo 2026-B · {groups.length} grupos · {counts.alertas}{' '}
+              Ciclo Activo 2026-B · {relatedGroups.length} grupos · {counts.alertas}{' '}
               con alertas
             </p>
           </article>
@@ -205,7 +207,7 @@ export default function Grupos() {
 
         <article className="groups-grid">
           {filtered.map((group) => (
-            <article className="group-card" key={group.routeCode}>
+            <article className="group-card" key={group.routeCode} onClick={() => navigate(`/grupos/${group.routeCode}`)} style={{cursor: 'pointer'}}>
               <article className="group-card-top">
                 <span className="group-card-routecode">{group.routeCode}</span>
                 {group.status === 'activo' && (

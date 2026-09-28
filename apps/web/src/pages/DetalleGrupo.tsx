@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import ModalAgregarAlumnos from '../components/ModalAlumnos';
 
 
 
@@ -104,6 +105,7 @@ function obtenerTitulo(isStudent: boolean, code: string): string {
 function VistaAlumno({ code }: { code: string }) {
   const [tab, setTab] = useState<'proximos' | 'pasados'>('proximos');
   const data = MOCK_DETALLE_ALUMNO[code];
+  const navigate =useNavigate();
 
   if (!data) return <p>Grupo no encontrado.</p>;
 
@@ -152,7 +154,8 @@ function VistaAlumno({ code }: { code: string }) {
               <span className={`${quiz.estado}`}>
                 {quiz.estado === 'disponible' ? 'Disponible' : 'Cerrado'}
               </span>
-              <button disabled={quiz.estado !== 'disponible'}>
+              <button disabled={quiz.estado !== 'disponible'}
+              onClick={() => navigate(`/grupos/${code}/quizzes/${quiz.id}/resolver`)}>
                 Contestar
               </button>
             </article>
@@ -167,17 +170,18 @@ function VistaAlumno({ code }: { code: string }) {
 function VistaDocente({ code }: { code: string }) {
   const [tab, setTab] = useState<'general' | 'settings'>('general');
   const [copiado, setCopiado] = useState(false);
-
+  const [modalAgregarAlumnos, setModalAgregarAlumnos] = useState(false);
   const inicial = MOCK_DETALLE_DOCENTE[code];
   const [alumnos, setAlumnos] = useState<AlumnoEntry[]>(inicial?.alumnos ?? []);
+  const navigate =useNavigate();
 
   if (!inicial) return <p>Grupo no encontrado.</p>;
 
-  function handleAprobar(id: string) {
+  function handleAprove(id: string) {
     setAlumnos((prev) => prev.map((a) => (a.id === id ? { ...a, estado: 'normal' as const } : a)));
   }
 
-  function handleRechazar(id: string) {
+  function handleReject(id: string) {
     setAlumnos((prev) => prev.filter((a) => a.id !== id));
   }
 
@@ -187,8 +191,23 @@ function VistaDocente({ code }: { code: string }) {
     setTimeout(() => setCopiado(false), 1500);
   }
 
+  function handleSendInvitations(correos: string[]){
+    const nuevos = correos.map((correos, i) =>({
+      id:`invitado-${Date.now()}-${i}`,
+      nombre:correos,
+      estado: 'pendiente' as const,
+    }));
+    setAlumnos((prev) => [...nuevos, ...prev]);
+  }
+
   return (
     <>
+    {modalAgregarAlumnos && (
+      <ModalAgregarAlumnos 
+      onClose={() => setModalAgregarAlumnos(false)}
+      onEnviar={handleSendInvitations}
+      />
+    )}
       <article>
         <span>ID: {inicial.idVisible}</span>
         <article>
@@ -235,7 +254,7 @@ function VistaDocente({ code }: { code: string }) {
               <span>
                 <i className="bi bi-journal-text"></i> Gestión de Quizzes
               </span>
-              <button>
+              <button onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}>
                 <i className="bi bi-plus-lg"></i> Nuevo Quiz
               </button>
             </article>
@@ -267,7 +286,7 @@ function VistaDocente({ code }: { code: string }) {
               <span>
                 <i className="bi bi-people"></i> Lista de Alumnos ({alumnos.length})
               </span>
-              <button>
+              <button onClick={() => setModalAgregarAlumnos(true)}>
                 <i className="bi bi-plus-lg"></i> Agregar
               </button>
             </article>
@@ -277,10 +296,10 @@ function VistaDocente({ code }: { code: string }) {
                 <article key={a.id}>
                   <span>{a.nombre} <em>(Solicitud)</em></span>
                   <article>
-                    <button onClick={() => handleAprobar(a.id)}>
+                    <button onClick={() => handleAprove(a.id)}>
                       <i className="bi bi-check-lg"></i>
                     </button>
-                    <button onClick={() => handleRechazar(a.id)}>
+                    <button onClick={() => handleReject(a.id)}>
                       <i className="bi bi-x-lg"></i>
                     </button>
                   </article>

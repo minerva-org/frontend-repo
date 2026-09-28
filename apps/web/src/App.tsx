@@ -5,6 +5,7 @@ import Grupos from './pages/Grupos';
 import Alumnos from './pages/Alumno';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 import QuizResolve from './pages/QuizAlumno.tsx';
+import QuizNuevo from './pages/QuizNuevo.tsx';
 import GroupDetail from './pages/DetalleGrupo.tsx';
 
 export default function App() { 
@@ -36,6 +37,13 @@ export default function App() {
             <GroupDetail/>
           </ProtectedRoute>
         }> </Route>
+
+        <Route path="/grupos/:code/quizzes/nuevo" element={
+          <ProtectedRoute allowedRoles={['docente','coordinador']}>
+            <QuizNuevo></QuizNuevo>
+          </ProtectedRoute>
+        }>
+        </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
