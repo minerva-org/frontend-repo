@@ -8,6 +8,7 @@ import QuizResolve from './pages/QuizAlumno.tsx';
 import QuizNuevo from './pages/QuizNuevo.tsx';
 import GroupDetail from './pages/DetalleGrupo.tsx';
 import Materias from './pages/Materias.tsx';
+import MisGrupos from './components/MisGrupos.tsx';
 
 export default function App() { 
   return ( <AuthProvider> 
@@ -15,7 +16,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/grupos" element={
-          <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorPlanta', 'directorGeneral']}>
+          <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorGeneral','dev']}>
             <Grupos />
           </ProtectedRoute>
         } />
@@ -26,6 +27,11 @@ export default function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/alumno/grupos" element={
+          <ProtectedRoute allowedRoles={['alumno']}>
+            <MisGrupos/>
+          </ProtectedRoute>
+        } />
 
         <Route path="/grupos/:code/quizzes/:quizId/resolver" element={
           <ProtectedRoute allowedRoles={['alumno']}>
@@ -40,6 +46,13 @@ export default function App() {
         }> </Route>
 
         <Route path="/grupos/:code/quizzes/nuevo" element={
+          <ProtectedRoute allowedRoles={['docente','coordinador']}>
+            <QuizNuevo></QuizNuevo>
+          </ProtectedRoute>
+        }>
+        </Route>
+
+        <Route path="/grupos/:code/quizzes/:quizId/editar" element={
           <ProtectedRoute allowedRoles={['docente','coordinador']}>
             <QuizNuevo></QuizNuevo>
           </ProtectedRoute>

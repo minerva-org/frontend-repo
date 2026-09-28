@@ -1,0 +1,27 @@
+.an-nav {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem 1rem;
+  background: var(--seige-superficie);
+  border-bottom: 1px solid color-mix(in srgb, var(--ar-acero) 30%, white);
+  overflow-x: auto;
+}
+.an-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-decoration: none;
+  color: color-mix(in srgb, var(--ar-acero) 65%, var(--ar-profundo));
+  border-radius: 0.5rem;
+}
+.an-link:hover { background: color-mix(in srgb, var(--ar-neblina) 30%, white); }
+.an-link.active { color: var(--ar-nieve); background: var(--seige-texto); }
+.an-link:focus-visible { outline: 2px solid var(--seige-acento); outline-offset: 2px; }
+
+@media (min-width: 641px) {
+  .an-nav { padding-inline: 2rem; }
+}

@@ -1,140 +1,142 @@
-import { useState, type SubmitEvent } from "react";
-import { useNavigate} from "react-router-dom";
-import {useAuth} from '../context/AuthContext'; 
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import '../styles/Alumno.css';
+import AlumnoNav from '../components/AlumnosNav.tsx';
 
-interface Group {
-  routeCode: string;
-  grupo: string;
-  docente: string | null;
-  numeroEstudiantes: number;
-  status: 'activo' | 'sin_docente' | 'archivado';
-  atRisk: number;
-  nextQuiz?: string;
-  alumnosEmail: string[];
+interface QuizAlumno {
+  id: string;
+  titulo: string;
+  grupoCode: string;
+  grupoNombre: string;
+  preguntas: number;
+  segundosPorPregunta: number;
+  abre: number; // timestamp en ms
+  cierra: number; // timestamp en ms
 }
 
-const INITIAL_GROUPS: Group[] = [
-  {
-    routeCode: 'MAT3-A',
-    grupo: 'Matemáticas III — Grupo A',
-    docente: 'Prof. García',
-    numeroEstudiantes: 36,
-    status: 'activo',
-    atRisk: 1,
-    nextQuiz: 'Lunes 28 de septiembre',
-    alumnosEmail: ['alumno@chapala.edu.mx'],
-  },
-  {
-    routeCode: 'FIS2-B',
-    grupo: 'Física II — Grupo B',
-    docente: 'Prof. Ruiz',
-    numeroEstudiantes: 28,
-    status: 'activo',
-    atRisk: 0,
-    nextQuiz: 'martes 29 de septiembre',
-    alumnosEmail: [], // nuevo — este alumno no está inscrito aquí
-  },
-  {
-    routeCode: 'PROG1-A',
-    grupo: 'Programación I — Grupo A',
-    docente: null,
-    numeroEstudiantes: 30,
-    status: 'sin_docente',
-    atRisk: 0,
-    nextQuiz: 'miercoles 30 de septiembre',
-    alumnosEmail: [], // nuevo
-  },
+const MIN = 60_000;
+const HORA = 60 * MIN;
+const DIA = 24 * HORA;
+const BASE = Date.now();
+
+// TODO: reemplazar por los datos reales del alumno
+const NOMBRE_ALUMNO = 'Carlos';
+
+const MOCK_QUIZZES: QuizAlumno[] = [
+  { id: 'q3', titulo: 'Quiz 3: Cinemática', grupoCode: 'FIS2-B', grupoNombre: 'Física II · 2.° B', preguntas: 3, segundosPorPregunta: 40, abre: BASE - HORA, cierra: BASE + 5 * HORA },
+  { id: 'q5', titulo: 'Quiz 5: Identidades Recíprocas', grupoCode: 'MAT3-A', grupoNombre: 'Matemáticas III · 3.° A', preguntas: 4, segundosPorPregunta: 45, abre: BASE - 2 * HORA, cierra: BASE + DIA + 22 * HORA },
+  { id: 'q4', titulo: 'Quiz 4: Leyes de Newton', grupoCode: 'FIS2-B', grupoNombre: 'Física II · 2.° B', preguntas: 3, segundosPorPregunta: 40, abre: BASE + DIA, cierra: BASE + 2 * DIA },
+  { id: 'q6', titulo: 'Quiz 6: Geometría Analítica', grupoCode: 'MAT3-A', grupoNombre: 'Matemáticas III · 3.° A', preguntas: 3, segundosPorPregunta: 45, abre: BASE + 3 * DIA, cierra: BASE + 4 * DIA },
+  { id: 'q2', titulo: 'Quiz 2: Ciclos', grupoCode: 'PROG1-A', grupoNombre: 'Programación I · 1.° A', preguntas: 3, segundosPorPregunta: 50, abre: BASE + 5 * DIA, cierra: BASE + 6 * DIA },
 ];
 
-const JOIN_CODE_CATALOG: Record<string, Group> = {
-  'FIS2B-26B': {
-    routeCode: 'FIS2-B',
-    grupo: 'Física II — Grupo B',
-    docente: 'Prof. Ruiz',
-    numeroEstudiantes: 28,
-    status: 'activo',
-    atRisk: 0,
-    nextQuiz: 'Viernes 10:00 AM',
-    alumnosEmail: [],
-  },
-};
+const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
+const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-export default function Alumno() {
-  const { email } = useAuth();
-  const navigate =useNavigate();
-  const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
-  const [joinCode, setJoinCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
+function formatFecha(ts: number): string {
+  const d = new Date(ts);
+  const h = d.getHours();
+  const h12 = h % 12 || 12;
+  const min = String(d.getMinutes()).padStart(2, '0');
+  return `${DIAS_SEMANA[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}, ${h12}:${min} ${h < 12 ? 'a.m.' : 'p.m.'}`;
+}
 
-  const myGroups = groups.filter((g) => email !== null && g.alumnosEmail.includes(email));
-  
-  
-  function handleJoin(e: SubmitEvent){
-    e.preventDefault();
-    setError(null);
+function formatRestante(ms: number): string {
+  const totalMin = Math.max(0, Math.floor(ms / MIN));
+  const d = Math.floor(totalMin / 1440);
+  const h = Math.floor((totalMin % 1440) / 60);
+  const m = totalMin % 60;
+  return d > 0 ? `${d} d ${h} h` : `${h} h ${m} min`;
+}
 
-    const normalizar = joinCode.trim().toUpperCase();
-    if(!normalizar) return;
+function textoSaludo(activos: number): string {
+  if (activos === 0) return 'No tienes quizzes activos por ahora.';
+  if (activos === 1) return 'Tienes 1 quiz activo esperando.';
+  return `Tienes ${activos} quizzes activos esperando.`;
+}
 
-    const match = JOIN_CODE_CATALOG[normalizar];
-    if(!match){
-      setError('Código inválido. Verifica con tu profesor')
-      return;
-    }
-    const alreadyJoined = myGroups.some((g) => g.routeCode === match.routeCode);
-    if(alreadyJoined){
-      setError('Ya estás inscrito en este curso')
-      return;
-    }
+export default function AlumnoInicio() {
+  const navigate = useNavigate();
+  const [ahora, setAhora] = useState(() => Date.now());
 
-    const groupWithMe: Group = {
-      ...match,
-      alumnosEmail: email ? [...match.alumnosEmail,email] : match.alumnosEmail,
-    };
+  // Refresca los contadores cada minuto
+  useEffect(() => {
+    const id = setInterval(() => setAhora(Date.now()), MIN);
+    return () => clearInterval(id);
+  }, []);
 
-    setGroups((prev) => {
-      const exist = prev.some((g) => g.routeCode === groupWithMe.routeCode);
-      return exist
-        ? prev.map((g) => (g.routeCode ===groupWithMe.routeCode ? groupWithMe : g))
-        : [...prev, groupWithMe];
-    });
-    setJoinCode('');
-  }
+  const vigentes = MOCK_QUIZZES.filter((q) => q.cierra > ahora).map((q) => ({
+    ...q,
+    activo: q.abre <= ahora,
+  }));
+
+  const activos = vigentes.filter((q) => q.activo).sort((a, b) => a.cierra - b.cierra);
+  const proximos = vigentes.filter((q) => !q.activo).sort((a, b) => a.abre - b.abre);
+  const ordenados = [...activos, ...proximos];
 
   return (
-  <section>
-      <form onSubmit={handleJoin}>
-        <h2>Ingrese código para inscribirse a un grupo</h2>
-        <p></p>
-        <article>
-          <input 
-          type="text" 
-          placeholder="Ejemplo: MATCHAPA159"
-          value={joinCode}
-          onChange={(e) => setJoinCode(e.target.value)}
-          />
+    <div className="al-screen">
+      <header className="al-topbar">
+        <div className="al-topbar-side">
+          <i className="bi bi-list al-icon"></i>
+          <span className="al-topbar-title">Alumno</span>
+        </div>
+        <div className="al-topbar-side">
+          <i className="bi bi-bell al-icon"></i>
+          <i className="bi bi-person-circle al-icon"></i>
+        </div>
+      </header>
+      <AlumnoNav />
 
-          <button type="submit">
-            Unirme
-          </button>
-        </article>
-        {error && <p>{error}</p>}
-      </form>
+      <main className="al-content">
+        <section className="al-intro">
+          <h1 className="al-title">Inicio</h1>
+          <p className="al-greeting">
+            Hola, {NOMBRE_ALUMNO}. {textoSaludo(activos.length)}
+          </p>
+          <div className="al-counters">
+            <span className="al-counter">Activos <strong>{activos.length}</strong></span>
+            <span className="al-counter">Próximos <strong>{proximos.length}</strong></span>
+          </div>
+        </section>
 
-      <article>
-        {myGroups.map((group) => (
-          <article key={group.routeCode} onClick={()  => navigate(`/grupos/${group.routeCode}`)}>
-            <article>
-              <span>{group.docente}</span>
-              <span>{group.status}</span>
+        <h2 className="al-section-label">TUS QUIZZES MÁS CERCANOS</h2>
+
+        {ordenados.length === 0 && <p className="al-empty">No tienes quizzes pendientes.</p>}
+
+        <div className="al-list">
+          {ordenados.map((q) => (
+            <article key={`${q.grupoCode}-${q.id}`} className={`al-card ${q.activo ? 'al-card-activo' : ''}`}>
+              <div className="al-card-top">
+                <span className={`al-status ${q.activo ? 'al-status-activo' : 'al-status-proximo'}`}>
+                  {q.activo && <i className="bi bi-circle-fill"></i>}
+                  {q.activo ? 'ACTIVO' : 'PRÓXIMO'}
+                </span>
+                <button className="al-group-link" onClick={() => navigate(`/grupos/${q.grupoCode}`)}>
+                  {q.grupoNombre} →
+                </button>
+              </div>
+
+              <h3 className="al-card-title">{q.titulo}</h3>
+
+              <p className="al-card-meta">
+                {q.preguntas} preguntas · {q.segundosPorPregunta} s por pregunta ·{' '}
+                {q.activo
+                  ? `Cierra en ${formatRestante(q.cierra - ahora)} · ${formatFecha(q.cierra)}`
+                  : `Se habilita el ${formatFecha(q.abre)}`}
+              </p>
+
+              <button
+                className={`al-btn ${q.activo ? 'al-btn-primary' : ''}`}
+                disabled={!q.activo}
+                onClick={() => navigate(`/grupos/${q.grupoCode}/quizzes/${q.id}/resolver`)}
+              >
+                {q.activo ? 'Iniciar quiz' : 'Aún no disponible'}
+              </button>
             </article>
-            <h3>{group.grupo}</h3>
-            <p>{group.nextQuiz}</p>
-          </article>
-        ))}
-
-        {myGroups.length === 0 && <p>Aún no estas inscrito en ningun grupo</p>}
-      </article>
-  </section>
-   
-)}
+          ))}
+        </div>
+      </main>
+    </div>
+  );
+}
