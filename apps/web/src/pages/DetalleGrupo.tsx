@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import ModalAgregarAlumnos from '../components/ModalAlumnos';
+import { useAuth } from '../context/AuthContext.tsx';
+import ModalAgregarAlumnos from '../components/ModalAlumnos.tsx';
 
 
 

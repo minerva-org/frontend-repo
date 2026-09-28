@@ -1,12 +1,13 @@
-import { AuthProvider } from './context/AuthContext'; 
+import { AuthProvider } from './context/AuthContext.tsx'; 
 import {BrowserRouter, Routes, Route, Navigate} from 'react-router-dom';
-import Login from './pages/Login';
-import Grupos from './pages/Grupos';
-import Alumnos from './pages/Alumno';
+import Login from './pages/Login.tsx';
+import Grupos from './pages/Grupos.tsx';
+import Alumnos from './pages/Alumno.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 import QuizResolve from './pages/QuizAlumno.tsx';
 import QuizNuevo from './pages/QuizNuevo.tsx';
 import GroupDetail from './pages/DetalleGrupo.tsx';
+import Materias from './pages/Materias.tsx';
 
 export default function App() { 
   return ( <AuthProvider> 
@@ -45,6 +46,13 @@ export default function App() {
         }>
         </Route>
 
+        <Route path="/materias" element={
+          <ProtectedRoute allowedRoles={['coordinador', 'directorPlanta']}>
+            <Materias></Materias>
+          </ProtectedRoute>
+        }>
+
+        </Route>
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

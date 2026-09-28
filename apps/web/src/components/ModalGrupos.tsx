@@ -1,5 +1,5 @@
 import { useState, type SubmitEvent } from 'react';
-import AutocompleteInput from './AutoCompleteInput';
+import AutocompleteInput from './AutoCompleteInput.tsx';
 import '../styles/ModalGrupos.css';
 
 const MOCK_docenteS = [

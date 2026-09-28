@@ -15,8 +15,10 @@ export default function Login() {
 
   async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
+    
+    const correo = email.trim();
 
-    const emailError = validateEmail(email);
+    const emailError = validateEmail(correo);
     if(emailError){
         setModalMessage('Compruebe su correo y/o contraseña y vuelva a intentarlo');
         return;
@@ -29,10 +31,10 @@ export default function Login() {
 
     setLoading(true);
     try {
-      const data = await login(email, password);
+      const data = await login(correo, password);
       navigate(data.role === 'alumno' ? '/alumno' : '/grupos');
     } catch (err) {
-        setModalMessage('Compruebe su correo y/o contraseña y vuelva a intentarlo');
+        setModalMessage(err instanceof Error ? err.message :'OcurrióEl un error inesperado');
         setPassword('');
     } finally {
       setLoading(false);
@@ -132,7 +134,7 @@ export default function Login() {
       {modalMessage && (
         <article className="login-modal-error ">
           <article className="login-modal">
-            <h2 className="login-modal-title">Correo y/o contraseña incorrecto</h2>
+            <h2 className="login-modal-title">No se pudo iniciar sesión</h2>
             <p className="login-modal-message">{modalMessage}</p>
             <button  ref={btnAceptar} className="login-modal-button" onClick={closeModal}>
               Aceptar

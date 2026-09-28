@@ -1,20 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {useAuth} from '../context/AuthContext';
-import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos';
+import {useAuth} from '../context/AuthContext.tsx';
+import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos.tsx';
 import '../styles/Grupos.css';
-
-interface Group {
-  routeCode: string;
-  grupo: string;
-  docente: string | null;
-  docenteEmail: string | null;
-  coordinadoresEmail: string [];
-  numeroEstudiantes: number;
-  status: 'activo' | 'sin_docente' | 'archivado';
-  atRisk: number;
-  nextQuiz?: string;
-}
+import type{Group } from  "../types.ts"
 
 const INITIAL_GROUPS: Group[] = [
   {
@@ -150,6 +139,12 @@ export default function Grupos() {
             Nuevo grupo
           </button>
         </article>
+
+        {(role === 'coordinador' || role === 'directorPlanta') && (
+      <button type="button" onClick={() => navigate('/materias')}>
+        Catálogo de materias
+      </button>
+  )}
 
         <article className="groups-search-row">
           <i className="bi bi-search groups-search-icon"></i>
