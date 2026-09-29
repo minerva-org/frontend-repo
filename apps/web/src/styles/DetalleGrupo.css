@@ -79,7 +79,7 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.15rem 0.6rem;
-  font-family: ui-monospace, Consolas, monospace;
+  font-family: sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
   background: color-mix(in srgb, var(--ar-azul) 12%, white);
@@ -101,7 +101,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.45rem 0.9rem;
-  font: inherit;
+  font: sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
   white-space: nowrap;
@@ -135,7 +135,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.8rem;
-  font: inherit;
+  font: sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--seige-texto);

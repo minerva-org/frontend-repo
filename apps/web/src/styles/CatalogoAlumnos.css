@@ -94,13 +94,24 @@
 .ca-scope-text strong {
   color: var(--seige-texto);
 }
+
+/* ---- Buscador + botón "Nuevo alumno", a la misma altura ---- */
+.ca-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.ca-toolbar .ca-search-row {
+  flex: 1;
+}
+
 .ca-new-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
   padding: 0.65rem 1rem;
-  font: inherit;
+  font-family: sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--seige-superficie);
@@ -128,7 +139,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.7rem 0.85rem 0.7rem 2.6rem;
-  font: inherit;
+  font-family: sans-serif;
   font-size: 1rem;
   color: var(--seige-texto);
   background: var(--seige-superficie);
@@ -213,7 +224,7 @@
 }
 .ca-link-button {
   padding: 0.3rem 0.4rem;
-  font: inherit;
+  font-family: sans-serif;
   font-size: 0.82rem;
   font-weight: 700;
   color: var(--seige-acento);
@@ -314,7 +325,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.65rem 0.8rem;
-  font: inherit;
+  font-family: sans-serif;
   font-size: 1rem;
   color: var(--seige-texto);
   background: var(--seige-superficie);
@@ -343,7 +354,7 @@
 .ca-password-btn {
   flex: none;
   padding: 0.55rem 0.75rem;
-  font: inherit;
+  font-family: sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--seige-texto);
@@ -365,7 +376,7 @@
 .ca-btn-secondary,
 .ca-btn-primary {
   padding: 0.7rem 1rem;
-  font: inherit;
+  font-family: sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   border-radius: 0.6rem;
@@ -408,6 +419,11 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
+  }
+
+  .ca-toolbar {
+    flex-direction: row;
+    align-items: center;
   }
   .ca-new-button {
     flex: none;
