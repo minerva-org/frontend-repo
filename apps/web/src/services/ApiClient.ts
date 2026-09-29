@@ -5,6 +5,7 @@ export function clearAuthSession() {
   sessionStorage.removeItem('role');
   sessionStorage.removeItem('username');
   sessionStorage.removeItem('email');
+  sessionStorage.removeItem('selectedPlantel');
 }
 
 export const apiClient = axios.create({

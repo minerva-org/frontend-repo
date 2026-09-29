@@ -1,76 +1,233 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import { apiClient } from '../services/ApiClient';
+import { createPersona, fetchPersonasByRol, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/CatalogoAlumnos.css';
 
-type EstadoAlumno = 'activo' | 'inactivo';
-
-interface Alumno {
-  id: string;
-  nombre: string;
-  matricula: string;
-  correo: string;
-  estado: EstadoAlumno;
+interface AlumnoFormState {
+  nombreCompleto: string;
+  email: string;
+  plantelId: number | null;
+  password: string;
 }
 
-const MOCK_ALUMNOS: Alumno[] = [
-  { id: '1', nombre: 'Carlos Díaz Ramírez', matricula: '2026-0142', correo: '2026-0142@alumnos.chapalagutierrez.edu.mx', estado: 'activo' },
-  { id: '2', nombre: 'Ana Sofía Beltrán', matricula: '2026-0143', correo: '2026-0143@alumnos.chapalagutierrez.edu.mx', estado: 'activo' },
-  { id: '3', nombre: 'Luis Fernando Ibarra', matricula: '2025-0871', correo: '2025-0871@alumnos.chapalagutierrez.edu.mx', estado: 'inactivo' },
-];
+interface PlantelItem {
+  id: number;
+  nombre: string;
+  activo: boolean;
+}
+
+const emptyForm: AlumnoFormState = {
+  nombreCompleto: '',
+  email: '',
+  plantelId: null,
+  password: '',
+};
 
 function generarPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
   return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
-function correoDeMatricula(matricula: string): string {
-  return `${matricula.trim()}@alumnos.chapalagutierrez.edu.mx`;
+function splitNombreCompleto(nombreCompleto: string) {
+  const limpio = nombreCompleto.trim().replace(/\s+/g, ' ');
+  if (!limpio) return { nombre: '', apellido: '' };
+
+  const partes = limpio.split(' ');
+  if (partes.length === 1) return { nombre: partes[0], apellido: '-' };
+
+  return {
+    nombre: partes[0],
+    apellido: partes.slice(1).join(' '),
+  };
+}
+
+function formatearEmailInstitucional(localPart: string, rol: 'ALUMNO' | 'DOCENTE' | 'COORDINADOR' | 'DIRECTOR_PLANTEL') {
+  const limpio = localPart.trim().replace(/@.*$/, '').replace(/\s+/g, '');
+  if (!limpio) return '';
+  const dominio = rol === 'ALUMNO' ? 'alumnos.chapala.edu.mx' : 'chapala.edu.mx';
+  return `${limpio}@${dominio}`;
+}
+
+function getLocalPart(email: string) {
+  return email.trim().split('@')[0] || '';
+}
+
+function getNombreCompleto(alumno: PersonaRecord) {
+  return `${alumno.nombre} ${alumno.apellido}`.trim();
 }
 
 export default function CatalogoAlumnos() {
+  const { role, selectedPlantel } = useAuth();
   const { toggleSidebar } = useSidebar();
-
-  const [alumnos, setAlumnos] = useState<Alumno[]>(MOCK_ALUMNOS);
+  const activeRoleLabel = `ROL ACTIVO: ${role ? role.toUpperCase() : '—'}`;
+  const canChoosePlantel = role === 'directorGeneral';
+  const [alumnos, setAlumnos] = useState<PersonaRecord[]>([]);
+  const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
+  const defaultPlantelId = selectedPlantel?.id ?? planteles[0]?.id ?? null;
   const [search, setSearch] = useState('');
-  const [showCreate, setShowCreate] = useState(false);
-  const [editing, setEditing] = useState<Alumno | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<AlumnoFormState>(emptyForm);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<PersonaRecord | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
 
-  const filtrados = alumnos.filter(
-    (a) =>
-      a.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      a.matricula.toLowerCase().includes(search.toLowerCase())
-  );
-
-  function handleToggleEstado(id: string) {
-    setAlumnos((prev) =>
-      prev.map((a) =>
-        a.id === id ? { ...a, estado: a.estado === 'activo' ? 'inactivo' : 'activo' } : a
-      )
-    );
+  async function loadAlumnos() {
+    try {
+      const response = await fetchPersonasByRol('ALUMNO');
+      setAlumnos((response.data ?? []) as PersonaRecord[]);
+      setFetchError(null);
+    } catch {
+      setAlumnos([]);
+      setFetchError('No se pudieron cargar los alumnos desde el backend.');
+    }
   }
 
-  function handleCreate(nuevo: { nombre: string; matricula: string }) {
-    const alumno: Alumno = {
-      id: crypto.randomUUID(),
-      nombre: nuevo.nombre,
-      matricula: nuevo.matricula,
-      correo: correoDeMatricula(nuevo.matricula),
-      estado: 'activo',
-    };
-    setAlumnos((prev) => [alumno, ...prev]);
-    setShowCreate(false);
+  async function loadPlanteles() {
+    try {
+      const response = await apiClient.get<PlantelItem[]>('/api/planteles');
+      const activos = (response.data ?? []).filter((item) => item.activo !== false);
+      setPlanteles(activos);
+      setForm((prev) => ({
+        ...prev,
+        plantelId: prev.plantelId ?? selectedPlantel?.id ?? activos[0]?.id ?? null,
+      }));
+    } catch {
+      setPlanteles([]);
+    }
   }
 
-  function handleEditSave(id: string, cambios: { nombre: string; matricula: string }) {
-    setAlumnos((prev) =>
-      prev.map((a) =>
-        a.id === id
-          ? { ...a, nombre: cambios.nombre, matricula: cambios.matricula, correo: correoDeMatricula(cambios.matricula) }
-          : a
-      )
-    );
-    setEditing(null);
+  useEffect(() => {
+    void loadAlumnos();
+    void loadPlanteles();
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 2600);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+
+  function openCreateModal() {
+    setEditingId(null);
+    setForm({
+      ...emptyForm,
+      plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (selectedPlantel?.id ?? planteles[0]?.id ?? null),
+      password: generarPassword(),
+    });
+    setFormError(null);
+    setIsModalOpen(true);
   }
+
+  function openEditModal(alumno: PersonaRecord) {
+    setEditingId(alumno.id);
+    setForm({
+      nombreCompleto: getNombreCompleto(alumno),
+      email: getLocalPart(alumno.email),
+      plantelId: canChoosePlantel ? (alumno.plantelId ?? planteles[0]?.id ?? null) : (selectedPlantel?.id ?? alumno.plantelId ?? planteles[0]?.id ?? null),
+      password: '',
+    });
+    setFormError(null);
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+    setEditingId(null);
+    setFormError(null);
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError(null);
+
+    if (!form.nombreCompleto.trim() || !form.email.trim()) {
+      setFormError('Completa nombre completo y correo institucional.');
+      return;
+    }
+
+    if (!editingId && !form.password.trim()) {
+      setFormError('Define una contraseña temporal para el alumno.');
+      return;
+    }
+
+    const { nombre, apellido } = splitNombreCompleto(form.nombreCompleto);
+    if (!nombre || !apellido) {
+      setFormError('Ingresa nombre y apellido.');
+      return;
+    }
+
+    if (!form.plantelId) {
+      setFormError('Selecciona un plantel para el alumno.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        nombre,
+        apellido,
+        email: formatearEmailInstitucional(form.email, 'ALUMNO'),
+        plantelId: canChoosePlantel ? (form.plantelId ?? defaultPlantelId) : (defaultPlantelId ?? form.plantelId ?? planteles[0]?.id ?? null),
+        rol: 'ALUMNO' as const,
+      };
+
+      if (editingId) {
+        const response = await updatePersona(editingId, payload);
+        const updated = response.data as PersonaRecord;
+        setAlumnos((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
+        setToast('Alumno actualizado correctamente.');
+      } else {
+        const response = await createPersona({
+          id: crypto.randomUUID(),
+          ...payload,
+          activo: true,
+          password: form.password.trim(),
+        });
+        const created = response.data as PersonaRecord;
+        setAlumnos((prev) => [created, ...prev]);
+        setToast('Alumno creado correctamente.');
+      }
+
+      closeModal();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo guardar el alumno.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDeactivate(alumno: PersonaRecord) {
+    setLoading(true);
+    try {
+      const response = await updatePersona(alumno.id, { activo: false });
+      const updated = response.data as PersonaRecord;
+      setAlumnos((prev) => prev.map((item) => (item.id === alumno.id ? updated : item)));
+      setConfirmDeactivate(null);
+      setToast('Alumno desactivado correctamente.');
+    } catch {
+      setToast('No se pudo desactivar el alumno.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const filteredAlumnos = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return alumnos;
+
+    return alumnos.filter((alumno) => {
+      const fullName = getNombreCompleto(alumno).toLowerCase();
+      const email = alumno.email.toLowerCase();
+      const plantelNombre = planteles.find((item) => item.id === alumno.plantelId)?.nombre.toLowerCase() ?? '';
+      return fullName.includes(query) || email.includes(query) || plantelNombre.includes(query);
+    });
+  }, [alumnos, search, planteles]);
 
   return (
     <article className="ca-screen">
@@ -89,13 +246,11 @@ export default function CatalogoAlumnos() {
       <div className="ca-body">
         <header className="ca-header">
           <article>
-            <h1 className="ca-title">Portal de Coordinación Escolar</h1>
-            <p className="ca-subtitle">
-              Apertura de grupos, matrícula de alumnos y docentes, y gestión del plan de estudios oficial.
-            </p>
+            <h1 className="ca-title">Catálogo de Alumnos</h1>
+            <p className="ca-subtitle">Alumnos de los grupos y planteles que gestionas.</p>
           </article>
+          <span className="ca-badge">{activeRoleLabel}</span>
         </header>
-
 
         <article className="ca-toolbar">
           <article className="ca-search-row">
@@ -103,244 +258,223 @@ export default function CatalogoAlumnos() {
             <input
               className="ca-search-input"
               type="text"
-              placeholder="Buscar alumno por nombre o matrícula..."
+              placeholder="Buscar alumno por nombre, correo o plantel..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </article>
-          <button className="ca-new-button" onClick={() => setShowCreate(true)}>
+          <button className="ca-new-button" onClick={openCreateModal}>
             <i className="bi bi-plus-lg"></i> Nuevo alumno
           </button>
         </article>
+
+        {fetchError && <p className="ca-empty">{fetchError}</p>}
 
         <article className="ca-table-wrap">
           <table className="ca-table">
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>Matrícula</th>
+                <th>Correo institucional</th>
+                <th>Plantel</th>
                 <th>Estado</th>
                 <th className="ca-th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((a) => (
-                <tr key={a.id} className={a.estado === 'inactivo' ? 'ca-row-inactivo' : ''}>
-                  <td>
-                    <span className="ca-nombre">{a.nombre}</span>
-                    <span className="ca-correo">{a.correo}</span>
-                  </td>
-                  <td>
-                    <span className="ca-matricula">{a.matricula}</span>
-                  </td>
-                  <td>
-                    <span className={`ca-estado ${a.estado === 'activo' ? 'ca-estado-activo' : 'ca-estado-inactivo'}`}>
-                      {a.estado === 'activo' ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="ca-acciones">
-                    <button
-                        className="ca-link-button"
-                        disabled={a.estado === 'inactivo'}
-                        title={a.estado === 'inactivo' ? 'Reactiva al alumno para poder editarlo' : undefined}
-                        onClick={() => setEditing(a)}
-                      >
+              {filteredAlumnos.map((alumno) => {
+                const plantelNombre = planteles.find((item) => item.id === alumno.plantelId)?.nombre ?? `Plantel ${alumno.plantelId ?? '-'}`;
+                return (
+                  <tr key={alumno.id} className={alumno.activo ? '' : 'ca-row-inactivo'}>
+                    <td>
+                      <span className="ca-nombre">{getNombreCompleto(alumno)}</span>
+                      <span className="ca-correo">{alumno.email}</span>
+                    </td>
+                    <td>
+                      <span className="ca-correo">{alumno.email}</span>
+                    </td>
+                    <td>
+                      <span className="ca-correo">{plantelNombre}</span>
+                    </td>
+                    <td>
+                      <span className={`ca-estado ${alumno.activo ? 'ca-estado-activo' : 'ca-estado-inactivo'}`}>
+                        {alumno.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="ca-acciones">
+                      <button className="ca-link-button" onClick={() => openEditModal(alumno)}>
                         <i className="bi bi-pencil"></i> Editar
-                    </button>
-                    <button
-                      className={`ca-link-button ${a.estado === 'activo' ? 'ca-link-danger' : 'ca-link-success'}`}
-                      onClick={() => handleToggleEstado(a.id)}
-                    >
-                      {a.estado === 'activo' ? 'Desactivar' : 'Activar'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                      </button>
+                      <button
+                        className={`ca-link-button ${alumno.activo ? 'ca-link-danger' : 'ca-link-success'}`}
+                        disabled={loading}
+                        onClick={() => (alumno.activo ? setConfirmDeactivate(alumno) : void handleDeactivate(alumno))}
+                      >
+                        {alumno.activo ? 'Desactivar' : 'Reactivar'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          {filtrados.length === 0 && <p className="ca-empty">No se encontraron alumnos.</p>}
+          {filteredAlumnos.length === 0 && !fetchError && <p className="ca-empty">No se encontraron alumnos.</p>}
         </article>
       </div>
 
-      {showCreate && (
-        <NuevoAlumnoModal onClose={() => setShowCreate(false)} onCreate={handleCreate} />
+      {isModalOpen && createPortal(
+        <AlumnoModal
+          alumno={editingId ? alumnos.find((item) => item.id === editingId) ?? null : null}
+          planteles={planteles}
+          form={form}
+          formError={formError}
+          loading={loading}
+          onClose={closeModal}
+          onSubmit={handleSubmit}
+          onChange={setForm}
+          canChoosePlantel={canChoosePlantel}
+          defaultPlantelName={selectedPlantel?.nombre ?? planteles[0]?.nombre ?? 'Plantel'}
+        />,
+        document.body,
       )}
 
-      {editing && editing.estado ==='activo' &&(
-        <EditarAlumnoModal
-          alumno={editing}
-          onClose={() => setEditing(null)}
-          onSave={(cambios) => handleEditSave(editing.id, cambios)}
-        />
+      {confirmDeactivate && createPortal(
+        <article className="ca-modal-overlay">
+          <article className="ca-modal" role="alertdialog" aria-modal="true" aria-labelledby="ca-deactivate-title">
+            <article className="ca-modal-header">
+              <article>
+                <h2 id="ca-deactivate-title" className="ca-modal-title">Confirmar desactivación</h2>
+                <p className="ca-modal-subtitle">{getNombreCompleto(confirmDeactivate)}</p>
+              </article>
+            </article>
+            <section style={{ padding: '1rem', color: 'var(--ca-texto-suave)' }}>
+              <p style={{ marginTop: 0 }}>El alumno dejará de estar disponible para asignaciones, pero conservará su historial.</p>
+            </section>
+            <article className="ca-modal-actions">
+              <button type="button" className="ca-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
+                Cancelar
+              </button>
+              <button type="button" className="ca-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)}>
+                Confirmar
+              </button>
+            </article>
+          </article>
+        </article>,
+        document.body,
+      )}
+
+      {toast && createPortal(
+        <article style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>
+          <section style={{ background: 'var(--ar-profundo)', color: 'var(--seige-superficie)', padding: '10px 14px', borderRadius: 10, boxShadow: '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)' }}>
+            {toast}
+          </section>
+        </article>,
+        document.body,
       )}
     </article>
   );
 }
 
-interface NuevoAlumnoModalProps {
+interface AlumnoModalProps {
+  alumno: PersonaRecord | null;
+  planteles: PlantelItem[];
+  form: AlumnoFormState;
+  formError: string | null;
+  loading: boolean;
   onClose: () => void;
-  onCreate: (data: { nombre: string; matricula: string }) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void> | void;
+  onChange: (next: AlumnoFormState) => void;
+  canChoosePlantel: boolean;
+  defaultPlantelName: string;
 }
 
-function NuevoAlumnoModal({ onClose, onCreate }: NuevoAlumnoModalProps) {
-  const [nombre, setNombre] = useState('');
-  const [matricula, setMatricula] = useState('');
-  const [password, setPassword] = useState(generarPassword);
-  const [copiado, setCopiado] = useState(false);
-
-  function handleRegenerar() {
-    setPassword(generarPassword());
-    setCopiado(false);
-  }
-
-  async function handleCopiar() {
-    try {
-      await navigator.clipboard.writeText(password);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 1500);
-    } catch {
-      setCopiado(false);
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!nombre.trim() || !matricula.trim()) return;
-    onCreate({ nombre: nombre.trim(), matricula: matricula.trim() });
-  }
-
-  const correoPreview = matricula.trim() ? correoDeMatricula(matricula) : 'matrícula@alumnos.chapalagutierrez.edu.mx';
-
+function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onSubmit, onChange, canChoosePlantel, defaultPlantelName }: AlumnoModalProps) {
   return (
     <article className="ca-modal-overlay">
-      <article className="ca-modal" role="dialog" aria-modal="true" aria-labelledby="ca-create-title">
+      <article className="ca-modal" role="dialog" aria-modal="true" aria-labelledby="ca-modal-title">
         <article className="ca-modal-header">
           <article>
-            <h2 id="ca-create-title" className="ca-modal-title">Nuevo alumno</h2>
-            <p className="ca-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
+            <h2 id="ca-modal-title" className="ca-modal-title">
+              {alumno ? 'Editar alumno' : 'Nuevo alumno'}
+            </h2>
+            <p className="ca-modal-subtitle">Alta y edición de usuarios alumnos</p>
           </article>
         </article>
 
-        <form className="ca-modal-form" onSubmit={handleSubmit}>
+        <form className="ca-modal-form" onSubmit={onSubmit}>
           <label className="ca-field">
             <span className="ca-field-label">Nombre completo</span>
             <input
               className="ca-input"
               type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              value={form.nombreCompleto}
+              onChange={(e) => onChange({ ...form, nombreCompleto: e.target.value })}
               placeholder="Ej. Carlos Díaz Ramírez"
               required
             />
           </label>
 
           <label className="ca-field">
-            <span className="ca-field-label">Matrícula</span>
-            <input
-              className="ca-input"
-              type="text"
-              value={matricula}
-              onChange={(e) => setMatricula(e.target.value)}
-              placeholder="Ej. 2026-0142"
-              required
-            />
+            <span className="ca-field-label">Correo institucional</span>
+            <div className="ca-email-row">
+              <input
+                className="ca-input ca-email-input"
+                type="text"
+                value={form.email}
+                onChange={(e) => onChange({ ...form, email: e.target.value })}
+                placeholder="ejemplo.alumno"
+                required
+              />
+              <span className="ca-email-domain">@alumnos.chapala.edu.mx</span>
+            </div>
           </label>
 
-          <label className="ca-field">
-            <span className="ca-field-label">Correo institucional (usuario de acceso)</span>
-            <input className="ca-input" type="text" value={correoPreview} readOnly />
-          </label>
+          {canChoosePlantel ? (
+            <label className="ca-field">
+              <span className="ca-field-label">Plantel</span>
+              <select
+                className="ca-input"
+                value={form.plantelId ?? ''}
+                onChange={(e) => onChange({ ...form, plantelId: Number(e.target.value) || null })}
+                required
+              >
+                <option value="">Selecciona un plantel</option>
+                {planteles.map((plantel) => (
+                  <option key={plantel.id} value={plantel.id}>
+                    {plantel.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <label className="ca-field">
+              <span className="ca-field-label">Plantel</span>
+              <input className="ca-input" type="text" value={defaultPlantelName} readOnly />
+            </label>
+          )}
 
-          <article className="ca-field">
-            <span className="ca-field-label">Contraseña temporal generada</span>
-            <article className="ca-password-row">
-              <input className="ca-input ca-password-input" type="text" value={password} readOnly />
-              <button type="button" className="ca-password-btn" onClick={handleRegenerar}>
-                Regenerar
-              </button>
-              <button type="button" className="ca-password-btn" onClick={handleCopiar}>
-                {copiado ? 'Copiado' : 'Copiar'}
-              </button>
-            </article>
-            <p className="ca-field-hint">Se le entrega al alumno para su primer inicio de sesión.</p>
-          </article>
+          {!alumno && (
+            <label className="ca-field">
+              <span className="ca-field-label">Contraseña temporal</span>
+              <input
+                className="ca-input"
+                type="text"
+                value={form.password}
+                onChange={(e) => onChange({ ...form, password: e.target.value })}
+                placeholder="Contraseña para primer acceso"
+                required
+              />
+            </label>
+          )}
+
+          {formError && <p className="ca-field-hint" style={{ color: 'var(--seige-error-texto)' }}>{formError}</p>}
 
           <article className="ca-modal-actions">
             <button type="button" className="ca-btn-secondary" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="ca-btn-primary">
-              Guardar
-            </button>
-          </article>
-        </form>
-      </article>
-    </article>
-  );
-}
-
-interface EditarAlumnoModalProps {
-  alumno: Alumno;
-  onClose: () => void;
-  onSave: (data: { nombre: string; matricula: string }) => void;
-}
-
-function EditarAlumnoModal({ alumno, onClose, onSave }: EditarAlumnoModalProps) {
-  const [nombre, setNombre] = useState(alumno.nombre);
-  const [matricula, setMatricula] = useState(alumno.matricula);
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!nombre.trim() || !matricula.trim()) return;
-    onSave({ nombre: nombre.trim(), matricula: matricula.trim() });
-  }
-
-  const correoPreview = correoDeMatricula(matricula || alumno.matricula);
-
-  return (
-    <article className="ca-modal-overlay">
-      <article className="ca-modal" role="dialog" aria-modal="true" aria-labelledby="ca-edit-title">
-        <article className="ca-modal-header">
-          <article>
-            <h2 id="ca-edit-title" className="ca-modal-title">Editar alumno</h2>
-            <p className="ca-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
-          </article>
-        </article>
-
-        <form className="ca-modal-form" onSubmit={handleSubmit}>
-          <label className="ca-field">
-            <span className="ca-field-label">Nombre completo</span>
-            <input
-              className="ca-input"
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="ca-field">
-            <span className="ca-field-label">Matrícula</span>
-            <input
-              className="ca-input"
-              type="text"
-              value={matricula}
-              onChange={(e) => setMatricula(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="ca-field">
-            <span className="ca-field-label">Correo institucional (usuario de acceso)</span>
-            <input className="ca-input" type="text" value={correoPreview} readOnly />
-          </label>
-
-          <article className="ca-modal-actions">
-            <button type="button" className="ca-btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="ca-btn-primary">
-              Guardar
+            <button type="submit" className="ca-btn-primary" disabled={loading}>
+              {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </article>
         </form>

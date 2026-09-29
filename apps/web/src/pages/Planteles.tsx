@@ -2,28 +2,33 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
+import { fetchInstituciones } from '../services/institucionService';
+import '../styles/CatalogoPlanteles.css';
 
 interface Plantel {
   id: number;
   nombre: string;
   direccion: string;
+  institucionId?: number;
   activo: boolean;
 }
 
 interface PlantelForm {
   nombre: string;
   direccion: string;
+  institucionId: number | null;
 }
 
-const BASE_INSTITUCION_ID = 1;
 const emptyForm: PlantelForm = {
   nombre: '',
   direccion: '',
+  institucionId: null,
 };
 
 export default function Planteles() {
   const { toggleSidebar } = useSidebar();
   const [planteles, setPlanteles] = useState<Plantel[]>([]);
+  const [instituciones, setInstituciones] = useState<{ id: number; nombre: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -47,8 +52,23 @@ export default function Planteles() {
     }
   }
 
+  async function loadInstituciones() {
+    try {
+      const response = await fetchInstituciones();
+      const activas = (response.data ?? []).filter((item) => item.id > 0);
+      setInstituciones(activas);
+      setForm((prev) => ({
+        ...prev,
+        institucionId: prev.institucionId ?? activas[0]?.id ?? null,
+      }));
+    } catch {
+      setInstituciones([]);
+    }
+  }
+
   useEffect(() => {
     void loadPlanteles();
+    void loadInstituciones();
   }, []);
 
   useEffect(() => {
@@ -59,7 +79,10 @@ export default function Planteles() {
 
   function openCreateModal() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      institucionId: instituciones[0]?.id ?? null,
+    });
     setFormError(null);
     setIsModalOpen(true);
   }
@@ -69,6 +92,7 @@ export default function Planteles() {
     setForm({
       nombre: plantel.nombre,
       direccion: plantel.direccion,
+      institucionId: plantel.institucionId ?? instituciones[0]?.id ?? null,
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -89,6 +113,11 @@ export default function Planteles() {
       return;
     }
 
+    if (!form.institucionId) {
+      setFormError('No hay una institución disponible para asignar el plantel.');
+      return;
+    }
+
     setLoading(true);
     try {
       if (editingId) {
@@ -103,7 +132,7 @@ export default function Planteles() {
         const response = await apiClient.post<Plantel>('/api/planteles', {
           nombre: form.nombre.trim(),
           direccion: form.direccion.trim(),
-          institucionId: BASE_INSTITUCION_ID,
+          institucionId: form.institucionId,
           activo: true,
         });
         const created = response.data;
@@ -145,167 +174,141 @@ export default function Planteles() {
   }, [planteles, search]);
 
   return (
-    <article style={{ padding: 24 }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+    <article className="pl-screen">
+      <header className="pl-topbar">
         <button
           type="button"
           onClick={toggleSidebar}
           aria-label="Mostrar u ocultar menú"
-          style={{ border: 'none', background: 'color-mix(in srgb, var(--ar-neblina) 26%, white)', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}
+          className="pl-icon-btn"
         >
           <i className="bi bi-list" />
         </button>
-        <h1 style={{ margin: 0 }}>Planteles</h1>
+        <span className="pl-topbar-title">Planteles</span>
       </header>
 
-      <section style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar plantel por nombre o dirección..."
-          style={{
-            flex: 1,
-            padding: 10,
-            borderRadius: 10,
-            border: '1px solid var(--seige-borde)',
-            background: 'color-mix(in srgb, var(--ar-neblina) 12%, white)',
-          }}
-        />
-        <button
-          type="button"
-          onClick={openCreateModal}
-          style={{
-            border: 'none',
-            borderRadius: 10,
-            padding: '10px 14px',
-            background: 'var(--seige-acento)',
-            color: 'var(--seige-superficie)',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          + Agregar Plantel
-        </button>
-      </section>
+      <article className="pl-body">
+        <header className="pl-header">
+          <article>
+            <h1 className="pl-title">Sedes y Planteles Académicos</h1>
+            <p className="pl-subtitle">Gestión de planteles escolares.</p>
+          </article>
+        </header>
 
-      <section style={{ background: 'var(--seige-superficie)', border: '1px solid var(--seige-borde)', borderRadius: 16, padding: 20 }}>
-        <h2 style={{ marginTop: 0 }}>Planteles registrados</h2>
+        <article className="pl-toolbar">
+          <article className="pl-search-row">
+            <i className="bi bi-search pl-search-icon"></i>
+            <input
+              className="pl-search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar plantel por nombre o dirección..."
+            />
+          </article>
+          <button className="pl-new-button" type="button" onClick={openCreateModal}>
+            <i className="bi bi-plus-lg"></i> Agregar Plantel
+          </button>
+        </article>
 
-        {fetchError && <p style={{ color: 'var(--seige-error-texto)', marginBottom: 12 }}>{fetchError}</p>}
+        <article className="pl-table-wrap">
+          <h2 style={{ margin: '1rem 1rem 0' }}>Planteles registrados</h2>
 
-        {filteredPlanteles.length === 0 && !fetchError ? (
-          <p>No hay planteles registrados aún.</p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--seige-borde)' }}>
-                <th style={{ padding: '10px 8px' }}>Nombre</th>
-                <th style={{ padding: '10px 8px' }}>Dirección</th>
-                <th style={{ padding: '10px 8px' }}>Estado</th>
-                <th style={{ padding: '10px 8px' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPlanteles.map((plantel) => (
-                <tr key={plantel.id} style={{ borderBottom: '1px solid color-mix(in srgb, var(--seige-borde) 70%, white)' }}>
-                  <td style={{ padding: '10px 8px' }}>{plantel.nombre}</td>
-                  <td style={{ padding: '10px 8px' }}>{plantel.direccion}</td>
-                  <td style={{ padding: '10px 8px' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 999,
-                        background: plantel.activo
-                          ? 'color-mix(in srgb, var(--seige-exito) 20%, white)'
-                          : 'var(--seige-error-fondo)',
-                        color: plantel.activo
-                          ? 'color-mix(in srgb, var(--seige-exito) 78%, black)'
-                          : 'var(--seige-error-texto)',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {plantel.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px 8px', display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => openEditModal(plantel)}
-                      style={{
-                        border: '1px solid var(--seige-borde)',
-                        borderRadius: 8,
-                        background: 'var(--seige-superficie)',
-                        padding: '6px 10px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!plantel.activo || loading}
-                      onClick={() => setConfirmDeactivate(plantel)}
-                      style={{
-                        border: 'none',
-                        borderRadius: 8,
-                        background: plantel.activo
-                          ? 'color-mix(in srgb, var(--seige-error-texto) 78%, white)'
-                          : 'color-mix(in srgb, var(--ar-neblina) 70%, white)',
-                        color: 'var(--seige-superficie)',
-                        padding: '6px 10px',
-                        cursor: plantel.activo ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      Desactivar
-                    </button>
-                  </td>
+          {fetchError && <p className="pl-empty" style={{ paddingTop: 0 }}>{fetchError}</p>}
+
+          {filteredPlanteles.length === 0 && !fetchError ? (
+            <p className="pl-empty">No hay planteles registrados aún.</p>
+          ) : (
+            <table className="pl-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Dirección</th>
+                  <th>Estado</th>
+                  <th className="pl-th-acciones">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+              </thead>
+              <tbody>
+                {filteredPlanteles.map((plantel) => (
+                  <tr key={plantel.id} className={plantel.activo ? '' : 'pl-row-inactivo'}>
+                    <td className="pl-td-nombre">{plantel.nombre}</td>
+                    <td className="pl-td-suave">{plantel.direccion}</td>
+                    <td>
+                      <span className={`pl-estado ${plantel.activo ? 'pl-estado-activo' : 'pl-estado-inactivo'}`}>
+                        {plantel.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="pl-acciones">
+                      <button className="pl-btn pl-btn-neutral" type="button" onClick={() => openEditModal(plantel)}>
+                        Editar
+                      </button>
+                      <button
+                        className={`pl-btn ${plantel.activo ? 'pl-btn-danger' : 'pl-btn-success'}`}
+                        type="button"
+                        disabled={!plantel.activo || loading}
+                        onClick={() => setConfirmDeactivate(plantel)}
+                      >
+                        Desactivar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </article>
+      </article>
 
       {isModalOpen && createPortal(
-        <article style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', display: 'grid', placeItems: 'center', zIndex: 40 }}>
-          <article style={{ background: 'var(--seige-superficie)', borderRadius: 14, width: 'min(560px, 92vw)', overflow: 'hidden' }}>
-            <header style={{ background: 'color-mix(in srgb, var(--ar-azul) 82%, white)', color: 'var(--seige-superficie)', padding: '14px 16px', fontWeight: 700 }}>
-              {editingId ? 'Editar Plantel' : 'Nuevo Plantel'}
+        <article className="pl-modal-overlay">
+          <article className="pl-modal">
+            <header className="pl-modal-header">
+              <article>
+                <h2 className="pl-modal-title">{editingId ? 'Editar Plantel' : 'Nuevo Plantel'}</h2>
+                <p className="pl-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
+              </article>
             </header>
-            <form onSubmit={handleSubmit} style={{ padding: 16, display: 'grid', gap: 12 }}>
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span>Nombre completo del plantel</span>
+            <form onSubmit={handleSubmit} className="pl-modal-form">
+              <label className="pl-field">
+                <span className="pl-field-label">Nombre completo del plantel</span>
                 <input
+                  className="pl-input"
                   value={form.nombre}
                   onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--seige-borde)' }}
                 />
               </label>
 
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span>Dirección</span>
+              <label className="pl-field">
+                <span className="pl-field-label">Institución</span>
+                <select
+                  className="pl-input"
+                  value={form.institucionId ?? ''}
+                  onChange={(e) => setForm((prev) => ({ ...prev, institucionId: Number(e.target.value) || null }))}
+                >
+                  <option value="">Selecciona una institución</option>
+                  {instituciones.map((institucion) => (
+                    <option key={institucion.id} value={institucion.id}>
+                      {institucion.nombre}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="pl-field">
+                <span className="pl-field-label">Dirección</span>
                 <input
+                  className="pl-input"
                   value={form.direccion}
                   onChange={(e) => setForm((prev) => ({ ...prev, direccion: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--seige-borde)' }}
                 />
               </label>
 
-              {formError && <p style={{ margin: 0, color: 'var(--seige-error-texto)' }}>{formError}</p>}
+              {formError && <p className="pl-empty" style={{ padding: 0, textAlign: 'left', color: 'var(--seige-error-texto)' }}>{formError}</p>}
 
-              <footer style={{ borderTop: '1px solid var(--seige-borde)', paddingTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  style={{ padding: '9px 14px', border: '1px solid var(--seige-borde)', borderRadius: 8, background: 'var(--seige-superficie)', color: 'var(--seige-texto)', cursor: 'pointer' }}
-                >
+              <footer className="pl-modal-actions">
+                <button type="button" onClick={closeModal} className="pl-btn-secondary">
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{ padding: '9px 14px', border: 'none', borderRadius: 8, background: 'var(--seige-acento)', color: 'var(--seige-superficie)', cursor: 'pointer' }}
-                >
+                <button type="submit" disabled={loading} className="pl-btn-primary">
                   {loading ? 'Guardando...' : 'Guardar'}
                 </button>
               </footer>
@@ -316,28 +319,20 @@ export default function Planteles() {
       )}
 
       {confirmDeactivate && createPortal(
-        <article style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', display: 'grid', placeItems: 'center', zIndex: 50 }}>
-          <article style={{ background: 'var(--seige-superficie)', borderRadius: 14, width: 'min(520px, 92vw)', overflow: 'hidden' }}>
-            <header style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)', color: 'var(--seige-superficie)', padding: '14px 16px', fontWeight: 700 }}>
+        <article className="pl-modal-overlay">
+          <article className="pl-modal">
+            <header className="pl-modal-header" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, var(--ar-profundo))' }}>
               Confirmar
             </header>
-            <section style={{ padding: 16, color: 'var(--seige-texto-secundario)' }}>
+            <section className="pl-modal-form">
               <p>¿Deseas desactivar el registro "{confirmDeactivate.nombre}"?</p>
               <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
             </section>
-            <footer style={{ borderTop: '1px solid var(--seige-borde)', padding: 14, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => setConfirmDeactivate(null)}
-                style={{ padding: '9px 14px', border: '1px solid var(--seige-borde)', borderRadius: 8, background: 'var(--seige-superficie)', color: 'var(--seige-texto)', cursor: 'pointer' }}
-              >
+            <footer className="pl-modal-actions">
+              <button type="button" onClick={() => setConfirmDeactivate(null)} className="pl-btn-secondary">
                 Cancelar
               </button>
-              <button
-                type="button"
-                onClick={() => void handleDeactivate(confirmDeactivate)}
-                style={{ padding: '9px 14px', border: 'none', borderRadius: 8, background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)', color: 'var(--seige-superficie)', cursor: 'pointer' }}
-              >
+              <button type="button" onClick={() => void handleDeactivate(confirmDeactivate)} className="pl-btn-primary" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
                 Confirmar
               </button>
             </footer>

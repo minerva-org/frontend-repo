@@ -321,6 +321,31 @@
   color: var(--ca-texto-suave);
 }
 
+.ca-email-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: var(--seige-superficie);
+  border: 1px solid var(--ca-borde-campo);
+  border-radius: 0.55rem;
+  overflow: hidden;
+}
+.ca-email-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  border-radius: 0;
+}
+.ca-email-domain {
+  flex: none;
+  padding: 0.65rem 0.8rem;
+  font-family: sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ar-profundo);
+  background: color-mix(in srgb, var(--ar-neblina) 18%, white);
+  border-left: 1px solid var(--ca-borde-campo);
+}
 .ca-input {
   width: 100%;
   box-sizing: border-box;

@@ -37,6 +37,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
         items: [
           { to: '/planteles', label: 'Catálogo de Planteles', icon: 'bi-building' },
           { to: '/directores-planteles', label: 'Catálogo de Directores Planteles', icon: 'bi-people' },
+          { to: '/materias', label: 'Catálogo de Materias', icon: 'bi-journal-bookmark' },
           { to: '/metricas-tronco-comun', label: 'Métricas de Tronco Común', icon: 'bi-bar-chart-line' },
         ],
       },

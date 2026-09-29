@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
-import { createPersona, updatePersona } from '../services/personaService';
+import { buildPersonaUsername, createPersona, updatePersona } from '../services/personaService';
+import '../styles/CatalogoDirectoresPlantel.css';
 
 interface DirectorPersona {
   id: string;
@@ -24,13 +25,20 @@ interface DirectorFormState {
   nombreCompleto: string;
   email: string;
   plantelId: number;
+  password: string;
 }
 
 const emptyForm: DirectorFormState = {
   nombreCompleto: '',
   email: '',
-  plantelId: 1,
+  plantelId: 0,
+  password: '',
 };
+
+function generarPassword(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
+  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
 
 export default function DirectoresPlanteles() {
   const { toggleSidebar } = useSidebar();
@@ -96,6 +104,16 @@ export default function DirectoresPlanteles() {
     };
   }
 
+  function formatearEmailInstitucional(localPart: string) {
+    const limpio = localPart.trim().replace(/@.*$/, '').replace(/\s+/g, '');
+    if (!limpio) return '';
+    return `${limpio}@chapala.edu.mx`;
+  }
+
+  function getLocalPart(email: string) {
+    return email.trim().split('@')[0] || '';
+  }
+
   function getNombreCompleto(director: DirectorPersona) {
     return `${director.nombre} ${director.apellido}`.trim();
   }
@@ -109,7 +127,8 @@ export default function DirectoresPlanteles() {
     setEditingId(null);
     setForm({
       ...emptyForm,
-      plantelId: planteles[0]?.id ?? 1,
+      plantelId: planteles[0]?.id ?? 0,
+      password: generarPassword(),
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -119,8 +138,9 @@ export default function DirectoresPlanteles() {
     setEditingId(director.id);
     setForm({
       nombreCompleto: getNombreCompleto(director),
-      email: director.email,
+      email: getLocalPart(director.email),
       plantelId: director.plantelId,
+      password: '',
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -141,6 +161,11 @@ export default function DirectoresPlanteles() {
       return;
     }
 
+    if (!editingId && !form.password.trim()) {
+      setFormError('Define una contraseña temporal para el director.');
+      return;
+    }
+
     const { nombre, apellido } = splitNombreCompleto(form.nombreCompleto);
     if (!nombre || !apellido) {
       setFormError('Ingresa nombre y apellido.');
@@ -149,13 +174,18 @@ export default function DirectoresPlanteles() {
 
     setLoading(true);
     try {
-      const plantelId = Number(form.plantelId) || planteles[0]?.id || 1;
+      const plantelId = Number(form.plantelId) || planteles[0]?.id || 0;
+
+      if (!plantelId) {
+        setFormError('No hay un plantel disponible para asignar al director.');
+        return;
+      }
 
       if (editingId) {
         const response = await updatePersona(editingId, {
           nombre,
           apellido,
-          email: form.email.trim(),
+          email: formatearEmailInstitucional(form.email),
           plantelId,
           rol: 'DIRECTOR_PLANTEL',
         });
@@ -163,14 +193,18 @@ export default function DirectoresPlanteles() {
         setDirectores((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
         setToast('Director actualizado correctamente.');
       } else {
+        const emailInstitucional = formatearEmailInstitucional(form.email);
+        const username = buildPersonaUsername(emailInstitucional, plantelId);
         const response = await createPersona({
           id: crypto.randomUUID(),
           nombre,
           apellido,
-          email: form.email.trim(),
+          email: emailInstitucional,
           rol: 'DIRECTOR_PLANTEL',
           activo: true,
           plantelId,
+          username,
+          password: form.password.trim(),
         });
         const created = response.data as DirectorPersona;
         setDirectores((prev) => [created, ...prev]);
@@ -212,161 +246,154 @@ export default function DirectoresPlanteles() {
   }, [directores, search, planteles]);
 
   return (
-    <article style={{ padding: 24 }}>
-      <header style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+    <article className="dp-screen">
+      <header className="dp-topbar">
         <button
           type="button"
           onClick={toggleSidebar}
           aria-label="Mostrar u ocultar menú"
-          style={{ border: 'none', background: 'color-mix(in srgb, var(--ar-neblina) 26%, white)', borderRadius: 10, padding: '8px 10px', cursor: 'pointer' }}
+          className="dp-icon-btn"
         >
           <i className="bi bi-list" />
         </button>
-        <h1 style={{ margin: 0 }}>Directores de Plantel</h1>
+        <span className="dp-topbar-title">Directores de Plantel</span>
       </header>
 
-      <section style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-        <input
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder="Buscar en directores de plantel..."
-          style={{
-            flex: 1,
-            padding: 10,
-            borderRadius: 10,
-            border: '1px solid var(--seige-borde)',
-            background: 'color-mix(in srgb, var(--ar-neblina) 12%, white)',
-          }}
-        />
-        <button
-          type="button"
-          onClick={openCreateModal}
-          style={{
-            border: 'none',
-            borderRadius: 10,
-            padding: '10px 14px',
-            background: 'var(--seige-acento)',
-            color: 'var(--seige-superficie)',
-            cursor: 'pointer',
-            fontWeight: 600,
-          }}
-        >
-          + Agregar Director
-        </button>
-      </section>
+      <article className="dp-body">
+        <header className="dp-header">
+          <article>
+            <h1 className="dp-title">Directores de Plantel Escolar</h1>
+            <p className="dp-subtitle">Asignación y control de directores por sede.</p>
+          </article>
+        </header>
 
-      <section style={{ background: 'var(--seige-superficie)', border: '1px solid var(--seige-borde)', borderRadius: 16, padding: 20 }}>
-        <h2 style={{ marginTop: 0 }}>Directores de Plantel Escolar</h2>
+        <article className="dp-toolbar">
+          <article className="dp-search-row">
+            <i className="bi bi-search dp-search-icon"></i>
+            <input
+              className="dp-search-input"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar en directores de plantel..."
+            />
+          </article>
+          <button className="dp-new-button" type="button" onClick={openCreateModal}>
+            <i className="bi bi-plus-lg"></i> Agregar Director
+          </button>
+        </article>
 
-        {fetchError && <p style={{ color: 'var(--seige-error-texto)', marginBottom: 12 }}>{fetchError}</p>}
+        <article className="dp-table-wrap">
+          <h2 style={{ margin: '1rem 1rem 0' }}>Directores de Plantel Escolar</h2>
 
-        {filteredDirectores.length === 0 && !fetchError ? (
-          <p>No hay directores creados aún.</p>
-        ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--seige-borde)' }}>
-                <th style={{ padding: '10px 8px' }}>Nombre del director</th>
-                <th style={{ padding: '10px 8px' }}>Correo institucional</th>
-                <th style={{ padding: '10px 8px' }}>Plantel asignado</th>
-                <th style={{ padding: '10px 8px' }}>Estado</th>
-                <th style={{ padding: '10px 8px' }}>Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDirectores.map((director) => (
-                <tr key={director.id} style={{ borderBottom: '1px solid color-mix(in srgb, var(--seige-borde) 70%, white)' }}>
-                  <td style={{ padding: '10px 8px' }}>{getNombreCompleto(director)}</td>
-                  <td style={{ padding: '10px 8px' }}>{director.email}</td>
-                  <td style={{ padding: '10px 8px' }}>{getPlantelNombre(director.plantelId)}</td>
-                  <td style={{ padding: '10px 8px' }}>
-                    <span
-                      style={{
-                        padding: '2px 8px',
-                        borderRadius: 999,
-                        background: director.activo
-                          ? 'color-mix(in srgb, var(--seige-exito) 20%, white)'
-                          : 'var(--seige-error-fondo)',
-                        color: director.activo
-                          ? 'color-mix(in srgb, var(--seige-exito) 78%, black)'
-                          : 'var(--seige-error-texto)',
-                        fontWeight: 700,
-                      }}
-                    >
-                      {director.activo ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px 8px', display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={() => openEditModal(director)}
-                      style={{
-                        border: '1px solid var(--seige-borde)',
-                        borderRadius: 8,
-                        background: 'var(--seige-superficie)',
-                        padding: '6px 10px',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Editar
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!director.activo || loading}
-                      onClick={() => setConfirmDeactivate(director)}
-                      style={{
-                        border: 'none',
-                        borderRadius: 8,
-                        background: director.activo
-                          ? 'color-mix(in srgb, var(--seige-error-texto) 78%, white)'
-                          : 'color-mix(in srgb, var(--ar-neblina) 70%, white)',
-                        color: 'var(--seige-superficie)',
-                        padding: '6px 10px',
-                        cursor: director.activo ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      Desactivar
-                    </button>
-                  </td>
+          {fetchError && <p className="dp-empty" style={{ paddingTop: 0 }}>{fetchError}</p>}
+
+          {filteredDirectores.length === 0 && !fetchError ? (
+            <p className="dp-empty">No hay directores creados aún.</p>
+          ) : (
+            <table className="dp-table">
+              <thead>
+                <tr>
+                  <th>Nombre del director</th>
+                  <th>Correo institucional</th>
+                  <th>Plantel asignado</th>
+                  <th>Estado</th>
+                  <th className="dp-th-acciones">Acciones</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </section>
+              </thead>
+              <tbody>
+                {filteredDirectores.map((director) => (
+                  <tr key={director.id} className={director.activo ? '' : 'dp-row-inactivo'}>
+                    <td className="dp-td-nombre">{getNombreCompleto(director)}</td>
+                    <td className="dp-td-suave">{director.email}</td>
+                    <td className="dp-td-suave">{getPlantelNombre(director.plantelId)}</td>
+                    <td>
+                      <span className={`dp-estado ${director.activo ? 'dp-estado-activo' : 'dp-estado-inactivo'}`}>
+                        {director.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="dp-acciones">
+                      <button className="dp-btn dp-btn-neutral" type="button" onClick={() => openEditModal(director)}>
+                        Editar
+                      </button>
+                      <button
+                        className={`dp-btn ${director.activo ? 'dp-btn-danger' : 'dp-btn-success'}`}
+                        type="button"
+                        disabled={!director.activo || loading}
+                        onClick={() => setConfirmDeactivate(director)}
+                      >
+                        Desactivar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </article>
+      </article>
 
       {isModalOpen && createPortal(
-        <article style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', display: 'grid', placeItems: 'center', zIndex: 40 }}>
-          <article style={{ background: 'var(--seige-superficie)', borderRadius: 14, width: 'min(560px, 92vw)', overflow: 'hidden' }}>
-            <header style={{ background: 'color-mix(in srgb, var(--ar-azul) 82%, white)', color: 'var(--seige-superficie)', padding: '14px 16px', fontWeight: 700 }}>
-              {editingId ? 'Editar Director de Plantel' : 'Nuevo Director de Plantel'}
+        <article className="dp-modal-overlay">
+          <article className="dp-modal">
+            <header className="dp-modal-header">
+              <article>
+                <h2 className="dp-modal-title">{editingId ? 'Editar director plantel' : 'Nuevo director plantel'}</h2>
+                <p className="dp-modal-subtitle">{editingId ? 'Actualiza los datos del registro' : 'Captura los datos del nuevo registro'}</p>
+              </article>
             </header>
-            <form onSubmit={handleSubmit} style={{ padding: 16, display: 'grid', gap: 12 }}>
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span>Nombre completo</span>
+            <form onSubmit={handleSubmit} className="dp-modal-form">
+              <label className="dp-field">
+                <span className="dp-field-label">Nombre completo</span>
                 <input
+                  className="dp-input"
                   value={form.nombreCompleto}
+                  placeholder="Nuevo director plantel"
                   onChange={(e) => setForm((prev) => ({ ...prev, nombreCompleto: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--seige-borde)' }}
                 />
               </label>
 
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span>Correo electrónico oficial</span>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--seige-borde)' }}
-                />
+              <label className="dp-field">
+                <span className="dp-field-label">Correo institucional</span>
+                <div className="dp-email-row">
+                  <input
+                    className="dp-input dp-email-input"
+                    type="text"
+                    value={form.email}
+                    placeholder="ejemplo.director"
+                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                  />
+                  <span className="dp-email-domain">@chapala.edu.mx</span>
+                </div>
               </label>
 
-              <label style={{ display: 'grid', gap: 6 }}>
-                <span>Plantel de adscripción</span>
+              {!editingId && (
+                <label className="dp-field">
+                  <span className="dp-field-label">Contraseña temporal</span>
+                  <div className="dp-password-row">
+                    <input
+                      className="dp-input dp-password-input"
+                      type="text"
+                      value={form.password}
+                      placeholder="Contraseña temporal"
+                      onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
+                    />
+                    <button
+                      type="button"
+                      className="dp-password-btn"
+                      onClick={() => setForm((prev) => ({ ...prev, password: generarPassword() }))}
+                    >
+                      Generar
+                    </button>
+                  </div>
+                </label>
+              )}
+
+              <label className="dp-field">
+                <span className="dp-field-label">Plantel de adscripción</span>
                 <select
+                  className="dp-input"
                   value={form.plantelId}
                   onChange={(e) => setForm((prev) => ({ ...prev, plantelId: Number(e.target.value || 1) }))}
-                  style={{ padding: 10, borderRadius: 10, border: '1px solid var(--seige-borde)' }}
                 >
                   {planteles.map((plantel) => (
                     <option key={plantel.id} value={plantel.id}>{plantel.nombre}</option>
@@ -374,21 +401,13 @@ export default function DirectoresPlanteles() {
                 </select>
               </label>
 
-              {formError && <p style={{ margin: 0, color: 'var(--seige-error-texto)' }}>{formError}</p>}
+              {formError && <p className="dp-empty" style={{ padding: 0, textAlign: 'left', color: 'var(--seige-error-texto)' }}>{formError}</p>}
 
-              <footer style={{ borderTop: '1px solid var(--seige-borde)', paddingTop: 12, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  style={{ padding: '9px 14px', border: '1px solid var(--seige-borde)', borderRadius: 8, background: 'var(--seige-superficie)', color: 'var(--seige-texto)', cursor: 'pointer' }}
-                >
+              <footer className="dp-modal-actions">
+                <button type="button" className="dp-btn-secondary" onClick={closeModal}>
                   Cancelar
                 </button>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  style={{ padding: '9px 14px', border: 'none', borderRadius: 8, background: 'var(--seige-acento)', color: 'var(--seige-superficie)', cursor: 'pointer' }}
-                >
+                <button type="submit" className="dp-btn-primary" disabled={loading}>
                   {loading ? 'Guardando...' : 'Guardar'}
                 </button>
               </footer>
@@ -399,28 +418,20 @@ export default function DirectoresPlanteles() {
       )}
 
       {confirmDeactivate && createPortal(
-        <article style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)', display: 'grid', placeItems: 'center', zIndex: 50 }}>
-          <article style={{ background: 'var(--seige-superficie)', borderRadius: 14, width: 'min(520px, 92vw)', overflow: 'hidden' }}>
-            <header style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)', color: 'var(--seige-superficie)', padding: '14px 16px', fontWeight: 700 }}>
+        <article className="dp-modal-overlay">
+          <article className="dp-modal">
+            <header className="dp-modal-header" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, var(--ar-profundo))' }}>
               Confirmar
             </header>
-            <section style={{ padding: 16, color: 'var(--seige-texto-secundario)' }}>
+            <section className="dp-modal-form">
               <p>¿Deseas desactivar el registro "{getNombreCompleto(confirmDeactivate)}"?</p>
               <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
             </section>
-            <footer style={{ borderTop: '1px solid var(--seige-borde)', padding: 14, display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => setConfirmDeactivate(null)}
-                style={{ padding: '9px 14px', border: '1px solid var(--seige-borde)', borderRadius: 8, background: 'var(--seige-superficie)', color: 'var(--seige-texto)', cursor: 'pointer' }}
-              >
+            <footer className="dp-modal-actions">
+              <button type="button" className="dp-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
                 Cancelar
               </button>
-              <button
-                type="button"
-                onClick={() => void handleDeactivate(confirmDeactivate)}
-                style={{ padding: '9px 14px', border: 'none', borderRadius: 8, background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)', color: 'var(--seige-superficie)', cursor: 'pointer' }}
-              >
+              <button type="button" className="dp-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)} style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
                 Confirmar
               </button>
             </footer>
