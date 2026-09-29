@@ -153,48 +153,6 @@ export default function Grupos({soloMisGrupos = false }: GruposProps) {
           
         </article>
 
-        <article className="groups-filters">
-          <button className="groups-filter-dropdown">
-            Todos <i className="bi bi-chevron-down"></i>
-          </button>
-          <button className="groups-filter-dropdown">
-            <i className="bi bi-funnel"></i> Filtros{' '}
-            <span className="groups-filter-badge">2</span>
-          </button>
-
-          <article className="groups-filter-pills">
-
-            <button
-              className={`groups-pill ${filter === 'todos' ? 'active' : ''}`}
-              onClick={() => setFilter('todos')}
-            > Todos <span className="groups-pill-count">{counts.todos}</span>
-            </button>
-
-            <button
-              className={`groups-pill ${filter === 'alertas' ? 'active' : ''}`}
-              onClick={() => setFilter('alertas')}
-            >
-              Con alertas{' '}
-              <span className="groups-pill-count">{counts.alertas}</span>
-            </button>
-
-            <button
-              className={`groups-pill ${filter === 'sin_docente' ? 'active' : ''}`}
-              onClick={() => setFilter('sin_docente')}
-            >
-              Sin docente{' '}
-              <span className="groups-pill-count">{counts.sin_docente}</span>
-            </button>
-
-            <button
-              className={`groups-pill ${filter === 'archivados' ? 'active' : ''}`}
-              onClick={() => setFilter('archivados')}
-            >
-              Archivados{' '}
-              <span className="groups-pill-count">{counts.archivados}</span>
-            </button>
-          </article>
-        </article>
 
         <article className="groups-grid">
           {filtered.map((group) => (
