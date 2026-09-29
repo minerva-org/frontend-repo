@@ -223,8 +223,14 @@ export default function Materias() {
                       </td>
                       <td>
                         <article className="mat-actions">
-                          <button className="mat-link mat-link-editar" type="button" onClick={() => setModal({ tipo: 'editar', materia: m })}>
-                            <i className="bi bi-pencil"></i> Editar
+                          <button
+                              className="mat-link mat-link-editar"
+                              type="button"
+                              disabled={m.status === 'Inactiva'}
+                              title={m.status === 'Inactiva' ? 'Reactiva la materia para poder editarla' : undefined}
+                              onClick={() => setModal({ tipo: 'editar', materia: m })}
+                            >
+                              <i className="bi bi-pencil"></i> Editar
                           </button>
                           <button
                             className={`mat-link ${m.status === 'Activa' ? 'mat-link-desactivar' : 'mat-link-activar'}`}

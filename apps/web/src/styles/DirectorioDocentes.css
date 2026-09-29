@@ -93,17 +93,6 @@
 .dd-scope-text strong {
   color: var(--seige-texto);
 }
-
-/* ---- Buscador + botón "Nuevo docente", a la misma altura ---- */
-.dd-toolbar {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-.dd-toolbar .dd-search-row {
-  flex: 1;
-}
-
 .dd-new-button {
   display: inline-flex;
   align-items: center;
@@ -243,6 +232,13 @@
 .dd-link-button:hover {
   text-decoration: underline;
 }
+.dd-link-button:disabled {
+  color: var(--dd-texto-suave);
+  cursor: not-allowed;
+}
+.dd-link-button:disabled:hover {
+  text-decoration: none;
+}
 .dd-link-danger {
   color: var(--seige-error-texto);
 }
@@ -307,19 +303,6 @@
   font-size: 0.78rem;
   color: var(--ar-neblina);
 }
-.dd-modal-close {
-  flex: none;
-  padding: 0.3rem;
-  font-size: 1rem;
-  color: var(--ar-nieve);
-  background: none;
-  border: 0;
-  border-radius: 0.4rem;
-  cursor: pointer;
-}
-.dd-modal-close:hover {
-  background: color-mix(in srgb, white 15%, transparent);
-}
 
 .dd-modal-form {
   display: flex;
@@ -351,7 +334,7 @@
   width: 100%;
   box-sizing: border-box;
   padding: 0.65rem 0.8rem;
-  font-family: sans-serif;
+  font: inherit;
   font-size: 1rem;
   color: var(--seige-texto);
   background: var(--seige-superficie);
@@ -376,12 +359,12 @@
 .dd-password-input {
   flex: 1 1 10rem;
   min-width: 0;
-  font-family: sans-serif;
+  font-family: ui-monospace, Consolas, monospace;
 }
 .dd-password-btn {
   flex: none;
   padding: 0.55rem 0.75rem;
-  font-family: sans-serif;
+  font: inherit;
   font-size: 0.8rem;
   font-weight: 700;
   color: var(--seige-texto);
@@ -403,7 +386,7 @@
 .dd-btn-secondary,
 .dd-btn-primary {
   padding: 0.7rem 1rem;
-  font-family: sans-serif;
+  font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
   border-radius: 0.6rem;
@@ -427,8 +410,7 @@
 }
 .dd-btn-secondary:focus-visible,
 .dd-btn-primary:focus-visible,
-.dd-password-btn:focus-visible,
-.dd-modal-close:focus-visible {
+.dd-password-btn:focus-visible {
   outline: 2px solid var(--seige-acento);
   outline-offset: 2px;
 }
@@ -447,11 +429,6 @@
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
-  }
-
-  .dd-toolbar {
-    flex-direction: row;
-    align-items: center;
   }
   .dd-new-button {
     flex: none;

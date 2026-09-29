@@ -341,6 +341,13 @@
   outline-offset: 1px;
 }
 
+.ca-link-button:disabled {
+  color: var(--ca-texto-suave);
+  cursor: not-allowed;
+}
+.ca-link-button:disabled:hover {
+  text-decoration: none;
+}
 .ca-password-row {
   display: flex;
   flex-wrap: wrap;
