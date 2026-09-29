@@ -2,6 +2,9 @@ import { useState, type SubmitEvent } from 'react';
 import AutocompleteInput from './AutoCompleteInput.tsx';
 import '../styles/ModalGrupos.css';
 
+// TODO: reemplazar por el catálogo real de materias activas (endpoint /materias)
+const MOCK_MATERIAS = ['Matemáticas III', 'Física II', 'Ética'];
+
 const MOCK_docenteS = [
   'Prof. García',
   'Prof. Ruiz',
@@ -34,17 +37,22 @@ interface CreateGroupModalProps {
 }
 
 export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModalProps) {
-  const [grupo, setgrupo] = useState('');
+  const [materia, setMateria] = useState<string[]>([]);
   const [grado, setgrado] = useState('');
   const [docente, setdocente] = useState<string[]>([]);
   const [numeroEstudiantes, setnumeroEstudiantes] = useState<string[]>([]);
+  const [error, setError] = useState('');
 
-  function handleSubmit(e: SubmitEvent) {
+  function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!grupo.trim() || !grado.trim()) return;
+    if (materia.length === 0 || !grado.trim()) {
+      setError('Selecciona la materia y captura el grado/grupo.');
+      return;
+    }
+    setError('');
 
     onCreate({
-      grupo: grupo.trim(),
+      grupo: materia[0],
       grado: grado.trim(),
       docente: docente[0] ?? null,
       numeroEstudiantes,
@@ -56,21 +64,17 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
     <article className="create-group-overlay">
       <article className="create-group-modal">
         <article className="create-group-header">
-          <h2 className="create-group-title bi ">Nuevo grupo</h2>
+          <h2 className="create-group-title">Nuevo grupo</h2>
         </article>
 
         <form onSubmit={handleSubmit} className="create-group-form" noValidate>
-          <label className="create-group-field">
-            <span className="create-group-label">Materia</span>
-            <input
-              className="create-group-input"
-              type="text"
-              placeholder="Ej. Matemáticas III"
-              value={grupo}
-              onChange={(e) => setgrupo(e.target.value)}
-              required
-            />
-          </label>
+          <AutocompleteInput
+            label="Materia"
+            placeholder="Buscar materia..."
+            options={MOCK_MATERIAS}
+            selected={materia}
+            onChange={setMateria}
+          />
 
           <label className="create-group-field">
             <span className="create-group-label">Grado / Grupo</span>
@@ -100,6 +104,8 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
             selected={numeroEstudiantes}
             onChange={setnumeroEstudiantes}
           />
+
+          {error && <p className="create-group-error">{error}</p>}
 
           <article className="create-group-actions">
             <button type="button" className="create-group-cancel" onClick={onClose}>

@@ -6,6 +6,7 @@ import { createPortal } from 'react-dom';
 import type { SidebarConfig, SidebarNavItem } from '../services/sidebarTypes.ts';
 import '../styles/Sidebar.css';
 import { create } from 'axios';
+import logo from '../assets/logo.webp';
 
 interface SidebarProps {
   config: SidebarConfig;
@@ -73,7 +74,7 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
     <aside className={`sd-sidebar ${collapsed ? 'sd-sidebar-collapsed' : ''}`}>
       <article className="sd-brand">
         <span className="sd-brand-logo">
-          <i className="bi bi-mortarboard-fill"></i>
+          <img src={logo} alt="Logo Preparatoria Chapala" className="sd-brand-logo-img" />
         </span>
         <article className="sd-brand-text">
           <span className="sd-brand-title">Preparatoria Chapala</span>

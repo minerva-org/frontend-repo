@@ -130,8 +130,7 @@ export default function Grupos({soloMisGrupos = false }: GruposProps) {
           <article>
             <h1 className="groups-title">Catálogo de grupos</h1>
             <p className="groups-subtitle">
-              Ciclo Activo 2026-B · {relatedGroups.length} grupos · {counts.alertas}{' '}
-              con alertas
+              Ciclo Activo 2026
             </p>
           </article>
           <button className="groups-new-button" onClick={() => setShowModal(true)}>
