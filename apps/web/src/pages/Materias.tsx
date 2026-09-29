@@ -158,11 +158,6 @@ export default function Materias() {
           </article>
         </section>
 
-        <section className="mat-scope">
-          <span className="mat-scope-text">
-            <strong>Ámbito Operativo:</strong> Asignaturas y grupos bajo su titularidad académica.
-          </span>
-        </section>
 
         <section className="mat-toolbar">
           <article className="mat-search-row">

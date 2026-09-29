@@ -96,11 +96,6 @@ export default function CatalogoAlumnos() {
           </article>
         </header>
 
-        <article className="ca-scope-row">
-          <p className="ca-scope-text">
-            <strong>Ámbito Operativo:</strong> Asignaturas y grupos bajo su titularidad académica.
-          </p>
-        </article>
 
         <article className="ca-toolbar">
           <article className="ca-search-row">
