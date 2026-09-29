@@ -96,10 +96,6 @@ function claseCalificacion(cal: number): string {
   return 'puntuacionBaja';
 }
 
-function obtenerTitulo(isStudent: boolean, code: string): string {
-  const data = isStudent ? MOCK_DETALLE_ALUMNO[code] : MOCK_DETALLE_DOCENTE[code];
-  return data?.titulo ?? code;
-}
 
 function VistaAlumno({ code }: { code: string }) {
   const [tab, setTab] = useState<'proximos' | 'pasados'>('proximos');
@@ -346,14 +342,13 @@ export default function GroupDetail() {
   const { role } = useAuth();
   const { toggleSidebar } = useSidebar();
   const { code } = useParams<{ code: string }>();
-  const navigate = useNavigate();
   const isStudent = role === 'alumno';
 
   if (!code) {
     return <p className="gd-empty">Código de grupo no especificado.</p>;
   }
 
-  const titulo = obtenerTitulo(isStudent, code);
+
 
   return (
     <article className="gd-screen">
@@ -365,16 +360,6 @@ export default function GroupDetail() {
           <span className="gd-topbar-title">{isStudent ? 'Alumno' : 'Docente'}</span>
         </article>
       </header>
-
-      <nav className="gd-breadcrumb">
-        <span>Inicio</span>
-        <span className="gd-breadcrumb-sep">/</span>
-        <span className="gd-breadcrumb-link" onClick={() => navigate(isStudent ? '/alumno/grupos' : '/grupos')}>
-          {isStudent ? 'Mis Grupos' : 'Grupos'}
-        </span>
-        <span className="gd-breadcrumb-sep">/</span>
-        <span className="gd-breadcrumb-current">{titulo}</span>
-      </nav>
 
       <main className="gd-content">
         {isStudent ? <VistaAlumno code={code} /> : <VistaDocente code={code} />}

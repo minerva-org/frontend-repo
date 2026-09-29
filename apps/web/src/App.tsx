@@ -11,11 +11,16 @@ import Materias from './pages/Materias.tsx';
 import AppLayout from './components/AppLayout.tsx';
 import MisGrupos from './pages/MisGrupos.tsx';
 import PlantelDashboard from './pages/PlantelDashboard.tsx';
-import Planteles from './pages/Planteles.tsx';
-import DirectoresPlanteles from './pages/DirectoresPlanteles.tsx';
+import Planteles from './pages/CatalogoPlanteles.tsx';
+import DirectoresPlanteles from './pages/CatalogoDirectoresPlantel.tsx';
 import MetricasTroncoComun from './pages/MetricasTroncoComun.tsx';
 import DirectorioDocentes from './pages/DirectorioDocentes.tsx';
 import CatalogoAlumnos from './pages/CatalogoAlumnos.tsx';
+// NOTA: CatalogoPlanteles.tsx quedó sin usar — antes se importaba aquí como
+// "DirectoresPlantel" y competía con la ruta de abajo. Revisa qué contiene
+// ese archivo: si es otra versión del catálogo de Planteles, probablemente
+// ya no lo necesitas; si es en realidad el catálogo de Directores, avísame
+// y cambiamos el import de la línea de arriba por ese archivo.
 
 
 export default function App() {
@@ -38,6 +43,13 @@ export default function App() {
                 <Alumnos />
               </ProtectedRoute>
             } />
+
+            <Route path="/plantel/dashboard" element={
+              <ProtectedRoute allowedRoles={['directorPlantel']}>
+                <PlantelDashboard />
+              </ProtectedRoute>
+            } />
+
             <Route path="/plantel/directorio-docente" element={
               <ProtectedRoute allowedRoles={['coordinador','directorPlantel']}>
                 <DirectorioDocentes />
@@ -55,6 +67,7 @@ export default function App() {
                 <DirectorioDocentes />
               </ProtectedRoute>
             } />
+
             <Route path="/catalogo-alumnos" element={
               <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral']}>
                 <CatalogoAlumnos />
@@ -110,7 +123,7 @@ export default function App() {
             } />
 
             <Route path="/directores-planteles" element={
-              <ProtectedRoute allowedRoles={['directorPlantel', 'directorGeneral', 'admin', 'dev']}>
+              <ProtectedRoute allowedRoles={[ 'directorGeneral', 'admin', 'dev']}>
                 <DirectoresPlanteles />
               </ProtectedRoute>
             } />

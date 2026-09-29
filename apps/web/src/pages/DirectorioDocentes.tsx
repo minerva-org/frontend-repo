@@ -26,6 +26,10 @@ function generarPassword(): string {
   return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 }
 
+function rolATexto(role: string): string {
+  return role.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase();
+}
+
 export default function DirectorioDocentes() {
   const { role } = useAuth();
   const activeRole = role;
@@ -36,7 +40,6 @@ export default function DirectorioDocentes() {
   const [docentes, setDocentes] = useState<Docente[]>(MOCK_DOCENTES);
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing] = useState<Docente | null>(null);
 
   const filtrados = docentes.filter(
     (d) =>
@@ -66,13 +69,6 @@ export default function DirectorioDocentes() {
     };
     setDocentes((prev) => [docente, ...prev]);
     setShowModal(false);
-  }
-
-  function handleEditSave(id: string, cambios: { nombre: string; correo: string }) {
-    setDocentes((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, nombre: cambios.nombre, correo: cambios.correo } : d))
-    );
-    setEditing(null);
   }
 
   return (
@@ -112,20 +108,23 @@ export default function DirectorioDocentes() {
           <p className="dd-scope-text">
             <strong>Ámbito Operativo:</strong> Asignaturas y grupos bajo tu titularidad académica · {ambito}
           </p>
+          <span className="dd-scope-badge">ROL ACTIVO: {role ? rolATexto(role) : '—'}</span>
+        </article>
+
+        <article className="dd-toolbar">
+          <article className="dd-search-row">
+            <i className="bi bi-search dd-search-icon"></i>
+            <input
+              className="dd-search-input"
+              type="text"
+              placeholder="Buscar docente por nombre o materia..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </article>
           <button className="dd-new-button" onClick={() => setShowModal(true)}>
             <i className="bi bi-plus-lg"></i> Nuevo docente
           </button>
-        </article>
-
-        <article className="dd-search-row">
-          <i className="bi bi-search dd-search-icon"></i>
-          <input
-            className="dd-search-input"
-            type="text"
-            placeholder="Buscar docente por nombre o materia..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
         </article>
 
         <article className="dd-table-wrap">
@@ -162,16 +161,11 @@ export default function DirectorioDocentes() {
                     </span>
                   </td>
                   <td className="dd-acciones">
-                    <button
-                      className="dd-link-button"
-                      disabled={d.estado === 'inactivo'}
-                      title={d.estado === 'inactivo' ? 'Reactiva al docente para poder editarlo' : undefined}
-                      onClick={() => setEditing(d)}
-                    >
-                      <i className="bi bi-pencil"></i> Editar
+                    <button className="dd-btn dd-btn-neutral">
+                      Editar
                     </button>
                     <button
-                      className={`dd-link-button ${d.estado === 'activo' ? 'dd-link-danger' : 'dd-link-success'}`}
+                      className={`dd-btn ${d.estado === 'activo' ? 'dd-btn-danger' : 'dd-btn-success'}`}
                       onClick={() => handleToggleEstado(d.id)}
                     >
                       {d.estado === 'activo' ? 'Desactivar' : 'Activar'}
@@ -190,15 +184,6 @@ export default function DirectorioDocentes() {
           puedeAsignarRol={puedeAsignarRol}
           onClose={() => setShowModal(false)}
           onCreate={handleCreate}
-        />
-      )}
-
-      {editing && (
-        <EditarDocenteModal
-          docente={editing}
-          puedeAsignarRol={puedeAsignarRol}
-          onClose={() => setEditing(null)}
-          onSave={(cambios) => handleEditSave(editing.id, cambios)}
         />
       )}
     </article>
@@ -305,81 +290,6 @@ function NuevoDocenteModal({ puedeAsignarRol, onClose, onCreate }: NuevoDocenteM
                 <i className="bi bi-lock-fill"></i> Solo el Director de Plantel puede otorgar o cambiar el rol
               </p>
             )}
-          </label>
-
-          <article className="dd-modal-actions">
-            <button type="button" className="dd-btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="dd-btn-primary">
-              Guardar
-            </button>
-          </article>
-        </form>
-      </article>
-    </article>
-  );
-}
-
-interface EditarDocenteModalProps {
-  docente: Docente;
-  puedeAsignarRol: boolean;
-  onClose: () => void;
-  onSave: (data: { nombre: string; correo: string }) => void;
-}
-
-function EditarDocenteModal({ docente, puedeAsignarRol, onClose, onSave }: EditarDocenteModalProps) {
-  const [nombre, setNombre] = useState(docente.nombre);
-  const [correo, setCorreo] = useState(docente.correo);
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!nombre.trim() || !correo.trim()) return;
-    onSave({ nombre: nombre.trim(), correo: correo.trim() });
-  }
-
-  return (
-    <article className="dd-modal-overlay">
-      <article className="dd-modal" role="dialog" aria-modal="true" aria-labelledby="dd-edit-title">
-        <article className="dd-modal-header">
-          <article>
-            <h2 id="dd-edit-title" className="dd-modal-title">Editar docente</h2>
-            <p className="dd-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
-          </article>
-        </article>
-
-        <form className="dd-modal-form" onSubmit={handleSubmit}>
-          <label className="dd-field">
-            <span className="dd-field-label">Nombre completo</span>
-            <input
-              className="dd-input"
-              type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="dd-field">
-            <span className="dd-field-label">Correo institucional (usuario de acceso)</span>
-            <input
-              className="dd-input"
-              type="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              required
-            />
-          </label>
-
-          <label className="dd-field">
-            <span className="dd-field-label">Rol</span>
-            <select className="dd-input" value={docente.rol} disabled>
-              <option value="docente">Docente</option>
-              <option value="coordinador">Coordinador</option>
-            </select>
-            <p className="dd-field-hint">
-              El rol se cambia desde la tabla{puedeAsignarRol ? '' : '; solo el Director de Plantel puede hacerlo'}.
-            </p>
           </label>
 
           <article className="dd-modal-actions">

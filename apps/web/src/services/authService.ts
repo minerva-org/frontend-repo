@@ -27,9 +27,16 @@ export function normalizeRole(rawRole?: string | null): UserRole | null {
   const normalized = rawRole.toUpperCase().replace(/[-\s]/g, '_');
   return ROLE_MAP[normalized] ?? null;
 }
-
+export const MOCK_USERS: Record<string, { password: string; role: UserRole }> = {
+  'alumno@chapala.edu.mx': { password: 'Alumno#2024x', role: 'alumno' },
+  'docente@chapala.edu.mx': { password: 'Docente#2024x', role: 'docente' },
+  'coordinador@chapala.edu.mx': { password: 'Coordinador#2024x', role: 'coordinador' },
+  'directorgeneral@chapala.edu.mx': { password: 'DirGen#2024x', role: 'directorGeneral' },
+  'directorplantel@chapala.edu.mx': {password:'DirPlantel#2024x', role:'directorPlantel'},
+};
 export function decodeJwtRole(token?: string | null) {
   if (!token) return null;
+
 
   try {
     const base64Payload = token.split('.')[1];
