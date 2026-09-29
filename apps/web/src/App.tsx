@@ -15,6 +15,7 @@ import Planteles from './pages/Planteles.tsx';
 import DirectoresPlanteles from './pages/DirectoresPlanteles.tsx';
 import MetricasTroncoComun from './pages/MetricasTroncoComun.tsx';
 import DirectorioDocentes from './pages/DirectorioDocentes.tsx';
+import CatalogoAlumnos from './pages/CatalogoAlumnos.tsx';
 
 
 export default function App() {
@@ -51,6 +52,11 @@ export default function App() {
             <Route path="/catalogo-docentes" element={
               <ProtectedRoute allowedRoles={['coordinador']}>
                 <DirectorioDocentes />
+              </ProtectedRoute>
+            } />
+            <Route path="/catalogo-alumnos" element={
+              <ProtectedRoute allowedRoles={['coordinador']}>
+                <CatalogoAlumnos />
               </ProtectedRoute>
             } />
 
