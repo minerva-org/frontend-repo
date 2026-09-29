@@ -50,6 +50,7 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  end={item.end ?? true}
                   className={({ isActive }) => `sd-nav-link ${isActive ? 'active' : ''}`}
                 >
                   <i className={`bi ${item.icon}`}></i>

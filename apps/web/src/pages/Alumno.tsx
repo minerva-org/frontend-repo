@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Alumno.css';
-import AlumnoNav from '../components/AlumnosNav.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 
 interface QuizAlumno {
@@ -83,12 +82,8 @@ export default function AlumnoInicio() {
           </button>
           <span className="al-topbar-title">Alumno</span>
         </article>
-        <article className="al-topbar-side">
-          <i className="bi bi-bell al-icon"></i>
-          <i className="bi bi-person-circle al-icon"></i>
-        </article>
+
       </header>
-      <AlumnoNav />
 
       <main className="al-content">
         <section className="al-intro">

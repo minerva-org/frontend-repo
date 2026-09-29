@@ -37,7 +37,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Metricas de aprendizaje', icon: 'bi-graph-up' }],
+        items: [{ to: '/metricas-aprendizaje', label: 'Metricas de aprendizaje', icon: 'bi-graph-up', end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -69,7 +69,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Metricas de aprendizaje', icon: 'bi-graph-up' }],
+        items: [{ to: '/metricas-aprendizaje', label: 'Metricas de aprendizaje', icon: 'bi-graph-up',end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -85,7 +85,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
     {
       label: 'Listado',
       items: [
-        { to: '/alumno', label: 'Inicio', icon: 'bi-house' },
+        { to: '/alumno', label: 'Inicio', icon: 'bi-house', end:true},
         { to: '/alumno/grupos', label: 'Mis Grupos', icon: 'bi-collection' },
       ],
     },

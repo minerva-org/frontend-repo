@@ -14,3 +14,10 @@ export interface SidebarConfig {
   roleLabel: string;
   navGroups: SidebarNavGroup[];
 }
+
+export interface SidebarNavItem {
+  to: string;
+  label: string;
+  icon: string;
+  end?: boolean;
+}

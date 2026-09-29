@@ -1,5 +1,4 @@
 import { useNavigate } from 'react-router-dom';
-import AlumnoNav from '../components/AlumnosNav.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import '../styles/MisGrupos.css';
 
@@ -36,12 +35,7 @@ export default function MisGrupos() {
           </button>
           <span className="mg-topbar-title">Alumno</span>
         </article>
-        <article className="mg-topbar-side">
-          <i className="bi bi-bell mg-icon"></i>
-          <i className="bi bi-person-circle mg-icon"></i>
-        </article>
       </header>
-      <AlumnoNav />
 
       <main className="mg-content">
         <section className="mg-intro">

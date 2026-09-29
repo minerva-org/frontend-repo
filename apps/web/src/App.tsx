@@ -11,10 +11,11 @@ import Materias from './pages/Materias.tsx';
 import AppLayout from './components/AppLayout.tsx';
 import MisGrupos from './pages/MisGrupos.tsx';
 import PlantelDashboard from './pages/PlantelDashboard.tsx';
-import PlantelDirectorioDocente from './pages/PlantelDirectorioDocente.tsx';
 import Planteles from './pages/Planteles.tsx';
 import DirectoresPlanteles from './pages/DirectoresPlanteles.tsx';
 import MetricasTroncoComun from './pages/MetricasTroncoComun.tsx';
+import DirectorioDocentes from './pages/DirectorioDocentes.tsx';
+
 
 export default function App() {
   return (
@@ -35,10 +36,21 @@ export default function App() {
                 <Alumnos />
               </ProtectedRoute>
             } />
+            <Route path="/plantel/directorio-docente" element={
+              <ProtectedRoute allowedRoles={['coordinador','directorPlantel']}>
+                <DirectorioDocentes />
+              </ProtectedRoute>
+             } />
 
             <Route path="/catalogo-grupos" element={
               <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral',]}>
                 <Grupos />
+              </ProtectedRoute>
+              } />
+
+            <Route path="/catalogo-docentes" element={
+              <ProtectedRoute allowedRoles={['coordinador']}>
+                <DirectorioDocentes />
               </ProtectedRoute>
             } />
 
@@ -85,29 +97,24 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/plantel/directorio-docente" element={
-              <ProtectedRoute allowedRoles={['directorPlantel']}>
-                <PlantelDirectorioDocente />
-              </ProtectedRoute>
-          } />
 
           <Route path="/planteles" element={
-  <ProtectedRoute allowedRoles={['directorGeneral']}>
-    <Planteles />
-  </ProtectedRoute>
-} />
+            <ProtectedRoute allowedRoles={['directorGeneral']}>
+              <Planteles />
+            </ProtectedRoute>
+           } />
 
-<Route path="/directores-planteles" element={
-  <ProtectedRoute allowedRoles={['directorGeneral']}>
-    <DirectoresPlanteles />
-  </ProtectedRoute>
-} />
+          <Route path="/directores-planteles" element={
+            <ProtectedRoute allowedRoles={['directorGeneral']}>
+              <DirectoresPlanteles />
+            </ProtectedRoute>
+          } />
 
-<Route path="/metricas-tronco-comun" element={
-  <ProtectedRoute allowedRoles={['directorGeneral']}>
-    <MetricasTroncoComun />
-  </ProtectedRoute>
-} />
+          <Route path="/metricas-tronco-comun" element={
+            <ProtectedRoute allowedRoles={['directorGeneral']}>
+              <MetricasTroncoComun />
+            </ProtectedRoute>
+          } />
 
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
