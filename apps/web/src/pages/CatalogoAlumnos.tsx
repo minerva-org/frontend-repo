@@ -144,8 +144,13 @@ export default function CatalogoAlumnos() {
                     </span>
                   </td>
                   <td className="ca-acciones">
-                    <button className="ca-link-button" onClick={() => setEditing(a)}>
-                      <i className="bi bi-pencil"></i> Editar
+                    <button
+                        className="ca-link-button"
+                        disabled={a.estado === 'inactivo'}
+                        title={a.estado === 'inactivo' ? 'Reactiva al alumno para poder editarlo' : undefined}
+                        onClick={() => setEditing(a)}
+                      >
+                        <i className="bi bi-pencil"></i> Editar
                     </button>
                     <button
                       className={`ca-link-button ${a.estado === 'activo' ? 'ca-link-danger' : 'ca-link-success'}`}
