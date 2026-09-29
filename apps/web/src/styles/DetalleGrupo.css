@@ -59,7 +59,7 @@
   border-radius: 999px;
 }
 .gd-hero-row { display: flex; flex-direction: column; gap: 0.5rem; }
-.gd-hero-title { margin: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+.gd-hero-title { margin-top: 0; font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
 .gd-hero-cycle { font-size: 0.85rem; opacity: 0.85; }
 
 .gd-info {
