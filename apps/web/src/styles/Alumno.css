@@ -84,7 +84,7 @@
 
 .al-group-link {
   padding: 0;
-  font: inherit;
+  font: sans-serif;
   font-size: 0.8rem;
   font-weight: 700;
   text-align: right;
@@ -100,7 +100,7 @@
 
 .al-btn {
   padding: 0.55rem 1.1rem;
-  font: inherit;
+  font: sans-serif;
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--al-suave);

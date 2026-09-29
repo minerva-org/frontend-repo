@@ -100,20 +100,22 @@ export default function CatalogoAlumnos() {
           <p className="ca-scope-text">
             <strong>Ámbito Operativo:</strong> Asignaturas y grupos bajo su titularidad académica.
           </p>
+        </article>
+
+        <article className="ca-toolbar">
+          <article className="ca-search-row">
+            <i className="bi bi-search ca-search-icon"></i>
+            <input
+              className="ca-search-input"
+              type="text"
+              placeholder="Buscar alumno por nombre o matrícula..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </article>
           <button className="ca-new-button" onClick={() => setShowCreate(true)}>
             <i className="bi bi-plus-lg"></i> Nuevo alumno
           </button>
-        </article>
-
-        <article className="ca-search-row">
-          <i className="bi bi-search ca-search-icon"></i>
-          <input
-            className="ca-search-input"
-            type="text"
-            placeholder="Buscar alumno por nombre o matrícula..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
         </article>
 
         <article className="ca-table-wrap">
@@ -164,7 +166,7 @@ export default function CatalogoAlumnos() {
         <NuevoAlumnoModal onClose={() => setShowCreate(false)} onCreate={handleCreate} />
       )}
 
-      {editing && (
+      {editing && editing.estado ==='activo' &&(
         <EditarAlumnoModal
           alumno={editing}
           onClose={() => setEditing(null)}

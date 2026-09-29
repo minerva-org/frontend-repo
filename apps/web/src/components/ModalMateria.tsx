@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent, type SubmitEvent } from 'react';
 import type { Materia, Tema, Unidad } from '../types.ts';
+import '../styles/ModalMateria.css';
 
 const MAX_PDF_MB = 10;
 const nuevoId = () => crypto.randomUUID();
@@ -16,7 +17,7 @@ interface Props {
   onGuardar: (datos: DatosMateria) => void;
 }
 
-export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
+export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const esEdicion = !!materia;
 
   const [nombre, setNombre] = useState(materia?.nombre ?? '');
@@ -26,7 +27,6 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
   const [planArchivo, setPlanArchivo] = useState<File | null>(null);
   const [reemplazandoPlan, setReemplazandoPlan] = useState(false);
   const [error, setError] = useState('');
-
 
   const handleArchivo = (e: ChangeEvent<HTMLInputElement>) => {
     const archivo = e.target.files?.[0] ?? null;
@@ -141,37 +141,43 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
   const mostrarInputArchivo = !esEdicion || reemplazandoPlan || !materia?.planEstudioNombre;
 
   return (
-    <article>
+    <article className="mm-overlay">
       <article
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-materia-titulo"
+        className="mm-modal"
       >
-        <header>
-          <h2 id="modal-materia-titulo">{esEdicion ? 'Editar materia' : 'Nueva materia'}</h2>
-          <button type="button" onClick={onCerrar} aria-label="Cerrar">
-            <i className="bi bi-x-lg" aria-hidden="true" />
-          </button>
+        <header className="mm-header">
+          <article>
+            <h2 id="modal-materia-titulo" className="mm-header-title">
+              {esEdicion ? 'Editar materia' : 'Nueva materia'}
+            </h2>
+            <p className="mm-header-subtitle">Preparatoria Chapala Gutiérrez</p>
+          </article>
         </header>
 
-        <form onSubmit={handleSubmit} noValidate>
-          <label htmlFor="materia-nombre">Nombre de la materia</label>
-          <input
-            id="materia-nombre"
-            type="text"
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            placeholder="Ej. Matemáticas 3"
-            autoFocus
-          />
+        <form onSubmit={handleSubmit} noValidate className="mm-form">
+          <article className="mm-field">
+            <label htmlFor="materia-nombre" className="mm-label">Nombre de la materia</label>
+            <input
+              id="materia-nombre"
+              className="mm-input"
+              type="text"
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
+              placeholder="Ej. Matemáticas 3"
+              autoFocus
+            />
+          </article>
 
-          <fieldset>
-            <legend>Plan de estudio (PDF)</legend>
+          <fieldset className="mm-fieldset">
+            <legend className="mm-legend">Plan de estudio (PDF)</legend>
 
             {esEdicion && materia?.planEstudioNombre && !reemplazandoPlan && (
-              <p>
+              <p className="mm-file-current">
                 <i className="bi bi-file-earmark-pdf" aria-hidden="true" /> {materia.planEstudioNombre}{' '}
-                <button type="button" onClick={() => setReemplazandoPlan(true)}>
+                <button type="button" onClick={() => setReemplazandoPlan(true)} className="mm-link-btn">
                   Reemplazar plan
                 </button>
               </p>
@@ -179,34 +185,39 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
 
             {mostrarInputArchivo && (
               <>
-                <input
-                  type="file"
-                  accept="application/pdf,.pdf"
-                  onChange={handleArchivo}
-                  aria-label="Archivo PDF del plan de estudio"
-                />
-                {planArchivo && <p>Seleccionado: {planArchivo.name}</p>}
-                {esEdicion && reemplazandoPlan && (
-                  <button type="button" onClick={cancelarReemplazo}>
-                    Cancelar reemplazo
-                  </button>
-                )}
-                <small>Máximo {MAX_PDF_MB} MB.</small>
+                <article className="mm-file-row">
+                  <input
+                    type="file"
+                    accept="application/pdf,.pdf"
+                    onChange={handleArchivo}
+                    aria-label="Archivo PDF del plan de estudio"
+                  />
+                  {esEdicion && reemplazandoPlan && (
+                    <button type="button" onClick={cancelarReemplazo} className="mm-link-btn">
+                      Cancelar reemplazo
+                    </button>
+                  )}
+                </article>
+                {planArchivo && <p className="mm-file-selected">Seleccionado: {planArchivo.name}</p>}
+                <small className="mm-file-hint">Máximo {MAX_PDF_MB} MB.</small>
               </>
             )}
           </fieldset>
 
-          <fieldset>
-            <legend>Unidades, temas y conceptos</legend>
+          <fieldset className="mm-fieldset">
+            <legend className="mm-legend">Unidades, temas y conceptos</legend>
 
             {unidades.length === 0 && (
-              <p>Aún no hay unidades. Agrégalas aquí o deja que el análisis del plan las detecte.</p>
+              <p className="mm-hint-box">
+                Aún no hay unidades. Agrégalas aquí o deja que el análisis del plan las detecte.
+              </p>
             )}
 
             {unidades.map((u, ui) => (
-              <article key={u.id}>
-                <article>
+              <article key={u.id} className="mm-unidad">
+                <article className="mm-unidad-row">
                   <input
+                    className="mm-input"
                     type="text"
                     value={u.nombre}
                     onChange={(e) => renombrarUnidad(u.id, e.target.value)}
@@ -215,6 +226,7 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
                   />
                   <button
                     type="button"
+                    className="mm-icon-btn"
                     onClick={() => quitarUnidad(u.id)}
                     aria-label={`Eliminar unidad ${ui + 1}`}
                   >
@@ -223,9 +235,10 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
                 </article>
 
                 {u.temas.map((t, ti) => (
-                  <article key={t.id}>
-                    <article>
+                  <article key={t.id} className="mm-tema">
+                    <article className="mm-tema-row">
                       <input
+                        className="mm-input"
                         type="text"
                         value={t.nombre}
                         onChange={(e) => renombrarTema(u.id, t.id, e.target.value)}
@@ -234,6 +247,7 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
                       />
                       <button
                         type="button"
+                        className="mm-icon-btn"
                         onClick={() => quitarTema(u.id, t.id)}
                         aria-label={`Eliminar tema ${ti + 1}`}
                       >
@@ -242,8 +256,9 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
                     </article>
 
                     {t.conceptos.map((c, ci) => (
-                      <article key={c.id}>
+                      <article key={c.id} className="mm-concepto-row">
                         <input
+                          className="mm-input"
                           type="text"
                           value={c.nombre}
                           onChange={(e) => renombrarConcepto(u.id, t.id, c.id, e.target.value)}
@@ -252,6 +267,7 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
                         />
                         <button
                           type="button"
+                          className="mm-icon-btn"
                           onClick={() => quitarConcepto(u.id, t.id, c.id)}
                           aria-label={`Eliminar concepto ${ci + 1}`}
                         >
@@ -260,30 +276,32 @@ export default function ModalMateria ({ materia, onCerrar, onGuardar }: Props) {
                       </article>
                     ))}
 
-                    <button type="button" onClick={() => agregarConcepto(u.id, t.id)}>
+                    <button type="button" className="mm-add-btn" onClick={() => agregarConcepto(u.id, t.id)}>
                       + Concepto
                     </button>
                   </article>
                 ))}
 
-                <button type="button" onClick={() => agregarTema(u.id)}>
+                <button type="button" className="mm-add-btn" onClick={() => agregarTema(u.id)}>
                   + Tema
                 </button>
               </article>
             ))}
 
-            <button type="button" onClick={agregarUnidad}>
+            <button type="button" className="mm-add-btn" onClick={agregarUnidad}>
               + Unidad
             </button>
           </fieldset>
 
-          {error && <p role="alert">{error}</p>}
+          {error && <p role="alert" className="mm-error">{error}</p>}
 
-          <footer>
-            <button type="button" onClick={onCerrar}>
+          <footer className="mm-footer">
+            <button type="button" onClick={onCerrar} className="mat-btn">
               Cancelar
             </button>
-            <button type="submit">{esEdicion ? 'Guardar cambios' : 'Crear materia'}</button>
+            <button type="submit" className="mat-btn mat-btn-primary">
+              {esEdicion ? 'Guardar cambios' : 'Crear materia'}
+            </button>
           </footer>
         </form>
       </article>

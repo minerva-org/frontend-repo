@@ -125,10 +125,6 @@ return (
           <i className="bi bi-list"></i>
           <span>Docente</span>
         </article>
-        <article>
-          <i className="bi bi-bell"></i>
-          <i className="bi bi-person-circle"></i>
-        </article>
       </header>
 
       <nav>

@@ -100,20 +100,22 @@ export default function DirectorioDocentes() {
           <p className="dd-scope-text">
             <strong>Ámbito Operativo:</strong> Asignaturas y grupos bajo tu titularidad académica · {ambito}
           </p>
+        </article>
+
+        <article className="dd-toolbar">
+          <article className="dd-search-row">
+            <i className="bi bi-search dd-search-icon"></i>
+            <input
+              className="dd-search-input"
+              type="text"
+              placeholder="Buscar docente por nombre o materia..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </article>
           <button className="dd-new-button" onClick={() => setShowModal(true)}>
             <i className="bi bi-plus-lg"></i> Nuevo docente
           </button>
-        </article>
-
-        <article className="dd-search-row">
-          <i className="bi bi-search dd-search-icon"></i>
-          <input
-            className="dd-search-input"
-            type="text"
-            placeholder="Buscar docente por nombre o materia..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
         </article>
 
         <article className="dd-table-wrap">

@@ -53,6 +53,7 @@
 
 .groups-breadcrumb,
 .groups-content {
+  margin-top: 50px;
   width: 100%;
   max-width: 72rem;
   margin-inline: auto;
@@ -101,7 +102,7 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.65rem 1rem;
-  font: inherit;
+  font: sans-serif;
   font-size: 0.9rem;
   font-weight: 700;
   border-radius: 0.6rem;
@@ -141,8 +142,8 @@
 .groups-search-input {
   width: 100%;
   padding: 0.7rem 0.85rem 0.7rem 2.6rem;
-  font: inherit;
-  font-size: 1rem; /* 16px: evita el zoom automático en iOS */
+  font: sans-serif;
+  font-size: 1rem;
   color: var(--seige-texto);
   background: var(--seige-superficie);
   border: 1px solid var(--groups-borde-campo);
@@ -161,7 +162,7 @@
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.8rem;
-  font: inherit;
+  font: sans-serif;
   font-size: 0.85rem;
   font-weight: 600;
   white-space: nowrap;
@@ -252,7 +253,7 @@
 }
 .group-card-routecode {
   padding: 0.2rem 0.55rem;
-  font-family: ui-monospace, Consolas, monospace;
+  font-family: sans-serif;
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--seige-texto);

@@ -122,17 +122,8 @@ export default function Grupos({soloMisGrupos = false }: GruposProps) {
           </button>
           <span className="groups-topbar-title">Grupos</span>
         </article>
-        <article className="groups-topbar-right">
-          <i className="bi bi-bell groups-icon-button"></i>
-          <i className="bi bi-person-circle groups-icon-button"></i>
-        </article>
       </header>
 
-      <nav className="groups-breadcrumb">
-        <span>Inicio</span>
-        <span className="groups-breadcrumb-sep">/</span>
-        <span className="groups-breadcrumb-current">Grupos</span>
-      </nav>
 
       <main className="groups-content">
         <article className="groups-page-header">
@@ -159,6 +150,7 @@ export default function Grupos({soloMisGrupos = false }: GruposProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          
         </article>
 
         <article className="groups-filters">
