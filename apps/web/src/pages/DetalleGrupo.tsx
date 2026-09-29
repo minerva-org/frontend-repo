@@ -364,10 +364,6 @@ export default function GroupDetail() {
           </button>
           <span className="gd-topbar-title">{isStudent ? 'Alumno' : 'Docente'}</span>
         </article>
-        <article className="gd-topbar-side">
-          <i className="bi bi-bell gd-icon"></i>
-          <i className="bi bi-person-circle gd-icon"></i>
-        </article>
       </header>
 
       <nav className="gd-breadcrumb">

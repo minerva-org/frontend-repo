@@ -4,7 +4,7 @@ import { sidebarConfigByRole } from '../services/sidebarConfig.ts';
 import type { SidebarNavItem } from '../services/sidebarTypes.ts';
 
 const MOCK_GRUPOS_ACTIVOS: SidebarNavItem[] = [
-  { to: '/grupos/MAT3-A', label: 'MAT3-A', icon: 'bi-bar-chart-line' },
+  { to: '/grupos/MAT3-A', label: 'MAT3-A', icon: 'bi-bar-chart-line', end:true},
 ];
 
 export default function AppSidebar() {

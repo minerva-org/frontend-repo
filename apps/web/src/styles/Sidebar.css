@@ -5,7 +5,10 @@
   display: flex;
   flex-direction: column;
   width: 17.5rem;
-  min-height: 100dvh;
+  height: 100dvh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
   overflow: hidden;
   color: var(--ar-nieve);
   background: var(--sd-fondo);
