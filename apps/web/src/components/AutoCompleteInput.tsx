@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import '../styles/AutocompleteInput.css';
+import '../styles/AutoCompleteInput.css';
 
 interface AutocompleteInputProps {
   label: string;

@@ -23,11 +23,12 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
 
           <Route element={<AppLayout />}>
             <Route path="/grupos" element={
-              <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorGeneral']}>
+              <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorGeneral', 'directorPlantel', 'admin', 'dev']}>
                 <Grupos soloMisGrupos/>
               </ProtectedRoute>
             } />
@@ -44,18 +45,18 @@ export default function App() {
              } />
 
             <Route path="/catalogo-grupos" element={
-              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral',]}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral', 'admin', 'dev']}>
                 <Grupos />
               </ProtectedRoute>
               } />
 
             <Route path="/catalogo-docentes" element={
-              <ProtectedRoute allowedRoles={['coordinador']}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral']}>
                 <DirectorioDocentes />
               </ProtectedRoute>
             } />
             <Route path="/catalogo-alumnos" element={
-              <ProtectedRoute allowedRoles={['coordinador']}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral']}>
                 <CatalogoAlumnos />
               </ProtectedRoute>
             } />
@@ -73,7 +74,7 @@ export default function App() {
             } />
 
             <Route path="/grupos/:code" element={
-              <ProtectedRoute allowedRoles={['alumno', 'docente', 'coordinador']}>
+              <ProtectedRoute allowedRoles={['alumno', 'docente', 'coordinador', 'directorGeneral', 'directorPlantel', 'admin', 'dev']}>
                 <GroupDetail/>
               </ProtectedRoute>
             } />
@@ -95,32 +96,31 @@ export default function App() {
                 <Materias/>
               </ProtectedRoute>
             } />
+
+            <Route path="/plantel/dashboard" element={
+              <ProtectedRoute allowedRoles={['directorPlantel', 'directorGeneral', 'admin', 'dev']}>
+                <PlantelDashboard />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/planteles" element={
+              <ProtectedRoute allowedRoles={['directorGeneral', 'directorPlantel', 'admin', 'dev']}>
+                <Planteles />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/directores-planteles" element={
+              <ProtectedRoute allowedRoles={['directorPlantel', 'directorGeneral', 'admin', 'dev']}>
+                <DirectoresPlanteles />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/metricas-tronco-comun" element={
+              <ProtectedRoute allowedRoles={['directorGeneral', 'admin', 'dev']}>
+                <MetricasTroncoComun />
+              </ProtectedRoute>
+            } />
           </Route>
-
-          <Route path="/plantel/dashboard" element={
-            <ProtectedRoute allowedRoles={['directorPlantel']}>
-              <PlantelDashboard />
-            </ProtectedRoute>
-          } />
-
-
-          <Route path="/planteles" element={
-            <ProtectedRoute allowedRoles={['directorGeneral']}>
-              <Planteles />
-            </ProtectedRoute>
-           } />
-
-          <Route path="/directores-planteles" element={
-            <ProtectedRoute allowedRoles={['directorGeneral']}>
-              <DirectoresPlanteles />
-            </ProtectedRoute>
-          } />
-
-          <Route path="/metricas-tronco-comun" element={
-            <ProtectedRoute allowedRoles={['directorGeneral']}>
-              <MetricasTroncoComun />
-            </ProtectedRoute>
-          } />
 
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>

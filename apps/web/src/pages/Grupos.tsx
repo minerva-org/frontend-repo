@@ -66,7 +66,7 @@ function generaterouteCode(grupo: string, existing: Group[]): string {
 export default function Grupos({soloMisGrupos = false }: GruposProps) {
   const [groups, setGroups] = useState<Group[]>(INITIAL_GROUPS);
   const navigate = useNavigate();
-  const {role, email} = useAuth();
+  const { role, email } = useAuth();
   const { toggleSidebar } = useSidebar();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<FilterKey>('todos');

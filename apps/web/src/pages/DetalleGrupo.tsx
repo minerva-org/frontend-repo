@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import ModalAgregarAlumnos from '../components/ModalAlumnos.tsx';
-import '../styles/Detallegrupo.css';
+import "../styles/DetalleGrupo.css";
 
 interface QuizItemAlumno {
   id: string;

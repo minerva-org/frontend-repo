@@ -1,6 +1,34 @@
 import type { SidebarConfig } from './sidebarTypes.ts';
 
 export const sidebarConfigByRole: Record<string, SidebarConfig> = {
+  admin: {
+    roleLabel: 'Administrador',
+    navGroups: [
+      {
+        label: 'Administración',
+        items: [
+          { to: '/grupos', label: 'Grupos', icon: 'bi-collection' },
+          { to: '/planteles', label: 'Planteles', icon: 'bi-building' },
+          { to: '/directores-planteles', label: 'Directores', icon: 'bi-people' },
+        ],
+      },
+    ],
+  },
+
+  dev: {
+    roleLabel: 'Desarrollador',
+    navGroups: [
+      {
+        label: 'Acceso Técnico',
+        items: [
+          { to: '/grupos', label: 'Grupos', icon: 'bi-collection' },
+          { to: '/planteles', label: 'Planteles', icon: 'bi-building' },
+          { to: '/directores-planteles', label: 'Directores', icon: 'bi-people' },
+        ],
+      },
+    ],
+  },
+
   directorGeneral: {
     roleLabel: 'Director General',
     navGroups: [

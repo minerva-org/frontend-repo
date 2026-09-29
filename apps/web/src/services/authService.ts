@@ -1,97 +1,91 @@
-import { apiClient } from "./ApiClient";
-import { isAxiosError } from "axios";
-import type {UserRole} from '../types.ts'
+import { isAxiosError } from 'axios';
+import type { UserRole } from '../types.ts';
+import { apiClient } from './ApiClient';
 
 export interface LoginResponse {
   token: string;
-  role: UserRole;
+  role: UserRole | null;
 }
 
-interface LoginResponseBackend{
-    token:string;
-    role: string;
+interface LoginResponseBackend {
+  token: string;
+  role?: string | null;
 }
 
-const Roles: Record<string,UserRole> ={
-    ALUMNO: 'alumno',
-    DOCENTE: 'docente',
-    COORDINADOR: 'coordinador',
-    DIRECTOR_GENERAL: 'directorGeneral',
-    DIRECTOR_PLANTEL: 'directorPlantel',
-    ADMIN: 'admin',
-    DEV: 'dev',
+const ROLE_MAP: Record<string, UserRole> = {
+  ADMIN: 'admin',
+  ALUMNO: 'alumno',
+  COORDINADOR: 'coordinador',
+  DOCENTE: 'docente',
+  DIRECTOR_GENERAL: 'directorGeneral',
+  DIRECTOR_PLANTEL: 'directorPlantel',
+  DEV: 'dev',
 };
 
-export const USE_MOCK = import.meta.env.VITE_USE_MOCK_AUTH === 'true';
+export function normalizeRole(rawRole?: string | null): UserRole | null {
+  if (!rawRole) return null;
+  const normalized = rawRole.toUpperCase().replace(/[-\s]/g, '_');
+  return ROLE_MAP[normalized] ?? null;
+}
 
-export const MOCK_USERS: Record<string, { password: string; role: UserRole }> = {
-  'alumno@chapala.edu.mx': { password: 'Alumno#2024x', role: 'alumno' },
-  'docente@chapala.edu.mx': { password: 'Docente#2024x', role: 'docente' },
-  'coordinador@chapala.edu.mx': { password: 'Coordinador#2024x', role: 'coordinador' },
-  'directorgeneral@chapala.edu.mx': { password: 'DirectorGeneral#2024x', role: 'directorGeneral' },
-  'directorplantel@chapala.edu.mx': {password:'DirectorPlantel#2024x', role:'directorPlantel'},
-};
+export function decodeJwtRole(token?: string | null) {
+  if (!token) return null;
 
-async function mockLogin(email: string, password: string): Promise<LoginResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 400));
-  const user = MOCK_USERS[email.toLowerCase()];
-  if (!user || user.password !== password) {
-    throw new Error('Verifique sus credenciales');
+  try {
+    const base64Payload = token.split('.')[1];
+    if (!base64Payload) return null;
+
+    const normalizedPayload = base64Payload.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = atob(normalizedPayload);
+    const parsed = JSON.parse(jsonPayload) as { role?: string; roles?: string | string[]; authorities?: string | string[] };
+
+    const directRole = parsed.role ?? parsed.roles;
+    if (typeof directRole === 'string') return normalizeRole(directRole);
+    if (Array.isArray(directRole) && directRole.length > 0) return normalizeRole(directRole[0]);
+
+    const authorities = parsed.authorities;
+    if (typeof authorities === 'string') return normalizeRole(authorities);
+    if (Array.isArray(authorities) && authorities.length > 0) return normalizeRole(authorities[0]);
+
+    return null;
+  } catch {
+    return null;
   }
-  return { token: `mock-token-${user.role}`, role: user.role };
 }
 
-console.log('USE_MOCK:', import.meta.env.VITE_USE_MOCK_AUTH);
-export async function login(email: string, password: string): Promise<LoginResponse> {
-    if (USE_MOCK) return mockLogin(email, password);
-    let data: LoginResponseBackend;
+export function inferRoleFromUsername(username: string): UserRole | null {
+  const normalized = username.trim().toLowerCase().replace(/[-_\s]/g, '');
 
-    try {
-        // TODO: cuando backend renombre LoginRequest, cambiar username por email
-        const response = await apiClient.post<LoginResponseBackend>('/auth/login', {
-        username: email,
-        password,
-        });
-        data = response.data;
-    } catch (err) {
-        if (isAxiosError(err) && [401, 403].includes(err.response?.status ?? 0)) {
-        throw new Error('Verifique sus credenciales', { cause: err });
-        }
-        throw new Error('No se pudo conectar con el servidor. Intente más tarde.', { cause: err });
-    }
+  if (normalized === 'bootstrap') return 'admin';
+  if (normalized === 'directorgeneral') return 'directorGeneral';
+  if (normalized === 'directorplantel') return 'directorPlantel';
+  if (normalized === 'dev' || normalized === 'developer') return 'dev';
 
-    const role = Roles[data.role];
-    if (!role) {
-        throw new Error('Tu cuenta no tiene acceso a esta aplicación.');
-    }
-
-    return { token: data.token, role };
+  return null;
 }
-/*
-export async function login(email: string, password: string): Promise<LoginResponse> {
-    let data: LoginResponseBackend;
 
-    
+export async function login(username: string, password: string): Promise<LoginResponse> {
+  const trimmedUsername = username.trim();
 
-    try {
-        // TODO: cuando backend renombre LoginRequest, cambiar username por email
-        const response = await apiClient.post<LoginResponseBackend>('/auth/login', {
-        username: email,
-        password,
-        });
-        data = response.data;
-    } catch (err) {
-        if (isAxiosError(err) && [401, 403].includes(err.response?.status ?? 0)) {
-        throw new Error('Verifique sus credenciales', { cause: err });
-        }
-        throw new Error('No se pudo conectar con el servidor. Intente más tarde.', { cause: err });
+  if (!trimmedUsername || !password.trim()) {
+    throw new Error('Debe ingresar usuario y contraseña.');
+  }
+
+  try {
+    const response = await apiClient.post<LoginResponseBackend>('/auth/login', {
+      username: trimmedUsername,
+      password,
+    });
+
+    const token = response.data.token;
+    const role = normalizeRole(response.data.role) ?? decodeJwtRole(token) ?? inferRoleFromUsername(trimmedUsername);
+
+    return { token, role };
+  } catch (error) {
+    if (isAxiosError(error) && [400, 401, 403].includes(error.response?.status ?? 0)) {
+      throw new Error('Usuario o contraseña incorrectos.');
     }
 
-    const role = Roles[data.role];
-    if (!role) {
-        throw new Error('Tu cuenta no tiene acceso a esta aplicación.');
-    }
-
-    return { token: data.token, role };
+    throw new Error('No se pudo conectar con el servidor. Intente más tarde.');
+  }
 }
-*/

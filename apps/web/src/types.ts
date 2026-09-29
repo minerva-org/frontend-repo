@@ -50,6 +50,6 @@ export interface Plantel {
   id: number;
   nombre: string;
   direccion: string;
-  universidadId: number;
+  institucionId: number;
   activo: boolean;
 }

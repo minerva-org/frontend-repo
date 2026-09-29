@@ -28,9 +28,10 @@ function generarPassword(): string {
 
 export default function DirectorioDocentes() {
   const { role } = useAuth();
+  const activeRole = role;
   const { toggleSidebar } = useSidebar();
-  const puedeAsignarRol = role === 'directorPlantel';
-  const ambito = role === 'directorPlantel' ? 'Sede Central' : 'Tus grupos';
+  const puedeAsignarRol = activeRole === 'directorPlantel';
+  const ambito = activeRole === 'directorPlantel' ? 'Sede Central' : 'Tus grupos';
 
   const [docentes, setDocentes] = useState<Docente[]>(MOCK_DOCENTES);
   const [search, setSearch] = useState('');
@@ -86,7 +87,7 @@ export default function DirectorioDocentes() {
           <i className="bi bi-list"></i>
         </button>
         <span className="dd-topbar-title">
-          {role === 'directorPlantel' ? 'Plantel' : 'Docentes'}
+          {activeRole === 'directorPlantel' ? 'Plantel' : 'Docentes'}
         </span>
       </header>
 
@@ -94,16 +95,16 @@ export default function DirectorioDocentes() {
         <header className="dd-header">
           <article>
             <h1 className="dd-title">
-              {role === 'directorPlantel' ? 'Tablero Directivo de Plantel' : 'Catálogo de Docentes'}
+              {activeRole === 'directorPlantel' ? 'Tablero Directivo de Plantel' : 'Catálogo de Docentes'}
             </h1>
             <p className="dd-subtitle">
-              {role === 'directorPlantel'
+              {activeRole === 'directorPlantel'
                 ? 'Supervisión de indicadores de reproducción, cumplimiento docente y riesgo formativo local.'
                 : 'Docentes de los grupos que coordinas.'}
             </p>
           </article>
           <span className="dd-badge">
-            {role === 'directorPlantel' ? 'Rol Activo: Director Plantel' : 'Rol Activo: Coordinador'}
+            {activeRole === 'directorPlantel' ? 'Rol Activo: Director Plantel' : 'Rol Activo: Coordinador'}
           </span>
         </header>
 
