@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos.tsx';
+import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchPersonas, type PersonaRecord } from '../services/personaService';
 import '../styles/Grupos.css';
@@ -287,47 +288,13 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
                         <td data-label="Alumnos">{group.alumnosCount}</td>
                         <td data-label="Acciones">
                           <article className="groups-actions">
-                            <div className="groups-action-menu">
-                              <button
-                                className="groups-link-button groups-menu-toggle"
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setOpenMenuGroupId((current) => (current === group.id ? null : group.id));
-                                }}
-                                aria-expanded={openMenuGroupId === group.id}
-                                aria-label={`Opciones para ${group.nombre}`}
-                              >
-                                <i className="bi bi-list"></i> Opciones
-                              </button>
-
-                              {openMenuGroupId === group.id && (
-                                <div
-                                  className="groups-menu-panel"
-                                  role="menu"
-                                  aria-label={`Acciones para ${group.nombre}`}
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  <button
-                                    type="button"
-                                    className="groups-menu-item"
-                                    onClick={() => {
-                                      setOpenMenuGroupId(null);
-                                      navigate(`/grupos/${group.id}`);
-                                    }}
-                                  >
-                                    <i className="bi bi-eye"></i> Ver
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="groups-menu-item groups-menu-item-danger"
-                                    onClick={() => openArchiveModal(group)}
-                                  >
-                                    <i className="bi bi-archive"></i> Archivar
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                            <GroupActionsMenu
+                              group={group}
+                              isOpen={openMenuGroupId === group.id}
+                              onToggle={setOpenMenuGroupId}
+                              onView={(groupId) => navigate(`/grupos/${groupId}`)}
+                              onArchive={openArchiveModal}
+                            />
                           </article>
                         </td>
                       </tr>
@@ -365,47 +332,14 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
                             <span className="groups-status-inactive">Inactivo</span>
                           </td>
                           <td data-label="Acciones">
-                            <div className="groups-action-menu">
-                              <button
-                                className="groups-link-button groups-menu-toggle"
-                                type="button"
-                                onClick={(event) => {
-                                  event.stopPropagation();
-                                  setOpenMenuGroupId((current) => (current === group.id ? null : group.id));
-                                }}
-                                aria-expanded={openMenuGroupId === group.id}
-                                aria-label={`Opciones para ${group.nombre}`}
-                              >
-                                <i className="bi bi-list"></i> Opciones
-                              </button>
-
-                              {openMenuGroupId === group.id && (
-                                <div
-                                  className="groups-menu-panel"
-                                  role="menu"
-                                  aria-label={`Acciones para ${group.nombre}`}
-                                  onClick={(event) => event.stopPropagation()}
-                                >
-                                  <button
-                                    type="button"
-                                    className="groups-menu-item"
-                                    onClick={() => {
-                                      setOpenMenuGroupId(null);
-                                      navigate(`/grupos/${group.id}`);
-                                    }}
-                                  >
-                                    <i className="bi bi-eye"></i> Ver
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="groups-menu-item"
-                                    onClick={() => void toggleGroupActivo(group.id, true)}
-                                  >
-                                    <i className="bi bi-arrow-counterclockwise"></i> Reactivar
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                            <GroupActionsMenu
+                              group={group}
+                              isOpen={openMenuGroupId === group.id}
+                              onToggle={setOpenMenuGroupId}
+                              onView={(groupId) => navigate(`/grupos/${groupId}`)}
+                              onReactivate={(groupId) => void toggleGroupActivo(groupId, true)}
+                              archived
+                            />
                           </td>
                         </tr>
                       ))}

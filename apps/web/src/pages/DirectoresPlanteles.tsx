@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import DirectorPlantelModal, { type DirectorFormState, isStrongPassword } from '../components/directores/DirectorPlantelModal.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
 import { buildPersonaUsername, createPersona, updatePersona } from '../services/personaService';
@@ -21,24 +22,12 @@ interface PlantelItem {
   activo: boolean;
 }
 
-interface DirectorFormState {
-  nombreCompleto: string;
-  email: string;
-  plantelId: number;
-  password: string;
-}
-
 const emptyForm: DirectorFormState = {
   nombreCompleto: '',
   email: '',
   plantelId: 0,
   password: '',
 };
-
-function generarPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-}
 
 export default function DirectoresPlanteles() {
   const { toggleSidebar } = useSidebar();
@@ -52,6 +41,8 @@ export default function DirectoresPlanteles() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<DirectorFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
 
   const [confirmDeactivate, setConfirmDeactivate] = useState<DirectorPersona | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -123,12 +114,20 @@ export default function DirectoresPlanteles() {
     return found?.nombre ?? `Plantel ${plantelId}`;
   }
 
+  function handleFormChange(next: DirectorFormState) {
+    setForm(next);
+    if (hasError || formError) {
+      setHasError(false);
+      setFormError(null);
+    }
+  }
+
   function openCreateModal() {
     setEditingId(null);
     setForm({
       ...emptyForm,
       plantelId: planteles[0]?.id ?? 0,
-      password: generarPassword(),
+      password: '',
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -150,21 +149,43 @@ export default function DirectoresPlanteles() {
     setIsModalOpen(false);
     setEditingId(null);
     setFormError(null);
+    setHasError(false);
+    setIsValidating(false);
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setFormError(null);
+    setIsValidating(true);
 
     if (!form.nombreCompleto.trim() || !form.email.trim()) {
-      setFormError('Completa nombre completo y correo electrónico oficial.');
+      const message = 'Completa nombre completo y correo electrónico oficial.';
+      setFormError(message);
+      setHasError(true);
+      setIsValidating(false);
       return;
     }
 
-    if (!editingId && !form.password.trim()) {
-      setFormError('Define una contraseña temporal para el director.');
-      return;
+    if (!editingId) {
+      if (!form.password.trim()) {
+        const message = 'Define una contraseña temporal para el director.';
+        setFormError(message);
+        setHasError(true);
+        setIsValidating(false);
+        return;
+      }
+
+      if (!isStrongPassword(form.password)) {
+        const message = 'La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas, número y símbolo.';
+        setFormError(message);
+        setHasError(true);
+        setIsValidating(false);
+        return;
+      }
     }
+
+    setIsValidating(false);
+    setHasError(false);
+    setFormError(null);
 
     const { nombre, apellido } = splitNombreCompleto(form.nombreCompleto);
     if (!nombre || !apellido) {
@@ -332,89 +353,20 @@ export default function DirectoresPlanteles() {
         </article>
       </article>
 
-      {isModalOpen && createPortal(
-        <article className="dp-modal-overlay">
-          <article className="dp-modal">
-            <header className="dp-modal-header">
-              <article>
-                <h2 className="dp-modal-title">{editingId ? 'Editar director plantel' : 'Nuevo director plantel'}</h2>
-                <p className="dp-modal-subtitle">{editingId ? 'Actualiza los datos del registro' : 'Captura los datos del nuevo registro'}</p>
-              </article>
-            </header>
-            <form onSubmit={handleSubmit} className="dp-modal-form">
-              <label className="dp-field">
-                <span className="dp-field-label">Nombre completo</span>
-                <input
-                  className="dp-input"
-                  value={form.nombreCompleto}
-                  placeholder="Nuevo director plantel"
-                  onChange={(e) => setForm((prev) => ({ ...prev, nombreCompleto: e.target.value }))}
-                />
-              </label>
-
-              <label className="dp-field">
-                <span className="dp-field-label">Correo institucional</span>
-                <div className="dp-email-row">
-                  <input
-                    className="dp-input dp-email-input"
-                    type="text"
-                    value={form.email}
-                    placeholder="ejemplo.director"
-                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                  />
-                  <span className="dp-email-domain">@chapala.edu.mx</span>
-                </div>
-              </label>
-
-              {!editingId && (
-                <label className="dp-field">
-                  <span className="dp-field-label">Contraseña temporal</span>
-                  <div className="dp-password-row">
-                    <input
-                      className="dp-input dp-password-input"
-                      type="text"
-                      value={form.password}
-                      placeholder="Contraseña temporal"
-                      onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
-                    />
-                    <button
-                      type="button"
-                      className="dp-password-btn"
-                      onClick={() => setForm((prev) => ({ ...prev, password: generarPassword() }))}
-                    >
-                      Generar
-                    </button>
-                  </div>
-                </label>
-              )}
-
-              <label className="dp-field">
-                <span className="dp-field-label">Plantel de adscripción</span>
-                <select
-                  className="dp-input"
-                  value={form.plantelId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, plantelId: Number(e.target.value || 1) }))}
-                >
-                  {planteles.map((plantel) => (
-                    <option key={plantel.id} value={plantel.id}>{plantel.nombre}</option>
-                  ))}
-                </select>
-              </label>
-
-              {formError && <p className="dp-empty" style={{ padding: 0, textAlign: 'left', color: 'var(--seige-error-texto)' }}>{formError}</p>}
-
-              <footer className="dp-modal-actions">
-                <button type="button" className="dp-btn-secondary" onClick={closeModal}>
-                  Cancelar
-                </button>
-                <button type="submit" className="dp-btn-primary" disabled={loading}>
-                  {loading ? 'Guardando...' : 'Guardar'}
-                </button>
-              </footer>
-            </form>
-          </article>
-        </article>,
-        document.body,
+      {isModalOpen && (
+        <DirectorPlantelModal
+          isOpen={isModalOpen}
+          editingId={editingId}
+          form={form}
+          formError={formError}
+          loading={loading || isValidating}
+          hasError={hasError}
+          isValidating={isValidating}
+          planteles={planteles}
+          onClose={closeModal}
+          onSubmit={handleSubmit}
+          onChange={handleFormChange}
+        />
       )}
 
       {confirmDeactivate && createPortal(
