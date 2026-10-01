@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type SubmitEvent } from 'react';
 import AutocompleteInput from './AutoCompleteInput.tsx';
 import { apiClient } from '../services/ApiClient';
-import { fetchPersonasByRol, type PersonaRecord } from '../services/personaService';
+import { fetchPersonas, fetchPersonasByRol, type PersonaRecord } from '../services/personaService';
 import { useAuth } from '../context/AuthContext.tsx';
 import '../styles/ModalGrupos.css';
 
@@ -30,7 +30,7 @@ interface CreateGroupModalProps {
 }
 
 export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModalProps) {
-  const { selectedPlantel } = useAuth();
+  const { role, email, selectedPlantel } = useAuth();
   const [materia, setMateria] = useState<string[]>([]);
   const [grado, setgrado] = useState('');
   const [docente, setdocente] = useState<string[]>([]);
@@ -39,6 +39,26 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
   const [docentesBD, setDocentesBD] = useState<GrupoSelectablePersona[]>([]);
   const [alumnosBD, setAlumnosBD] = useState<GrupoSelectablePersona[]>([]);
   const [materiasBD, setMateriasBD] = useState<string[]>(MOCK_MATERIAS);
+  const [creatorPlantelId, setCreatorPlantelId] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function loadCreatorPlantel() {
+      if (!email || (role !== 'directorPlantel' && role !== 'coordinador')) {
+        setCreatorPlantelId(null);
+        return;
+      }
+
+      try {
+        const response = await fetchPersonas();
+        const creator = (response.data ?? []).find((persona) => persona.email.toLowerCase() === email.toLowerCase());
+        setCreatorPlantelId(creator?.plantelId ?? null);
+      } catch {
+        setCreatorPlantelId(null);
+      }
+    }
+
+    void loadCreatorPlantel();
+  }, [email, role]);
 
   useEffect(() => {
     async function loadPeople() {
@@ -129,7 +149,10 @@ export default function CreateGroupModal({ onClose, onCreate }: CreateGroupModal
       materia: materia[0],
       alumnosIds,
       numeroEstudiantes,
-      plantelId: selectedPlantel?.id ?? null,
+      plantelId:
+        role === 'directorPlantel' || role === 'coordinador'
+          ? (creatorPlantelId ?? selectedPlantel?.id ?? null)
+          : (selectedPlantel?.id ?? creatorPlantelId ?? null),
     });
     onClose();
   }
