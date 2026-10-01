@@ -74,7 +74,8 @@ export default function CatalogoAlumnos() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AlumnoFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmDeactivate, setConfirmDeactivate] = useState<PersonaRecord | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] =
+    useState<PersonaRecord | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   async function loadAlumnos() {
@@ -125,11 +126,15 @@ export default function CatalogoAlumnos() {
   }
 
   function openEditModal(alumno: PersonaRecord) {
+    if (alumno.activo === false) return;
+
     setEditingId(alumno.id);
     setForm({
       nombreCompleto: getNombreCompleto(alumno),
       email: getLocalPart(alumno.email),
-      plantelId: canChoosePlantel ? (alumno.plantelId ?? planteles[0]?.id ?? null) : (selectedPlantel?.id ?? alumno.plantelId ?? planteles[0]?.id ?? null),
+      plantelId: canChoosePlantel
+        ? (alumno.plantelId ?? planteles[0]?.id ?? null)
+        : (selectedPlantel?.id ?? alumno.plantelId ?? planteles[0]?.id ?? null),
       password: '',
     });
     setFormError(null);
@@ -222,6 +227,25 @@ export default function CatalogoAlumnos() {
     }
   }
 
+  async function handleActivate(alumno: PersonaRecord) {
+    setLoading(true);
+
+    try {
+      const response = await updatePersona(alumno.id, { activo: true });
+      const updated = response.data as PersonaRecord;
+
+      setAlumnos((prev) =>
+        prev.map((item) => (item.id === alumno.id ? updated : item)),
+      );
+
+      setToast('Alumno reactivado correctamente.');
+    } catch {
+      setToast('No se pudo reactivar el alumno.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const filteredAlumnos = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return alumnos;
@@ -306,13 +330,22 @@ export default function CatalogoAlumnos() {
                       </span>
                     </td>
                     <td className="ca-acciones">
-                      <button className="ca-link-button" onClick={() => openEditModal(alumno)}>
+                      <button
+                        type="button"
+                        className="ca-link-button"
+                        disabled={alumno.activo === false || loading}
+                        onClick={() => openEditModal(alumno)}
+                      >
                         <i className="bi bi-pencil"></i> Editar
                       </button>
                       <button
                         className={`ca-link-button ${alumno.activo ? 'ca-link-danger' : 'ca-link-success'}`}
                         disabled={loading}
-                        onClick={() => (alumno.activo ? setConfirmDeactivate(alumno) : void handleDeactivate(alumno))}
+                        onClick={() =>
+                          alumno.activo
+                            ? setConfirmDeactivate(alumno)
+                            : void handleActivate(alumno)
+                        }
                       >
                         {alumno.activo ? 'Desactivar' : 'Reactivar'}
                       </button>

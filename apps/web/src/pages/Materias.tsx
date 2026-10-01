@@ -47,6 +47,7 @@ export default function Materias() {
 
     try {
       const response = await apiClient.get<Materia[]>('/api/materias');
+
       setMaterias(response.data ?? []);
     } catch (err) {
       const message = extractErrorMessage(err, 'No se pudieron cargar las materias. Intenta recargar la página.');
@@ -140,12 +141,38 @@ export default function Materias() {
 
   async function handleDeactivate(materia: Materia) {
     try {
-      await apiClient.delete(`/api/materias/${materia.id}`);
-      setMaterias((prev) => prev.filter((item) => item.id !== materia.id));
+      const response = await apiClient.patch<Materia>(
+        `/api/materias/${materia.id}`,
+        { activo: false },
+      );
+
+      setMaterias((prev) =>
+        prev.map((item) =>
+          item.id === materia.id
+            ? { ...item, ...response.data, activo: false }
+            : item,
+        ),
+      );
+
       setConfirmDeactivate(null);
-      setToast('Materia eliminada correctamente.');
+      setToast('Materia desactivada correctamente.');
     } catch (err) {
-      const message = extractErrorMessage(err, 'No se pudo eliminar la materia.');
+      setError(extractErrorMessage(err, 'No se pudo desactivar la materia.'));
+    }
+  }
+
+  async function handleActivate(materia: Materia) {
+    try {
+      const response = await apiClient.patch(`/api/materias/${materia.id}`, {
+        activo: true,
+      });
+
+      setConfirmDeactivate(null);
+      setToast('Materia reactivada correctamente.');
+
+      await loadMaterias();
+    } catch (err) {
+      const message = extractErrorMessage(err, 'No se pudo reactivar la materia.');
       setToast(message);
       setError(message);
     }
@@ -223,37 +250,64 @@ export default function Materias() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtradas.map((m) => (
-                    <tr key={m.id}>
-                      <td className="mat-td-nombre">{m.nombre}</td>
-                      <td>
-                        <span className="mat-plan">{m.prefijo}</span>
-                      </td>
-                      <td>
-                        <span className="mat-plan">
-                          <i className="bi bi-folder2-open"></i> {m.planEstudioId}
-                        </span>
-                      </td>
-                      <td>
-                        <article className="mat-actions">
-                          <button
-                            className="mat-link mat-link-editar"
-                            type="button"
-                            onClick={() => setModal({ tipo: 'editar', materia: m })}
-                          >
-                            <i className="bi bi-pencil"></i> Editar
-                          </button>
-                          <button
-                            className="mat-link mat-link-desactivar"
-                            type="button"
-                            onClick={() => abrirConfirmacionEliminacion(m)}
-                          >
-                            Eliminar
-                          </button>
-                        </article>
-                      </td>
-                    </tr>
-                  ))}
+                  {filtradas.map((m) => {
+                    const estaActiva = m.activo !== false;
+
+                    return (
+                      <tr
+                        key={m.id}
+                        className={!estaActiva ? 'mat-row-inactiva' : ''}
+                      >
+                        <td className="mat-td-nombre">
+                          {m.nombre}
+                          {!estaActiva && (
+                            <span className="mat-estado-inactivo">Inactiva</span>
+                          )}
+                        </td>
+
+                        <td>
+                          <span className="mat-plan">{m.prefijo}</span>
+                        </td>
+
+                        <td>
+                          <span className="mat-plan">
+                            <i className="bi bi-folder2-open"></i> {m.planEstudioId}
+                          </span>
+                        </td>
+
+                        <td>
+                          <article className="mat-actions">
+                            <button
+                              className="mat-link mat-link-editar"
+                              type="button"
+                              disabled={!estaActiva}
+                              onClick={() => setModal({ tipo: 'editar', materia: m })}
+                            >
+                              <i className="bi bi-pencil"></i> Editar
+                            </button>
+
+                            {estaActiva ? (
+                              <button
+                                className="mat-link mat-link-desactivar"
+                                type="button"
+                                onClick={() => abrirConfirmacionEliminacion(m)}
+                              >
+                                Eliminar
+                              </button>
+                            ) : (
+                              <button
+                                className="mat-link mat-link-reactivar"
+                                type="button"
+                                onClick={() => void handleActivate(m)}
+                              >
+                                Reactivar
+                              </button>
+                            )}
+                          </article>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </article>
@@ -271,20 +325,41 @@ export default function Materias() {
       )}
 
       {confirmDeactivate && createPortal(
-        <article className="mat-modal-overlay">
-          <article className="mat-modal">
-            <header className="mat-modal-header" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, var(--ar-profundo))' }}>
-              Confirmar
+        <article
+          className="mat-modal-overlay"
+          onClick={() => setConfirmDeactivate(null)}
+        >
+          <article
+            className="mat-modal"
+            role="alertdialog"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="mat-modal-header">
+              Confirmar desactivación
             </header>
+
             <section className="mat-modal-body">
               <p>¿Deseas desactivar el registro "{confirmDeactivate.nombre}"?</p>
-              <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
+              <p>
+                Dejará de estar disponible para asignarse.
+              </p>
             </section>
+
             <footer className="mat-modal-actions">
-              <button type="button" onClick={() => setConfirmDeactivate(null)} className="mat-btn mat-btn-secondary">
+              <button
+                type="button"
+                onClick={() => setConfirmDeactivate(null)}
+                className="mat-btn mat-btn-secondary"
+              >
                 Cancelar
               </button>
-              <button type="button" onClick={() => void handleDeactivate(confirmDeactivate)} className="mat-btn mat-btn-primary" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
+
+              <button
+                type="button"
+                onClick={() => void handleDeactivate(confirmDeactivate)}
+                className="mat-btn mat-btn-primary"
+              >
                 Confirmar
               </button>
             </footer>
@@ -313,6 +388,9 @@ export default function Materias() {
         </article>,
         document.body,
       )}
+
+     
     </article>
   );
 }
+

@@ -22,7 +22,7 @@ export default function Login() {
         : role === 'directorGeneral'
           ? '/planteles'
           : role === 'directorPlantel'
-            ? '/plantel/dashboard'
+            ? '/plantel/directorio-docente'
             : '/grupos';
       navigate(destination, { replace: true });
     }
@@ -47,13 +47,16 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await login(trimmedUsername, password);
-      const destination = data.role === 'alumno'
+      const loginRole = data.role ?? role;
+
+      const destination = loginRole === 'alumno'
         ? '/alumno'
-        : data.role === 'directorGeneral'
+        : loginRole === 'directorGeneral'
           ? '/planteles'
-          : data.role === 'directorPlantel'
+          : loginRole === 'directorPlantel'
             ? '/plantel/dashboard'
             : '/grupos';
+
       navigate(destination, { replace: true });
     } catch (err) {
       setModalMessage(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
@@ -157,3 +160,4 @@ export default function Login() {
     </article>
   );
 }
+

@@ -30,6 +30,7 @@ export interface Materia {
   prefijo: string;
   planEstudioId: string;
   unidades?: Unidad[];
+  activo?: boolean;
 }
 
 export interface Group {

@@ -256,16 +256,16 @@
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgba(15, 23, 42, 0.46);
+  background: color-mix(in srgb, var(--ar-profundo) 38%, transparent);
 }
 
 .ca-confirm-modal {
   width: min(100%, 30rem);
   overflow: hidden;
   background: var(--seige-superficie);
-  border: 2px solid color-mix(in srgb, #b42318 65%, transparent);
+  border: 1px solid var(--ar-neblina);
   border-radius: 1rem;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--ar-profundo) 30%, transparent);
 }
 
 .ca-confirm-header {
@@ -277,22 +277,22 @@
   color: var(--ar-nieve);
   background: linear-gradient(
     135deg,
-    #7f1d1d,
-    color-mix(in srgb, #7f1d1d 60%, #b42318)
+    var(--ar-profundo),
+    color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul))
   );
 }
 
 .ca-confirm-title {
   margin: 0;
+  color: var(--ar-nieve);
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--ar-nieve);
 }
 
 .ca-confirm-subtitle {
   margin: 0.25rem 0 0;
+  color: var(--ar-neblina);
   font-size: 0.76rem;
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .ca-confirm-body {
@@ -301,7 +301,7 @@
 
 .ca-confirm-text {
   margin: 0;
-  color: var(--ca-texto-suave);
+  color: var(--seige-texto);
   line-height: 1.6;
 }
 
@@ -312,31 +312,30 @@
   padding: 1rem 1.25rem 1.25rem;
 }
 
-@media (min-width: 641px) {
-  .ca-confirm-actions {
-    flex-direction: row;
-    justify-content: flex-end;
-  }
-}
-
 .ca-confirm-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
   padding: 0.7rem 1rem;
-  font-family: sans-serif;
+  color: var(--ar-nieve);
+  font: inherit;
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--ar-nieve);
-  background: #b42318;
+  background: var(--ar-azul);
   border: 0;
   border-radius: 0.6rem;
   cursor: pointer;
 }
 
 .ca-confirm-button:hover {
-  filter: brightness(1.08);
+  background: var(--ar-profundo);
+}
+
+@media (min-width: 641px) {
+  .ca-confirm-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
 }
 
 .ca-search-input:focus-visible,
@@ -458,7 +457,9 @@
 
 .ca-link-button:disabled {
   color: var(--ca-texto-suave);
+  opacity: 0.45;
   cursor: not-allowed;
+  pointer-events: none;
 }
 .ca-link-button:disabled:hover {
   text-decoration: none;

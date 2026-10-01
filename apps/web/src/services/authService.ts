@@ -4,12 +4,14 @@ import { apiClient } from './ApiClient';
 
 export interface LoginResponse {
   token: string;
-  role: UserRole | null;
+  role: string | null;
+  personaId: string;
 }
 
 interface LoginResponseBackend {
   token: string;
   role?: string | null;
+  personaId?: string;
 }
 
 const ROLE_MAP: Record<string, UserRole> = {
@@ -80,9 +82,16 @@ export async function login(username: string, password: string): Promise<LoginRe
     const token = response.data.token;
     const role = normalizeRole(response.data.role) ?? decodeJwtRole(token) ?? inferRoleFromUsername(trimmedUsername);
 
-    return { token, role };
+    return {
+      token,
+      role,
+      personaId: response.data.personaId,
+    };
   } catch (error) {
-    if (isAxiosError(error) && [400, 401, 403].includes(error.response?.status ?? 0)) {
+    if (
+      isAxiosError(error) &&
+      [400, 401, 403, 409].includes(error.response?.status ?? 0)
+    ) {
       throw new Error('Usuario o contraseña incorrectos.');
     }
 

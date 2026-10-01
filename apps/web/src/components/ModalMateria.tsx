@@ -112,7 +112,9 @@ function crearDatosDummyGeografia(): UnidadForm[] {
 }
 
 function crearDatosDesdeMateria(materia: Materia | null | undefined, esEdicion: boolean): UnidadForm[] {
-  if (!materia?.unidades?.length) return esEdicion ? [] : crearDatosDummyGeografia();
+  if (!materia?.unidades?.length) {
+    return [];
+  }
 
   return materia.unidades.map((unidad) => ({
     id: unidad.id ?? crypto.randomUUID(),
@@ -132,7 +134,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const esEdicion = !!materia;
 
   const [id] = useState(materia?.id ?? crypto.randomUUID());
-  const [nombre, setNombre] = useState(materia?.nombre ?? 'Geografía');
+  const [nombre, setNombre] = useState(materia?.nombre ?? '');
   const [numero, setNumero] = useState<number>(() => extraerNumeroDesdePrefijo(materia?.prefijo));
   const [unidades, setUnidades] = useState<UnidadForm[]>(() => crearDatosDesdeMateria(materia, esEdicion));
   const [error, setError] = useState('');

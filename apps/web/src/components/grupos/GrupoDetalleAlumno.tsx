@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../services/ApiClient';
-import { fetchPersonas } from '../../services/personaService';
 
 export interface GrupoDetalleBackend {
   id: string;
@@ -32,29 +31,29 @@ export default function GrupoDetalleAlumno({ code }: { code: string }) {
 
     async function load() {
       try {
-        const [grupoResponse, personasResponse] = await Promise.all([
+        const [grupoResponse, alumnosResponse] = await Promise.all([
           apiClient.get<GrupoDetalleBackend>(`/api/grupos/${code}`),
-          fetchPersonas(),
+          apiClient.get<string[]>(`/api/grupos/${code}/alumnos-detalle`),
         ]);
 
         if (cancelled) return;
 
-        const nextGrupo = grupoResponse.data;
-        const personas = personasResponse.data ?? [];
-        const docente = personas.find((persona) => persona.id === nextGrupo.docenteId);
-        const alumnoIds = nextGrupo.alumnosIds ?? [];
-        const alumnoList = personas.filter((persona) => alumnoIds.includes(persona.id));
+        const nextGrupo = {
+          ...grupoResponse.data,
+          alumnosIds: alumnosResponse.data ?? [],
+        };
 
         setGrupo(nextGrupo);
-        setDocenteNombre(docente ? `${docente.nombre} ${docente.apellido}`.trim() : nextGrupo.docenteId);
+        setDocenteNombre(nextGrupo.docenteId);
         setAlumnos(
-          alumnoList.map((persona) => ({
-            id: persona.id,
-            nombre: `${persona.nombre} ${persona.apellido}`.trim(),
+          (nextGrupo.alumnosIds ?? []).map((id) => ({
+            id,
+            nombre: id,
             estado: 'normal',
           })),
         );
-      } catch {
+      } catch (error) {
+        console.error('Error cargando detalle del grupo:', error);
         if (!cancelled) {
           setGrupo(null);
           setAlumnos([]);
@@ -107,7 +106,7 @@ export default function GrupoDetalleAlumno({ code }: { code: string }) {
         </div>
 
         <div className="gd-quiz-actions">
-          <button className="gd-btn gd-btn-primary" onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}>
+          <button className="gd-btn gd-btn-primary" onClick={() => navigate(`/grupos/${grupo.id}`)}>
             <i className="bi bi-journal-plus"></i> Ir a quizzes
           </button>
         </div>

@@ -284,16 +284,16 @@
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgba(15, 23, 42, 0.46);
+  background: color-mix(in srgb, var(--ar-profundo) 38%, transparent);
 }
 
 .dd-confirm-modal {
   width: min(100%, 30rem);
   overflow: hidden;
   background: var(--seige-superficie);
-  border: 2px solid color-mix(in srgb, #b42318 65%, transparent);
+  border: 1px solid var(--ar-neblina);
   border-radius: 1rem;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 18px 44px color-mix(in srgb, var(--ar-profundo) 30%, transparent);
 }
 
 .dd-confirm-header {
@@ -305,22 +305,22 @@
   color: var(--ar-nieve);
   background: linear-gradient(
     135deg,
-    #7f1d1d,
-    color-mix(in srgb, #7f1d1d 60%, #b42318)
+    var(--ar-profundo),
+    color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul))
   );
 }
 
 .dd-confirm-title {
   margin: 0;
+  color: var(--ar-nieve);
   font-size: 1.1rem;
   font-weight: 700;
-  color: var(--ar-nieve);
 }
 
 .dd-confirm-subtitle {
   margin: 0.25rem 0 0;
+  color: var(--ar-neblina);
   font-size: 0.76rem;
-  color: rgba(255, 255, 255, 0.8);
 }
 
 .dd-confirm-body {
@@ -329,7 +329,7 @@
 
 .dd-confirm-text {
   margin: 0;
-  color: var(--dd-texto-suave);
+  color: var(--seige-texto);
   line-height: 1.6;
 }
 
@@ -346,18 +346,23 @@
   justify-content: center;
   gap: 0.5rem;
   padding: 0.7rem 1rem;
-  font-family: sans-serif;
+  color: var(--ar-nieve);
+  font-family: inherit;
   font-size: 0.9rem;
   font-weight: 700;
-  color: var(--ar-nieve);
-  background: #b42318;
+  background: var(--ar-azul);
   border: 0;
   border-radius: 0.6rem;
   cursor: pointer;
 }
 
 .dd-confirm-button:hover {
-  filter: brightness(1.08);
+  background: var(--ar-profundo);
+}
+
+.dd-confirm-button:focus-visible {
+  outline: 2px solid var(--ar-neblina);
+  outline-offset: 2px;
 }
 
 @media (min-width: 641px) {
@@ -644,4 +649,9 @@
   .dd-body {
     padding: 2rem;
   }
+}
+
+.dd-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }

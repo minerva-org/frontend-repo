@@ -20,6 +20,7 @@ interface GrupoBackend {
   activo?: boolean;
   docenteId: string;
   plantelId: number | null;
+  alumnosIds?: string[];
 }
 
 interface GrupoListado extends GrupoBackend {
@@ -33,7 +34,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   const [personas, setPersonas] = useState<PersonaRecord[]>([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { role, email, selectedPlantel, setSelectedPlantel } = useAuth();
+  const { role, email, user, selectedPlantel, setSelectedPlantel } = useAuth();
   const { toggleSidebar } = useSidebar();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -130,13 +131,19 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
     void loadGroups();
   }, [activePlantelId]);
 
+  const normalizedRole = String(role ?? '').toLowerCase();
+
   const relatedGroups = useMemo(() => {
     return groups.filter((group) => {
       if (activePlantelId != null && group.plantelId != null) {
         if (group.plantelId !== activePlantelId) return false;
       }
 
-      if (role === 'directorGeneral' || role === 'directorPlantel' || role === 'admin' || role === 'dev') {
+      if (normalizedRole === 'alumno') {
+        return Boolean(user?.id && group.alumnosIds?.includes(user.id));
+      }
+
+      if (['directorgeneral', 'directorplantel', 'admin', 'dev'].includes(normalizedRole)) {
         return true;
       }
 
@@ -144,12 +151,20 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
         group.docenteEmail.toLowerCase() === (email ?? '').toLowerCase() ||
         (!!propiaPersona && group.docenteId === propiaPersona.id);
 
-      if (soloMisGrupos) return esMiGrupo;
-      if (role === 'docente') return esMiGrupo;
-      if (role === 'coordinador') return true;
-      return true;
+      if (soloMisGrupos || normalizedRole === 'docente') return esMiGrupo;
+      if (normalizedRole === 'coordinador') return true;
+
+      return false;
     });
-  }, [groups, role, email, soloMisGrupos, activePlantelId, propiaPersona]);
+  }, [
+    groups,
+    normalizedRole,
+    email,
+    user?.id,
+    soloMisGrupos,
+    activePlantelId,
+    propiaPersona,
+  ]);
 
   const visibleGroups = useMemo(
     () => relatedGroups.filter((group) => group.activo !== false),
@@ -203,6 +218,18 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       setCreateGroupError(true);
       setCreatedGroupName(data.materia);
       throw new Error('No hay un plantel seleccionado.');
+    }
+
+    const docente = personas.find((persona) => persona.id === data.docenteId);
+    const alumnosInactivos = data.alumnosIds.filter((alumnoId) => {
+      const alumno = personas.find((persona) => persona.id === alumnoId);
+      return alumno?.activo === false;
+    });
+
+    if (docente?.activo === false || alumnosInactivos.length > 0) {
+      setCreateGroupError(true);
+      setCreatedGroupName(data.materia);
+      throw new Error('No puedes agregar personas desactivadas al grupo.');
     }
 
     const payload = {
@@ -267,10 +294,15 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
             />
           </article>
 
-          <button className="groups-new-button" onClick={() => setShowModal(true)}>
-            <i className="bi bi-plus-lg"></i>
-            Nuevo grupo
-          </button>
+          {normalizedRole !== 'alumno' && (
+            <button
+              className="groups-new-button"
+              onClick={() => setShowModal(true)}
+            >
+              <i className="bi bi-plus-lg"></i>
+              Nuevo grupo
+            </button>
+          )}
         </article>
 
         {fetchError && <p className="groups-empty">{fetchError}</p>}
@@ -281,7 +313,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
           <>
             {filtered.length === 0 ? (
               <p className="groups-empty">
-                {soloMisGrupos || role === 'docente'
+                {soloMisGrupos || normalizedRole === 'docente'
                   ? 'Aún no tienes grupos asignados.'
                   : 'No se encontraron grupos activos.'}
               </p>

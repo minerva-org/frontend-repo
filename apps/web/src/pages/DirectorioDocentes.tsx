@@ -131,11 +131,15 @@ export default function DirectorioDocentes() {
   }
 
   function openEditModal(docente: PersonaRecord) {
+    if (docente.activo === false) return;
+
     setEditingId(docente.id);
     setForm({
       nombreCompleto: getNombreCompleto(docente),
       email: getLocalPart(docente.email),
-      plantelId: canChoosePlantel ? (docente.plantelId ?? planteles[0]?.id ?? null) : (selectedPlantel?.id ?? docente.plantelId ?? planteles[0]?.id ?? null),
+      plantelId: canChoosePlantel
+        ? (docente.plantelId ?? planteles[0]?.id ?? null)
+        : (selectedPlantel?.id ?? docente.plantelId ?? planteles[0]?.id ?? null),
       rol: docente.rol === 'COORDINADOR' ? 'COORDINADOR' : 'DOCENTE',
       password: '',
     });
@@ -229,6 +233,25 @@ export default function DirectorioDocentes() {
     }
   }
 
+  async function handleActivate(docente: PersonaRecord) {
+    setLoading(true);
+
+    try {
+      const response = await updatePersona(docente.id, { activo: true });
+      const updated = response.data as PersonaRecord;
+
+      setDocentes((prev) =>
+        prev.map((item) => (item.id === docente.id ? updated : item)),
+      );
+
+      setToast('Docente reactivado correctamente.');
+    } catch {
+      setToast('No se pudo reactivar el docente.');
+    } finally {
+      setLoading(false);
+    }
+}
+
   const filteredDocentes = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return docentes;
@@ -312,13 +335,23 @@ export default function DirectorioDocentes() {
                       </span>
                     </td>
                     <td className="dd-acciones">
-                      <button className="dd-btn dd-btn-neutral" onClick={() => openEditModal(docente)}>
+                      <button
+                        className="dd-btn dd-btn-neutral"
+                        disabled={docente.activo === false || loading}
+                        onClick={() => openEditModal(docente)}
+                      >
                         Editar
                       </button>
                       <button
-                        className={`dd-btn ${docente.activo ? 'dd-btn-danger' : 'dd-btn-success'}`}
+                        className={`dd-btn ${
+                          docente.activo ? 'dd-btn-danger' : 'dd-btn-success'
+                        }`}
                         disabled={loading}
-                        onClick={() => (docente.activo ? setConfirmDeactivate(docente) : void handleDeactivate(docente))}
+                        onClick={() =>
+                          docente.activo
+                            ? setConfirmDeactivate(docente)
+                            : void handleActivate(docente)
+                        }
                       >
                         {docente.activo ? 'Desactivar' : 'Reactivar'}
                       </button>

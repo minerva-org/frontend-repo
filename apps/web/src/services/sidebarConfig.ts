@@ -54,6 +54,28 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
           { to: '/plantel/directorio-docente', label: 'Directorio Docente', icon: 'bi-person-badge' },
         ],
       },
+      {
+        label: 'Diagnóstico y Analítica',
+        items: [{ to: '/metricas-aprendizaje', label: 'Métricas de aprendizaje', icon: 'bi-graph-up', end: true }],
+      },
+      {
+        label: 'Grupos Activos',
+        items: [],
+        dynamic: true,
+      },
+      {
+        label: 'Gestión Académica',
+        items: [
+          { to: '/catalogo-grupos', label: 'Catálogo de Grupos', icon: 'bi-grid-3x3-gap' },
+          { to: '/catalogo-docentes', label: 'Catálogo de Docentes', icon: 'bi-people' },
+          { to: '/catalogo-alumnos', label: 'Catálogo de Alumnos', icon: 'bi-people' },
+          { to: '/materias', label: 'Materias y Planes (S3)', icon: 'bi-journal-bookmark' },
+        ],
+      },
+      {
+        label: 'Supervisión',
+        items: [{ to: '/avance-curricular', label: 'Avance Curricular de Sede', icon: 'bi-bar-chart-line' }],
+      },
     ],
   },
 

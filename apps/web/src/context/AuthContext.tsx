@@ -18,6 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   login: (username: string, password: string) => Promise<LoginResponse>;
   logout: () => void;
+  user: AuthUser | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,7 +85,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSelectedPlantelState(null);
     sessionStorage.removeItem('selectedPlantel');
 
-    const loggedUser = response.data.usuario ?? response.data.user ?? response.data;
+    const loginData = data as LoginResponse & {
+      personaId?: string;
+      usuario?: AuthUser;
+      user?: AuthUser;
+    };
+
+    const loggedUser: AuthUser = {
+      ...(loginData.usuario ?? loginData.user),
+      id: loginData.personaId
+        ?? loginData.usuario?.id
+        ?? loginData.user?.id
+        ?? '',
+      personaId: loginData.personaId
+        ?? loginData.usuario?.personaId
+        ?? loginData.user?.personaId,
+      email: loginData.usuario?.email
+        ?? loginData.user?.email
+        ?? usernameInput,
+      rol: loginData.usuario?.rol
+        ?? loginData.user?.rol
+        ?? String(nextRole ?? ''),
+    };
 
     setUser(loggedUser);
     localStorage.setItem('user', JSON.stringify(loggedUser));
@@ -97,7 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
     setUsername(null);
     setEmail(null);
-    sessionStorage.removeItem('token');
+    setUser(null);
+    sessionStorage.removeItem('user');
+
+    localStorage.removeItem('token');
     sessionStorage.removeItem('role');
     sessionStorage.removeItem('username');
     sessionStorage.removeItem('email');
@@ -113,6 +138,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         effectiveRole,
         username,
         email,
+        user,
         selectedPlantel,
         setSelectedPlantel,
         isAuthenticated: !!token,
@@ -136,7 +162,10 @@ export function useAuth() {
 }
 
 interface AuthUser {
-  id: string;
-  email: string;
-  rol: string;
+  id?: string;
+  personaId?: string;
+  nombre?: string;
+  apellido?: string;
+  email?: string;
+  rol?: string;
 }

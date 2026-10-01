@@ -1,22 +1,19 @@
 import { useNavigate } from 'react-router-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import '../styles/MisGrupos.css';
+import { apiClient } from '../services/ApiClient';
+import { useAuth } from '../context/AuthContext.tsx';
+import { useEffect, useState, useMemo } from 'react';
+import { fetchPersonas } from '../services/personaService';
 
-interface GrupoAlumno {
-  code: string;
-  materia: string;
-  grupo: string;
-  docente: string;
-  activos: number;
-  proximos: number;
-  pasados: number;
+interface GrupoBackend {
+  id: string;
+  claveGrupo: string;
+  nombre: string;
+  semestre: string;
+  activo?: boolean;
+  alumnosIds?: string[];
 }
-
-const MOCK_MIS_GRUPOS: GrupoAlumno[] = [
-  { code: 'MAT3-A', materia: 'Matemáticas III', grupo: '3.° A', docente: 'Prof. García', activos: 1, proximos: 1, pasados: 3 },
-  { code: 'FIS2-B', materia: 'Física II', grupo: '2.° B', docente: 'Prof. Ruiz', activos: 1, proximos: 1, pasados: 1 },
-  { code: 'PROG1-A', materia: 'Programación I', grupo: '1.° A', docente: 'Profa. Méndez', activos: 0, proximos: 1, pasados: 1 },
-];
 
 function plural(n: number, singular: string, pluralForm: string): string {
   return `${n} ${n === 1 ? singular : pluralForm}`;
@@ -25,6 +22,86 @@ function plural(n: number, singular: string, pluralForm: string): string {
 export default function MisGrupos() {
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
+  const [grupos, setGrupos] = useState<GrupoBackend[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
+  const { email } = useAuth();
+  const personaId = user?.personaId;
+
+  useEffect(() => {
+    async function cargarGrupos() {
+      setLoading(true);
+
+      if (!personaId) {
+        setError('No se encontró el ID de persona. Cierra sesión y vuelve a ingresar.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const gruposResponse = await apiClient.get<GrupoBackend[]>('/api/grupos');
+        const grupos = gruposResponse.data ?? [];
+
+        const resultados = await Promise.all(
+          grupos.map(async (grupo) => {
+            const response = await apiClient.get<unknown[]>(
+              `/api/grupos/${grupo.id}/alumnos`,
+            );
+
+            console.log('Comprobando membresía:', {
+              personaId,
+              grupoId: grupo.id,
+              respuestaAlumnos: response.data,
+            });
+
+            const alumnosIds = (response.data ?? []).map((alumno) => {
+              if (typeof alumno === 'string') return alumno;
+
+              if (alumno && typeof alumno === 'object') {
+                const registro = alumno as {
+                  id?: string;
+                  personaId?: string;
+                  idAlumno?: string;
+                };
+                return registro.personaId ?? registro.idAlumno ?? registro.id ?? '';
+              }
+
+              return '';
+            });
+
+            const coincide = alumnosIds.some(
+              (id) => id.trim().toLowerCase() === personaId.trim().toLowerCase(),
+            );
+
+            console.log('Filtro de grupo:', {
+              personaId,
+              grupoId: grupo.id,
+              alumnosIds,
+              coincide,
+            });
+
+            return coincide ? { ...grupo, alumnosIds } : null;
+          }),
+        );
+
+        setGrupos(resultados.filter((grupo): grupo is GrupoBackend => grupo !== null));
+        setError(null);
+      } catch (err) {
+        console.error('Error cargando grupos del alumno:', err);
+        setError('No se pudieron cargar tus grupos.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void cargarGrupos();
+  }, [personaId]);
+
+  const gruposActivos = useMemo(
+    () => grupos.filter((g) => g.activo !== false),
+    [grupos],
+  );
 
   return (
     <article className="mg-screen">
@@ -43,24 +120,28 @@ export default function MisGrupos() {
           <p className="mg-subtitle">Los grupos de los que formas parte este ciclo.</p>
         </section>
 
-        {MOCK_MIS_GRUPOS.length === 0 && <p className="mg-empty">Todavía no perteneces a ningún grupo.</p>}
+        {loading ? (
+          <p className="mg-empty">Cargando grupos...</p>
+        ) : error ? (
+          <p className="mg-empty">{error}</p>
+        ) : gruposActivos.length === 0 ? (
+          <p className="mg-empty">Todavía no perteneces a ningún grupo.</p>
+        ) : null}
 
         <article className="mg-grid">
-          {MOCK_MIS_GRUPOS.map((g) => (
-            <button key={g.code} className="mg-card" onClick={() => navigate(`/grupos/${g.code}`)}>
-              <h2 className="mg-card-title">{g.materia}</h2>
-              <p className="mg-card-meta">{g.grupo} · {g.docente}</p>
+          {gruposActivos.map((g) => (
+            <button
+              key={g.id}
+              className="mg-card"
+              onClick={() => navigate(`/grupos/${g.id}`)}
+            >
+              <h2 className="mg-card-title">{g.nombre}</h2>
+              <p className="mg-card-meta">{g.semestre} · {g.alumnosIds?.length || 0} alumnos</p>
               <article className="mg-pills">
-                {g.activos > 0 && (
+                {g.activo && (
                   <span className="mg-pill mg-pill-activo">
-                    <i className="bi bi-circle-fill"></i> {plural(g.activos, 'activo', 'activos')}
+                    <i className="bi bi-circle-fill"></i> Activo
                   </span>
-                )}
-                {g.proximos > 0 && (
-                  <span className="mg-pill mg-pill-proximo">{plural(g.proximos, 'próximo', 'próximos')}</span>
-                )}
-                {g.pasados > 0 && (
-                  <span className="mg-pill mg-pill-pasado">{plural(g.pasados, 'pasado', 'pasados')}</span>
                 )}
               </article>
             </button>

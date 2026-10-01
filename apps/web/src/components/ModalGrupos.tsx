@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useState, type SubmitEvent } from 'react';
 import AutocompleteInput from './AutoCompleteInput.tsx';
 import { apiClient } from '../services/ApiClient';
-import {
-  fetchPersonas,
-  fetchPersonasByRol,
-  type PersonaRecord,
-} from '../services/personaService';
+import { fetchPersonas, fetchPersonasByRol, type PersonaRecord,}  from '../services/personaService';
 import { useAuth } from '../context/AuthContext.tsx';
 import '../styles/ModalGrupos.css';
 
@@ -102,12 +98,19 @@ export default function CreateGroupModal({
         const response = await fetchPersonas();
         const personas = response.data ?? [];
 
+        const docentesActivos = personas.filter(
+          (persona) =>
+            (persona.rol === 'DOCENTE' || persona.rol === 'COORDINADOR') &&
+            persona.activo !== false,
+        );
+
+        const alumnosActivos = personas.filter(
+          (persona) =>
+            persona.rol === 'ALUMNO' && persona.activo !== false,
+        );
+
         setDocentesBD(
-          personas
-            .filter((persona) => {
-              const rol = normalize(persona.rol ?? persona.role);
-              return rol === 'docente' || rol === 'coordinador';
-            })
+          docentesActivos
             .map((persona) => ({
               id: String(persona.id),
               label: `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim(),
@@ -115,11 +118,7 @@ export default function CreateGroupModal({
         );
 
         setAlumnosBD(
-          personas
-            .filter((persona) => {
-              const rol = normalize(persona.rol ?? persona.role);
-              return rol === 'alumno';
-            })
+          alumnosActivos
             .map((persona) => ({
               id: String(persona.id),
               label: `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim(),
@@ -270,7 +269,7 @@ export default function CreateGroupModal({
 
           {(!puedeDarClase || esCoordinador) && (
             <AutocompleteInput
-              label="Docente"
+              label="Docente o coordinador"
               placeholder="Buscar docente o coordinador..."
               options={docenteOptions}
               selected={docente}
