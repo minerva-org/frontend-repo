@@ -1,26 +1,11 @@
 import { useEffect, useMemo, useState, type SubmitEvent } from 'react';
 import AutocompleteInput from './AutoCompleteInput.tsx';
 import { apiClient } from '../services/ApiClient';
-import { fetchPersonas, fetchPersonasByRol, type PersonaRecord,}  from '../services/personaService';
+import { fetchPersonas}  from '../services/personaService';
 import { useAuth } from '../context/AuthContext.tsx';
+import type { GrupoSelectablePersona, NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/ModalGrupos.css';
 
-interface GrupoSelectablePersona {
-  id: string;
-  label: string;
-}
-
-export interface NewGroupData {
-  grupo: string;
-  claveGrupo: string;
-  grado: string;
-  docente: string | null;
-  docenteId: string | null;
-  materia: string;
-  alumnosIds: string[];
-  numeroEstudiantes: string[];
-  plantelId: number | null;
-}
 
 interface CreateGroupModalProps {
   onClose: () => void;
@@ -221,7 +206,6 @@ export default function CreateGroupModal({
       plantelId: selectedPlantel?.id ?? creatorPlantelId ?? null,
     };
 
-    console.log('Payload final:', payload);
 
     void Promise.resolve(onCreate(payload))
       .then(onClose)

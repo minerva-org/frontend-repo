@@ -2,31 +2,15 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos.tsx';
+import CreateGroupModal from '../components/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchPersonas, type PersonaRecord } from '../services/personaService';
+import type { GrupoBackend, GrupoListado,NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/Grupos.css';
 
 interface GruposProps {
   soloMisGrupos?: boolean;
-}
-
-interface GrupoBackend {
-  id: string;
-  claveGrupo: string;
-  nombre: string;
-  semestre: string;
-  activo?: boolean;
-  docenteId: string;
-  plantelId: number | null;
-  alumnosIds?: string[];
-}
-
-interface GrupoListado extends GrupoBackend {
-  docenteNombre: string;
-  docenteEmail: string;
-  alumnosCount: number;
 }
 
 export default function Grupos({ soloMisGrupos = false }: GruposProps) {

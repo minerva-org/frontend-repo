@@ -1,24 +1,7 @@
-import {useState, useEffect, useMemo} from 'react';
-import { useParams,useNavigate } from 'react-router-dom';
+import { useState, useEffect, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import type { QuizData } from '../types/QuizTypes.ts';
 import '../styles/QuizAlumno.css';
-
-interface QuestionOptions{
-    id: string;
-    texto: string;
-}
-
-interface QuestionQuiz{
-    id: string;
-    texto: string;
-    opciones: QuestionOptions[];
-}
-
-interface QuizData {
-    titulo: string;
-    inicio: string;
-    fin: string;
-    preguntas: QuestionQuiz[];
-}
 
 const MOCK_QUIZZES: Record<string, Record<string, QuizData>> = {
   'MAT3-A': {

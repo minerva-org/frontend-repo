@@ -87,6 +87,8 @@ export default function DirectorPlantelModal({
                 <input
                   className="dp-input dp-password-input"
                   type="text"
+                  name="password"
+                  autoComplete="new-password"
                   value={form.password}
                   placeholder="Ej. Dir#2026Segura"
                   onChange={(e) => onChange({ ...form, password: e.target.value })}

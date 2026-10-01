@@ -4,6 +4,7 @@ import DirectorPlantelModal, { type DirectorFormState, isStrongPassword } from '
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
 import { buildPersonaUsername, createPersona, updatePersona } from '../services/personaService';
+import type { PlantelItem } from '../types/PlantelTypes.ts';
 import '../styles/CatalogoDirectoresPlantel.css';
 
 interface DirectorPersona {
@@ -14,12 +15,6 @@ interface DirectorPersona {
   rol: 'DIRECTOR_PLANTEL' | 'ADMIN' | 'COORDINADOR' | 'DOCENTE' | 'ALUMNO';
   activo: boolean;
   plantelId: number;
-}
-
-interface PlantelItem {
-  id: number;
-  nombre: string;
-  activo: boolean;
 }
 
 const emptyForm: DirectorFormState = {
@@ -156,6 +151,8 @@ export default function DirectoresPlanteles() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsValidating(true);
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get('password') ?? '').trim();
 
     if (!form.nombreCompleto.trim() || !form.email.trim()) {
       const message = 'Completa nombre completo y correo electrónico oficial.';
@@ -166,7 +163,7 @@ export default function DirectoresPlanteles() {
     }
 
     if (!editingId) {
-      if (!form.password.trim()) {
+      if (!password) {
         const message = 'Define una contraseña temporal para el director.';
         setFormError(message);
         setHasError(true);
@@ -174,7 +171,7 @@ export default function DirectoresPlanteles() {
         return;
       }
 
-      if (!isStrongPassword(form.password)) {
+      if (!isStrongPassword(password)) {
         const message = 'La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas, número y símbolo.';
         setFormError(message);
         setHasError(true);
@@ -225,7 +222,7 @@ export default function DirectoresPlanteles() {
           activo: true,
           plantelId,
           username,
-          password: form.password.trim(),
+          password,
         });
         const created = response.data as DirectorPersona;
         setDirectores((prev) => [created, ...prev]);

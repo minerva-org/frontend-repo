@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import { apiClient } from '../services/ApiClient';
 import { useAuth } from '../context/AuthContext.tsx';
 
 interface QuizAlumno {
@@ -17,9 +17,6 @@ interface QuizAlumno {
 }
 
 const MIN = 60_000;
-const HORA = 60 * MIN;
-const DIA = 24 * HORA;
-const BASE = Date.now();
 
 
 
@@ -36,11 +33,13 @@ function formatFecha(ts: number): string {
 
 function formatRestante(ms: number): string {
   const totalMin = Math.max(0, Math.floor(ms / MIN));
-  const d = Math.floor(totalMin / 1440);
-  const h = Math.floor((totalMin % 1440) / 60);
-  const m = totalMin % 60;
-  return d > 0 ? `${d} d ${h} h` : `${h} h ${m} min`;
+  const dias = Math.floor(totalMin / 1440);
+  const horas = Math.floor((totalMin % 1440) / 60);
+  const minutos = totalMin % 60;
+  return dias > 0 ? `${dias} d ${horas} h` : `${horas} h ${minutos} min`;
 }
+
+
 
 function textoSaludo(activos: number): string {
   if (activos === 0) return 'No tienes quizzes activos por ahora.';
@@ -112,7 +111,7 @@ export default function AlumnoInicio() {
 
   const activos = vigentes.filter((q) => q.activo).sort((a, b) => a.cierra - b.cierra);
   const proximos = vigentes.filter((q) => !q.activo).sort((a, b) => a.abre - b.abre);
-  const ordenados = [...activos, ...proximos];
+  const ordenados = useMemo(() => [...activos, ...proximos], [activos, proximos]);
 
   return (
     <article className="al-screen">

@@ -19,16 +19,25 @@ interface PlantelForm {
   institucionId: number | null;
 }
 
+interface DirectorGeneralInstitucionRef {
+  institucionId?: number | null;
+  institucion?: { id?: number | null } | null;
+  universidadId?: number | null;
+}
+
 const emptyForm: PlantelForm = {
   nombre: '',
   direccion: '',
   institucionId: null,
 };
 
+const FALLBACK_INSTITUCION_ID = 1;
+
 export default function Planteles() {
   const { toggleSidebar } = useSidebar();
   const [planteles, setPlanteles] = useState<Plantel[]>([]);
   const [instituciones, setInstituciones] = useState<{ id: number; nombre: string }[]>([]);
+  const [defaultInstitucionId, setDefaultInstitucionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -57,19 +66,49 @@ export default function Planteles() {
       const response = await fetchInstituciones();
       const activas = (response.data ?? []).filter((item) => item.id > 0);
       setInstituciones(activas);
+      const fallbackInstitucionId = activas[0]?.id ?? null;
+      const resolvedDefault = defaultInstitucionId ?? fallbackInstitucionId;
       setForm((prev) => ({
         ...prev,
-        institucionId: prev.institucionId ?? activas[0]?.id ?? null,
+        institucionId: prev.institucionId ?? resolvedDefault,
       }));
     } catch {
       setInstituciones([]);
     }
   }
 
+  async function loadDirectorGeneralInstitucionId() {
+    try {
+      const response = await apiClient.get<DirectorGeneralInstitucionRef[]>('/api/personas', {
+        params: { rol: 'DIRECTOR_GENERAL' },
+      });
+      const directorGeneral = (response.data ?? [])[0];
+
+      const resolvedId =
+        directorGeneral?.institucionId
+        ?? directorGeneral?.institucion?.id
+        ?? directorGeneral?.universidadId
+        ?? null;
+
+      setDefaultInstitucionId(typeof resolvedId === 'number' ? resolvedId : null);
+    } catch {
+      setDefaultInstitucionId(null);
+    }
+  }
+
   useEffect(() => {
     void loadPlanteles();
+    void loadDirectorGeneralInstitucionId();
     void loadInstituciones();
   }, []);
+
+  useEffect(() => {
+    if (!defaultInstitucionId) return;
+    setForm((prev) => ({
+      ...prev,
+      institucionId: prev.institucionId ?? defaultInstitucionId,
+    }));
+  }, [defaultInstitucionId]);
 
   useEffect(() => {
     if (!toast) return;
@@ -81,7 +120,7 @@ export default function Planteles() {
     setEditingId(null);
     setForm({
       ...emptyForm,
-      institucionId: instituciones[0]?.id ?? null,
+      institucionId: defaultInstitucionId ?? instituciones[0]?.id ?? FALLBACK_INSTITUCION_ID,
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -92,7 +131,7 @@ export default function Planteles() {
     setForm({
       nombre: plantel.nombre,
       direccion: plantel.direccion,
-      institucionId: plantel.institucionId ?? instituciones[0]?.id ?? null,
+      institucionId: plantel.institucionId ?? defaultInstitucionId ?? instituciones[0]?.id ?? null,
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -113,10 +152,10 @@ export default function Planteles() {
       return;
     }
 
-    if (!form.institucionId) {
-      setFormError('No hay una institución disponible para asignar el plantel.');
-      return;
-    }
+    const resolvedInstitucionId = form.institucionId
+      ?? defaultInstitucionId
+      ?? instituciones[0]?.id
+      ?? FALLBACK_INSTITUCION_ID;
 
     setLoading(true);
     try {
@@ -132,7 +171,7 @@ export default function Planteles() {
         const response = await apiClient.post<Plantel>('/api/planteles', {
           nombre: form.nombre.trim(),
           direccion: form.direccion.trim(),
-          institucionId: form.institucionId,
+          institucionId: resolvedInstitucionId,
           activo: true,
         });
         const created = response.data;
@@ -275,22 +314,6 @@ export default function Planteles() {
                   value={form.nombre}
                   onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
                 />
-              </label>
-
-              <label className="pl-field">
-                <span className="pl-field-label">Institución</span>
-                <select
-                  className="pl-input"
-                  value={form.institucionId ?? ''}
-                  onChange={(e) => setForm((prev) => ({ ...prev, institucionId: Number(e.target.value) || null }))}
-                >
-                  <option value="">Selecciona una institución</option>
-                  {instituciones.map((institucion) => (
-                    <option key={institucion.id} value={institucion.id}>
-                      {institucion.nombre}
-                    </option>
-                  ))}
-                </select>
               </label>
 
               <label className="pl-field">

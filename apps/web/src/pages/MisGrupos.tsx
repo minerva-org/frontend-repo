@@ -1,10 +1,9 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../services/ApiClient.ts';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import '../styles/MisGrupos.css';
-import { apiClient } from '../services/ApiClient';
 import { useAuth } from '../context/AuthContext.tsx';
-import { useEffect, useState, useMemo } from 'react';
-import { fetchPersonas } from '../services/personaService';
 
 interface GrupoBackend {
   id: string;
@@ -26,7 +25,6 @@ export default function MisGrupos() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { email } = useAuth();
   const personaId = user?.personaId;
 
   useEffect(() => {
@@ -49,11 +47,6 @@ export default function MisGrupos() {
               `/api/grupos/${grupo.id}/alumnos`,
             );
 
-            console.log('Comprobando membresía:', {
-              personaId,
-              grupoId: grupo.id,
-              respuestaAlumnos: response.data,
-            });
 
             const alumnosIds = (response.data ?? []).map((alumno) => {
               if (typeof alumno === 'string') return alumno;
@@ -74,12 +67,6 @@ export default function MisGrupos() {
               (id) => id.trim().toLowerCase() === personaId.trim().toLowerCase(),
             );
 
-            console.log('Filtro de grupo:', {
-              personaId,
-              grupoId: grupo.id,
-              alumnosIds,
-              coincide,
-            });
 
             return coincide ? { ...grupo, alumnosIds } : null;
           }),
