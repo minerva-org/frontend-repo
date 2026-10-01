@@ -37,7 +37,7 @@ const MOCK_PLANTELES: Plantel[] = [
   },
 ];
 
-// TODO: reemplazar por el catálogo real de universidades del backend
+
 const MOCK_UNIVERSIDADES = [
   'Tecnológico Nacional de México',
   'Universidad de Guadalajara',
@@ -61,14 +61,12 @@ export default function CatalogoPlanteles() {
   );
 
   function handleToggleEstado(id: string) {
-    // TODO backend: PATCH /planteles/:id/status
     setPlanteles((prev) =>
       prev.map((p) => (p.id === id ? { ...p, estado: p.estado === 'Activo' ? 'Inactivo' : 'Activo' } : p)),
     );
   }
 
   function handleGuardar(datos: { nombre: string; universidad: string; direccion: string }) {
-    // TODO backend: POST /planteles o PATCH /planteles/:id
     if (modal?.tipo === 'editar') {
       const id = modal.plantel.id;
       setPlanteles((prev) => prev.map((p) => (p.id === id ? { ...p, ...datos } : p)));

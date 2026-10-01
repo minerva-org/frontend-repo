@@ -64,7 +64,6 @@ function getNombreCompleto(docente: PersonaRecord) {
 export default function DirectorioDocentes() {
   const { role, selectedPlantel } = useAuth();
   const { toggleSidebar } = useSidebar();
-  const activeRoleLabel = `ROL ACTIVO: ${role ? role.toUpperCase() : '—'}`;
   const canChoosePlantel = role === 'directorGeneral';
   const [docentes, setDocentes] = useState<PersonaRecord[]>([]);
   const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
@@ -90,7 +89,7 @@ export default function DirectorioDocentes() {
       setFetchError(null);
     } catch {
       setDocentes([]);
-      setFetchError('No se pudieron cargar los docentes desde el backend.');
+      setFetchError('No se pudieron cargar los docentes. Intenta recargar la página.');
     }
   }
 
@@ -261,7 +260,6 @@ export default function DirectorioDocentes() {
             <h1 className="dd-title">Catálogo de Docentes</h1>
             <p className="dd-subtitle">Docentes de los grupos y planteles que gestionas.</p>
           </article>
-          <span className="dd-badge">{activeRoleLabel}</span>
         </header>
 
         <article className="dd-toolbar">

@@ -48,7 +48,7 @@ export default function Planteles() {
       setFetchError(null);
     } catch {
       setPlanteles([]);
-      setFetchError('No se pudieron cargar los planteles. Revisa sesión, token y permisos del backend.');
+      setFetchError('No se pudieron cargar los planteles. Intenta recargar la página.');
     }
   }
 

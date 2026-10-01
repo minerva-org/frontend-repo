@@ -63,7 +63,6 @@ function getNombreCompleto(alumno: PersonaRecord) {
 export default function CatalogoAlumnos() {
   const { role, selectedPlantel } = useAuth();
   const { toggleSidebar } = useSidebar();
-  const activeRoleLabel = `ROL ACTIVO: ${role ? role.toUpperCase() : '—'}`;
   const canChoosePlantel = role === 'directorGeneral';
   const [alumnos, setAlumnos] = useState<PersonaRecord[]>([]);
   const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
@@ -85,7 +84,7 @@ export default function CatalogoAlumnos() {
       setFetchError(null);
     } catch {
       setAlumnos([]);
-      setFetchError('No se pudieron cargar los alumnos desde el backend.');
+      setFetchError('No se pudieron cargar los alumnos. Intenta recargar la página.');
     }
   }
 
@@ -255,7 +254,6 @@ export default function CatalogoAlumnos() {
             <h1 className="ca-title">Catálogo de Alumnos</h1>
             <p className="ca-subtitle">Alumnos de los grupos y planteles que gestionas.</p>
           </article>
-          <span className="ca-badge">{activeRoleLabel}</span>
         </header>
 
         <article className="ca-toolbar">

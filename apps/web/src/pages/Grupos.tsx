@@ -105,7 +105,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       setFetchError(null);
     } catch {
       setGroups([]);
-      setFetchError('No se pudieron cargar los grupos desde el backend.');
+      setFetchError('');
     } finally {
       setLoading(false);
     }
@@ -213,7 +213,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       await loadGroups();
     } catch (error) {
       console.error('Error creando grupo:', error);
-      setFetchError('No se pudo crear el grupo en el backend.');
+      setFetchError('No se pudo crear el grupo. Intente nuevamente más tarde.');
     }
   }
 
@@ -230,12 +230,11 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
 
       <main className="groups-content">
         <article className="groups-header">
-          <div>
+          <article>
             <h1 className="groups-title">Catálogo de grupos</h1>
             <p className="groups-subtitle">Ciclo Activo 2026</p>
-          </div>
-          <span className="groups-role-badge">ROL ACTIVO: {role ? role.toUpperCase() : '—'}</span>
-        </article>
+          </article>
+     </article>
 
         <article className="groups-toolbar">
           <article className="groups-search-row">
@@ -360,13 +359,13 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       )}
 
       {pendingArchiveGroup && (
-        <div className="groups-modal-backdrop" role="presentation" onClick={() => setPendingArchiveGroup(null)}>
-          <div className="groups-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="archive-group-title" onClick={(event) => event.stopPropagation()}>
+        <article className="groups-modal-backdrop" role="presentation" onClick={() => setPendingArchiveGroup(null)}>
+          <article className="groups-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="archive-group-title" onClick={(event) => event.stopPropagation()}>
             <header className="groups-confirm-header">
-              <div>
+              <article>
                 <h3 id="archive-group-title" className="groups-confirm-title">Archivar grupo</h3>
                 <p className="groups-confirm-subtitle">Confirmación requerida</p>
-              </div>
+              </article>
             </header>
 
             <section className="groups-confirm-body">
@@ -377,16 +376,16 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
               </p>
             </section>
 
-            <div className="groups-confirm-actions">
+            <article className="groups-confirm-actions">
               <button type="button" className="groups-secondary-button" onClick={() => setPendingArchiveGroup(null)}>
                 Cancelar
               </button>
               <button type="button" className="groups-confirm-button" onClick={() => void toggleGroupActivo(pendingArchiveGroup.id, false)}>
                 <i className="bi bi-archive"></i> Archivar
               </button>
-            </div>
-          </div>
-        </div>
+            </article>
+          </article>
+        </article>
       )}
     </article>
   );

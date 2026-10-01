@@ -49,7 +49,7 @@ export default function Materias() {
       const response = await apiClient.get<Materia[]>('/api/materias');
       setMaterias(response.data ?? []);
     } catch (err) {
-      const message = extractErrorMessage(err, 'No se pudieron cargar las materias desde el backend.');
+      const message = extractErrorMessage(err, 'No se pudieron cargar las materias. Intenta recargar la página.');
       setMaterias([]);
       setError(message);
       setToast(message);

@@ -54,7 +54,7 @@ export default function DirectoresPlanteles() {
       setFetchError(null);
     } catch {
       setDirectores([]);
-      setFetchError('No se pudieron cargar los directores. Revisa sesión, token y permisos del backend.');
+      setFetchError('No se pudieron cargar los directores de plantel. Intenta recargar la página.');
     }
   }
 

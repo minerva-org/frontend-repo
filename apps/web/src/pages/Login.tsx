@@ -5,8 +5,8 @@ import '../styles/Login.css';
 import logo from '../assets/logo.webp';
 
 export default function Login() {
-  const [username, setUsername] = useState('bootstrap');
-  const [password, setPassword] = useState('Admin123!');
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [modalMessage, setModalMessage] = useState<string | null>(null);
@@ -104,7 +104,7 @@ export default function Login() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="bootstrap"
+              placeholder="Tu usuario "
               autoComplete="username"
               required
             />
@@ -139,9 +139,7 @@ export default function Login() {
             {loading ? 'Ingresando...' : 'Entrar'}
           </button>
 
-          <p className="login-note">
-            Usuario inicial de prueba: <strong>bootstrap</strong> / <strong>Admin123!</strong>
-          </p>
+          
         </form>
       </main>
 

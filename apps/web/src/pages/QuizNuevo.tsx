@@ -135,7 +135,7 @@ export default function QuizNuevo() {
           ]);
         }
       } catch {
-        setError('No se pudo cargar el catálogo de unidades, temas y conceptos del backend.');
+        setError('No se pudo cargar el catálogo de unidades, temas y conceptos. Intenta recargar la página.');
       } finally {
         setLoading(false);
       }
@@ -379,7 +379,7 @@ export default function QuizNuevo() {
       navigate(`/grupos/${code}`);
     } catch (requestError) {
       console.error('Error saving quiz', requestError);
-      setError('No se pudo guardar el quiz en el backend. Revisa la información y vuelve a intentarlo.');
+      setError('Ocurrió un error al guardar el quiz. Intenta nuevamente más tarde.');
     }
   }
 

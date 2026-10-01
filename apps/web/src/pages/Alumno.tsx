@@ -10,8 +10,8 @@ interface QuizAlumno {
   grupoNombre: string;
   preguntas: number;
   segundosPorPregunta: number;
-  abre: number; // timestamp en ms
-  cierra: number; // timestamp en ms
+  abre: number;
+  cierra: number;
 }
 
 const MIN = 60_000;
