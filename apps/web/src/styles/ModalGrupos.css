@@ -20,6 +20,12 @@
   box-shadow: 0 12px 32px rgba(36, 60, 76, 0.25);
 }
 
+.create-group-hint {
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--texto-suave, #6b7280);
+}
+
 .create-group-header {
   display: flex;
   align-items: center;

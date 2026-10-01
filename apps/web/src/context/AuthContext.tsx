@@ -44,6 +44,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return null;
     }
   });
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
 
   const effectiveRole: UserRole | null = role;
 
@@ -79,6 +83,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setSelectedPlantelState(null);
     sessionStorage.removeItem('selectedPlantel');
+
+    const loggedUser = response.data.usuario ?? response.data.user ?? response.data;
+
+    setUser(loggedUser);
+    localStorage.setItem('user', JSON.stringify(loggedUser));
 
     return data;
   }
@@ -124,4 +133,10 @@ export function useAuth() {
   }
 
   return context;
+}
+
+interface AuthUser {
+  id: string;
+  email: string;
+  rol: string;
 }

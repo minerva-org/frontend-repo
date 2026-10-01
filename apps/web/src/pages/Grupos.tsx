@@ -30,6 +30,7 @@ interface GrupoListado extends GrupoBackend {
 
 export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   const [groups, setGroups] = useState<GrupoListado[]>([]);
+  const [personas, setPersonas] = useState<PersonaRecord[]>([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { role, email, selectedPlantel, setSelectedPlantel } = useAuth();
@@ -40,9 +41,22 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   const [loading, setLoading] = useState(true);
   const [openMenuGroupId, setOpenMenuGroupId] = useState<string | null>(null);
   const [pendingArchiveGroup, setPendingArchiveGroup] = useState<GrupoListado | null>(null);
+  const [createdGroupName, setCreatedGroupName] = useState<string | null>(null);
+  const [createGroupError, setCreateGroupError] = useState(false);
 
   const urlPlantelId = Number(searchParams.get('plantelId')) || null;
   const activePlantelId = urlPlantelId ?? selectedPlantel?.id ?? null;
+
+  console.log({
+    urlPlantelId,
+    selectedPlantel,
+    activePlantelId,
+  });
+
+  const propiaPersona = useMemo(
+    () => personas.find((p) => (p.email ?? '').toLowerCase() === (email ?? '').toLowerCase()),
+    [personas, email],
+  );
 
   useEffect(() => {
     if (urlPlantelId && selectedPlantel?.id !== urlPlantelId) {
@@ -74,8 +88,9 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
         fetchPersonas(),
       ]);
 
-      const personas = personasResponse.data ?? [] as PersonaRecord[];
-      const personaMap = new Map<string, PersonaRecord>(personas.map((persona) => [persona.id, persona]));
+      const personasData = personasResponse.data ?? [] as PersonaRecord[];
+      setPersonas(personasData);
+      const personaMap = new Map<string, PersonaRecord>(personasData.map((persona) => [persona.id, persona]));
 
       const grupos = gruposResponse.data ?? [];
       const alumnoCounts = await Promise.all(
@@ -125,12 +140,16 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
         return true;
       }
 
-      if (soloMisGrupos) return group.docenteEmail.toLowerCase() === (email ?? '').toLowerCase();
-      if (role === 'docente') return group.docenteEmail.toLowerCase() === (email ?? '').toLowerCase();
+      const esMiGrupo =
+        group.docenteEmail.toLowerCase() === (email ?? '').toLowerCase() ||
+        (!!propiaPersona && group.docenteId === propiaPersona.id);
+
+      if (soloMisGrupos) return esMiGrupo;
+      if (role === 'docente') return esMiGrupo;
       if (role === 'coordinador') return true;
       return true;
     });
-  }, [groups, role, email, soloMisGrupos, activePlantelId]);
+  }, [groups, role, email, soloMisGrupos, activePlantelId, propiaPersona]);
 
   const visibleGroups = useMemo(
     () => relatedGroups.filter((group) => group.activo !== false),
@@ -174,48 +193,48 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
     setPendingArchiveGroup(null);
   }
 
-  async function handleCreateGroup(data: NewGroupData) {
-    if (!data.docenteId) {
-      setFetchError('Selecciona un docente válido para crear el grupo.');
-      return;
+  const handleCreateGroup = async (data: NewGroupData) => {
+    setCreateGroupError(false);
+    setCreatedGroupName(null);
+
+    const plantelId = data.plantelId ?? selectedPlantel?.id;
+
+    if (plantelId == null) {
+      setCreateGroupError(true);
+      setCreatedGroupName(data.materia);
+      throw new Error('No hay un plantel seleccionado.');
     }
+
+    const payload = {
+      id: crypto.randomUUID(),
+      claveGrupo: data.claveGrupo,
+      nombre: data.materia,
+      semestre: data.grado,
+      activo: true,
+      docenteId: data.docenteId,
+      plantelId,
+      alumnosIds: data.alumnosIds,
+    };
 
     try {
-      const materiaPrefix = data.materia
-        .replace(/[^a-zA-Z0-9\s]/g, ' ')
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((token) => token.slice(0, 3))
-        .join('')
-        .slice(0, 6)
-        .toUpperCase() || 'MAT';
+      const response = await apiClient.post('/api/grupos', payload);
 
-      const cicloActivo = 'AGO-DIC-2026';
-      const nombreGrupo = `${data.grupo} ${data.grado}`.replace(/\s+/g, ' ').trim();
-      const claveGrupo = `${materiaPrefix}-${cicloActivo}-${nombreGrupo}`
-        .replace(/[^a-zA-Z0-9-]/g, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-|-$/g, '')
-        .slice(0, 80);
-
-      const payload = {
-        id: crypto.randomUUID(),
-        claveGrupo,
-        nombre: `${data.grupo} — ${data.grado}`,
-        semestre: cicloActivo,
-        docenteId: data.docenteId,
-        plantelId: data.plantelId ?? selectedPlantel?.id ?? null,
-        materia: data.materia,
-        alumnosIds: data.alumnosIds,
-      };
-
-      await apiClient.post('/api/grupos', payload);
       await loadGroups();
-    } catch (error) {
-      console.error('Error creando grupo:', error);
-      setFetchError('No se pudo crear el grupo. Intente nuevamente más tarde.');
+      setShowModal(false);
+      setCreatedGroupName(data.materia);
+      setCreateGroupError(false);
+
+      return response.data;
+    } catch (error: any) {
+      console.error('Response data:', error?.response?.data);
+
+      setShowModal(false);
+      setCreateGroupError(true);
+      setCreatedGroupName(data.materia);
+
+      throw error;
     }
-  }
+  };
 
   return (
     <article className="groups-screen">
@@ -261,7 +280,11 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
         ) : (
           <>
             {filtered.length === 0 ? (
-              <p className="groups-empty">No se encontraron grupos activos.</p>
+              <p className="groups-empty">
+                {soloMisGrupos || role === 'docente'
+                  ? 'Aún no tienes grupos asignados.'
+                  : 'No se encontraron grupos activos.'}
+              </p>
             ) : (
               <article className="groups-table-wrap">
                 <table className="groups-table">
@@ -382,6 +405,70 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
               </button>
               <button type="button" className="groups-confirm-button" onClick={() => void toggleGroupActivo(pendingArchiveGroup.id, false)}>
                 <i className="bi bi-archive"></i> Archivar
+              </button>
+            </article>
+          </article>
+        </article>
+      )}
+
+      {createdGroupName && (
+        <article
+          className="groups-modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            setCreatedGroupName(null);
+            setCreateGroupError(false);
+          }}
+        >
+          <article
+            className={`groups-confirm-modal ${
+              createGroupError ? 'groups-confirm-modal-error' : ''
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="created-group-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="groups-confirm-header">
+              <article>
+                <h3 id="created-group-title" className="groups-confirm-title">
+                  {createGroupError ? 'No se pudo crear el grupo' : 'Grupo creado'}
+                </h3>
+                <p className="groups-confirm-subtitle">
+                  {createGroupError
+                    ? 'Ocurrió un problema al guardar la información'
+                    : 'La operación se realizó correctamente'}
+                </p>
+              </article>
+            </header>
+
+            <section className="groups-confirm-body">
+              <p className="groups-confirm-text">
+                {createGroupError ? (
+                  <>
+                    No se pudo crear el grupo <strong>{createdGroupName}</strong>.
+                    Revisa los datos e inténtalo nuevamente.
+                  </>
+                ) : (
+                  <>
+                    El grupo <strong>{createdGroupName}</strong> fue creado correctamente.
+                  </>
+                )}
+              </p>
+            </section>
+
+            <article className="groups-confirm-actions">
+              <button
+                type="button"
+                className={`groups-confirm-button ${
+                  createGroupError ? 'groups-confirm-button-error' : ''
+                }`}
+                onClick={() => {
+                  setCreatedGroupName(null);
+                  setCreateGroupError(false);
+                }}
+              >
+                Aceptar
               </button>
             </article>
           </article>
