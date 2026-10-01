@@ -3,26 +3,11 @@ import AutocompleteInput from './AutoCompleteInput.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchPersonas, fetchPersonasByRol, type PersonaRecord } from '../services/personaService';
 import { useAuth } from '../context/AuthContext.tsx';
+import type { GrupoSelectablePersona, NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/ModalGrupos.css';
 
 // TODO: reemplazar por el catálogo real de materias activas (endpoint /materias)
 const MOCK_MATERIAS = ['Matemáticas III', 'Física II', 'Ética'];
-
-interface GrupoSelectablePersona {
-  id: string;
-  label: string;
-}
-
-export interface NewGroupData {
-  grupo: string;
-  grado: string;
-  docente: string | null;
-  docenteId: string | null;
-  materia: string;
-  alumnosIds: string[];
-  numeroEstudiantes: string[];
-  plantelId: number | null;
-}
 
 interface CreateGroupModalProps {
   onClose: () => void;

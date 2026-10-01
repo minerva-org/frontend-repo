@@ -136,25 +136,6 @@ export default function Materias() {
     }
   }
 
-  const [confirmDeactivate, setConfirmDeactivate] = useState<Materia | null>(null);
-
-  async function handleDeactivate(materia: Materia) {
-    try {
-      await apiClient.delete(`/api/materias/${materia.id}`);
-      setMaterias((prev) => prev.filter((item) => item.id !== materia.id));
-      setConfirmDeactivate(null);
-      setToast('Materia eliminada correctamente.');
-    } catch (err) {
-      const message = extractErrorMessage(err, 'No se pudo eliminar la materia.');
-      setToast(message);
-      setError(message);
-    }
-  }
-
-  function abrirConfirmacionEliminacion(materia: Materia) {
-    setConfirmDeactivate(materia);
-  }
-
   return (
     <article className="mat-screen">
       <header className="mat-topbar">
@@ -243,13 +224,6 @@ export default function Materias() {
                           >
                             <i className="bi bi-pencil"></i> Editar
                           </button>
-                          <button
-                            className="mat-link mat-link-desactivar"
-                            type="button"
-                            onClick={() => abrirConfirmacionEliminacion(m)}
-                          >
-                            Eliminar
-                          </button>
                         </article>
                       </td>
                     </tr>
@@ -268,29 +242,6 @@ export default function Materias() {
           onCerrar={() => setModal(null)}
           onGuardar={handleGuardar}
         />
-      )}
-
-      {confirmDeactivate && createPortal(
-        <article className="mat-modal-overlay">
-          <article className="mat-modal">
-            <header className="mat-modal-header" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, var(--ar-profundo))' }}>
-              Confirmar
-            </header>
-            <section className="mat-modal-body">
-              <p>¿Deseas desactivar el registro "{confirmDeactivate.nombre}"?</p>
-              <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
-            </section>
-            <footer className="mat-modal-actions">
-              <button type="button" onClick={() => setConfirmDeactivate(null)} className="mat-btn mat-btn-secondary">
-                Cancelar
-              </button>
-              <button type="button" onClick={() => void handleDeactivate(confirmDeactivate)} className="mat-btn mat-btn-primary" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
-                Confirmar
-              </button>
-            </footer>
-          </article>
-        </article>,
-        document.body,
       )}
 
       {toast && createPortal(

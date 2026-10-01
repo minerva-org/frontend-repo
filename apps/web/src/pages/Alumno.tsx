@@ -1,51 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
 import { useSidebar } from '../context/SidebarContext.tsx';
-
-interface QuizAlumno {
-  id: string;
-  titulo: string;
-  grupoCode: string;
-  grupoNombre: string;
-  preguntas: number;
-  segundosPorPregunta: number;
-  abre: number;
-  cierra: number;
-}
+import MisQuizCard from '../components/alumno/MisQuizCard.tsx';
+import type { QuizAlumno, QuizAlumnoBackend } from '../types/AlumnoTypes.ts';
 
 const MIN = 60_000;
-const HORA = 60 * MIN;
-const DIA = 24 * HORA;
-const BASE = Date.now();
 
 const NOMBRE_ALUMNO = 'Carlos';
 
-const MOCK_QUIZZES: QuizAlumno[] = [
-  { id: 'q3', titulo: 'Quiz 3: Cinemática', grupoCode: 'FIS2-B', grupoNombre: 'Física II · 2.° B', preguntas: 3, segundosPorPregunta: 40, abre: BASE - HORA, cierra: BASE + 5 * HORA },
-  { id: 'q5', titulo: 'Quiz 5: Identidades Recíprocas', grupoCode: 'MAT3-A', grupoNombre: 'Matemáticas III · 3.° A', preguntas: 4, segundosPorPregunta: 45, abre: BASE - 2 * HORA, cierra: BASE + DIA + 22 * HORA },
-  { id: 'q4', titulo: 'Quiz 4: Leyes de Newton', grupoCode: 'FIS2-B', grupoNombre: 'Física II · 2.° B', preguntas: 3, segundosPorPregunta: 40, abre: BASE + DIA, cierra: BASE + 2 * DIA },
-  { id: 'q6', titulo: 'Quiz 6: Geometría Analítica', grupoCode: 'MAT3-A', grupoNombre: 'Matemáticas III · 3.° A', preguntas: 3, segundosPorPregunta: 45, abre: BASE + 3 * DIA, cierra: BASE + 4 * DIA },
-  { id: 'q2', titulo: 'Quiz 2: Ciclos', grupoCode: 'PROG1-A', grupoNombre: 'Programación I · 1.° A', preguntas: 3, segundosPorPregunta: 50, abre: BASE + 5 * DIA, cierra: BASE + 6 * DIA },
-];
-
-const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
-
-function formatFecha(ts: number): string {
-  const d = new Date(ts);
-  const h = d.getHours();
-  const h12 = h % 12 || 12;
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${DIAS_SEMANA[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}, ${h12}:${min} ${h < 12 ? 'a.m.' : 'p.m.'}`;
+function parseTimestamp(value?: string | number): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+  return 0;
 }
 
-function formatRestante(ms: number): string {
-  const totalMin = Math.max(0, Math.floor(ms / MIN));
-  const d = Math.floor(totalMin / 1440);
-  const h = Math.floor((totalMin % 1440) / 60);
-  const m = totalMin % 60;
-  return d > 0 ? `${d} d ${h} h` : `${h} h ${m} min`;
+function normalizeQuiz(item: QuizAlumnoBackend, index: number): QuizAlumno {
+  const grupoCode = String(item.grupoCode ?? item.claveGrupo ?? item.grupoId ?? item.grupo ?? `grupo-${index + 1}`);
+  const titulo = item.titulo ?? item.nombre ?? `Quiz ${index + 1}`;
+  const grupoNombre = item.grupoNombre ?? item.grupo ?? item.claveGrupo ?? grupoCode;
+  const preguntas = Number(item.preguntas ?? item.totalPreguntas ?? 0);
+  const segundosPorPregunta = Number(item.segundosPorPregunta ?? item.duracionSegundos ?? 0);
+  const abre = parseTimestamp(item.abre ?? item.inicio ?? item.fechaInicio);
+  const cierra = parseTimestamp(item.cierra ?? item.fin ?? item.fechaFinalizacion);
+
+  return {
+    id: String(item.id ?? `${grupoCode}-${index + 1}`),
+    titulo,
+    grupoCode,
+    grupoNombre,
+    preguntas,
+    segundosPorPregunta,
+    abre,
+    cierra,
+  };
 }
 
 function textoSaludo(activos: number): string {
@@ -58,20 +50,54 @@ export default function AlumnoInicio() {
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
   const [ahora, setAhora] = useState(() => Date.now());
+  const [quizzes, setQuizzes] = useState<QuizAlumno[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setAhora(Date.now()), MIN);
     return () => clearInterval(id);
   }, []);
 
-  const vigentes = MOCK_QUIZZES.filter((q) => q.cierra > ahora).map((q) => ({
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMisQuizzes() {
+      setLoading(true);
+      try {
+        const response = await apiClient.get<QuizAlumnoBackend[]>('/api/quizzes/mis-quizzes');
+        const rawQuizzes = Array.isArray(response.data) ? response.data : [];
+        if (!isMounted) return;
+
+        setQuizzes(rawQuizzes.map((item, index) => normalizeQuiz(item, index)));
+        setError(null);
+      } catch (fetchError) {
+        if (!isMounted) return;
+
+        setQuizzes([]);
+        setError(fetchError instanceof Error ? fetchError.message : 'No se pudieron cargar tus quizzes.');
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadMisQuizzes();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const vigentes = quizzes.filter((q) => q.cierra > ahora).map((q) => ({
     ...q,
     activo: q.abre <= ahora,
   }));
 
   const activos = vigentes.filter((q) => q.activo).sort((a, b) => a.cierra - b.cierra);
   const proximos = vigentes.filter((q) => !q.activo).sort((a, b) => a.abre - b.abre);
-  const ordenados = [...activos, ...proximos];
+  const ordenados = useMemo(() => [...activos, ...proximos], [activos, proximos]);
 
   return (
     <article className="al-screen">
@@ -99,38 +125,27 @@ export default function AlumnoInicio() {
 
         <h2 className="al-section-label">TUS QUIZZES MÁS CERCANOS</h2>
 
-        {ordenados.length === 0 && <p className="al-empty">No tienes quizzes pendientes.</p>}
+        {loading && <p className="al-empty">Cargando tus quizzes...</p>}
+        {!loading && error && <p className="al-empty">{error}</p>}
+        {!loading && !error && ordenados.length === 0 && <p className="al-empty">No tienes quizzes pendientes.</p>}
 
         <article className="al-list">
           {ordenados.map((q) => (
-            <article key={`${q.grupoCode}-${q.id}`} className={`al-card ${q.activo ? 'al-card-activo' : ''}`}>
-              <article className="al-card-top">
-                <span className={`al-status ${q.activo ? 'al-status-activo' : 'al-status-proximo'}`}>
-                  {q.activo && <i className="bi bi-circle-fill"></i>}
-                  {q.activo ? 'ACTIVO' : 'PRÓXIMO'}
-                </span>
-                <button className="al-group-link" onClick={() => navigate(`/grupos/${q.grupoCode}`)}>
-                  {q.grupoNombre} →
-                </button>
-              </article>
-
-              <h3 className="al-card-title">{q.titulo}</h3>
-
-              <p className="al-card-meta">
-                {q.preguntas} preguntas · {q.segundosPorPregunta} s por pregunta ·{' '}
-                {q.activo
-                  ? `Cierra en ${formatRestante(q.cierra - ahora)} · ${formatFecha(q.cierra)}`
-                  : `Se habilita el ${formatFecha(q.abre)}`}
-              </p>
-
-              <button
-                className={`al-btn ${q.activo ? 'al-btn-primary' : ''}`}
-                disabled={!q.activo}
-                onClick={() => navigate(`/grupos/${q.grupoCode}/quizzes/${q.id}/resolver`)}
-              >
-                {q.activo ? 'Iniciar quiz' : 'Aún no disponible'}
-              </button>
-            </article>
+            <MisQuizCard
+              key={`${q.grupoCode}-${q.id}`}
+              id={q.id}
+              titulo={q.titulo}
+              grupoCode={q.grupoCode}
+              grupoNombre={q.grupoNombre}
+              preguntas={q.preguntas}
+              segundosPorPregunta={q.segundosPorPregunta}
+              abre={q.abre}
+              cierra={q.cierra}
+              activo={q.activo}
+              ahora={ahora}
+              onOpenGroup={(grupoCode) => navigate(`/grupos/${grupoCode}`)}
+              onStartQuiz={(grupoCode, quizId) => navigate(`/grupos/${grupoCode}/quizzes/${quizId}/resolver`)}
+            />
           ))}
         </article>
       </main>

@@ -19,3 +19,39 @@ body {
 #root {
   min-height: 100dvh;
 }
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  box-sizing: border-box;
+  color: var(--seige-texto);
+  background: var(--seige-superficie);
+  border: 1px solid var(--seige-borde);
+  border-radius: 0.5rem;
+}
+
+input:not([type='checkbox']):not([type='radio']):focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--seige-acento) 55%, white);
+  outline-offset: 1px;
+  border-color: var(--seige-acento);
+}
+
+input[type='checkbox'],
+input[type='radio'] {
+  accent-color: var(--seige-acento);
+}
+
+input[type='checkbox']:focus-visible,
+input[type='radio']:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--seige-acento) 55%, white);
+  outline-offset: 2px;
+}

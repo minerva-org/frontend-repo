@@ -3,21 +3,10 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
-import { createPersona, fetchPersonasByRol, updatePersona, type PersonaRecord } from '../services/personaService';
+import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/CatalogoAlumnos.css';
-
-interface AlumnoFormState {
-  nombreCompleto: string;
-  email: string;
-  plantelId: number | null;
-  password: string;
-}
-
-interface PlantelItem {
-  id: number;
-  nombre: string;
-  activo: boolean;
-}
+import type { AlumnoFormState } from '../types/AlumnoTypes.ts';
+import type { PlantelItem } from '../types/PlantelTypes.ts';
 
 const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
@@ -61,12 +50,12 @@ function getNombreCompleto(alumno: PersonaRecord) {
 }
 
 export default function CatalogoAlumnos() {
-  const { role, selectedPlantel } = useAuth();
+  const { role, email, selectedPlantel } = useAuth();
   const { toggleSidebar } = useSidebar();
   const canChoosePlantel = role === 'directorGeneral';
   const [alumnos, setAlumnos] = useState<PersonaRecord[]>([]);
   const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
-  const defaultPlantelId = selectedPlantel?.id ?? planteles[0]?.id ?? null;
+  const [ownPlantelId, setOwnPlantelId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -76,10 +65,46 @@ export default function CatalogoAlumnos() {
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState<PersonaRecord | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const activePlantelId = canChoosePlantel
+    ? (selectedPlantel?.id ?? planteles[0]?.id ?? null)
+    : (ownPlantelId ?? selectedPlantel?.id ?? planteles[0]?.id ?? null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function resolveOwnPlantel() {
+      if (canChoosePlantel || !email) {
+        setOwnPlantelId(null);
+        return;
+      }
+
+      try {
+        const persona = await fetchPersonaByEmail(email);
+        if (!cancelled) {
+          setOwnPlantelId(persona?.plantelId ?? null);
+        }
+      } catch {
+        if (!cancelled) {
+          setOwnPlantelId(null);
+        }
+      }
+    }
+
+    void resolveOwnPlantel();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canChoosePlantel, email]);
 
   async function loadAlumnos() {
+    if (!activePlantelId) {
+      setAlumnos([]);
+      return;
+    }
+
     try {
-      const response = await fetchPersonasByRol('ALUMNO');
+      const response = await fetchPersonasByPlantelAndRol(activePlantelId, 'ALUMNO');
       setAlumnos((response.data ?? []) as PersonaRecord[]);
       setFetchError(null);
     } catch {
@@ -95,7 +120,7 @@ export default function CatalogoAlumnos() {
       setPlanteles(activos);
       setForm((prev) => ({
         ...prev,
-        plantelId: prev.plantelId ?? selectedPlantel?.id ?? activos[0]?.id ?? null,
+        plantelId: prev.plantelId ?? activePlantelId ?? activos[0]?.id ?? null,
       }));
     } catch {
       setPlanteles([]);
@@ -103,9 +128,12 @@ export default function CatalogoAlumnos() {
   }
 
   useEffect(() => {
-    void loadAlumnos();
     void loadPlanteles();
   }, []);
+
+  useEffect(() => {
+    void loadAlumnos();
+  }, [activePlantelId]);
 
   useEffect(() => {
     if (!toast) return;
@@ -117,7 +145,7 @@ export default function CatalogoAlumnos() {
     setEditingId(null);
     setForm({
       ...emptyForm,
-      plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (selectedPlantel?.id ?? planteles[0]?.id ?? null),
+      plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (activePlantelId ?? planteles[0]?.id ?? null),
       password: '',
     });
     setFormError(null);
@@ -129,7 +157,7 @@ export default function CatalogoAlumnos() {
     setForm({
       nombreCompleto: getNombreCompleto(alumno),
       email: getLocalPart(alumno.email),
-      plantelId: canChoosePlantel ? (alumno.plantelId ?? planteles[0]?.id ?? null) : (selectedPlantel?.id ?? alumno.plantelId ?? planteles[0]?.id ?? null),
+      plantelId: canChoosePlantel ? (alumno.plantelId ?? planteles[0]?.id ?? null) : (activePlantelId ?? alumno.plantelId ?? planteles[0]?.id ?? null),
       password: '',
     });
     setFormError(null);
@@ -145,18 +173,20 @@ export default function CatalogoAlumnos() {
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get('password') ?? '').trim();
 
     if (!form.nombreCompleto.trim() || !form.email.trim()) {
       setFormError('Completa nombre completo y correo institucional.');
       return;
     }
 
-    if (!editingId && !form.password.trim()) {
+    if (!editingId && !password) {
       setFormError('Define una contraseña temporal para el alumno.');
       return;
     }
 
-    if (!editingId && !isStrongPassword(form.password)) {
+    if (!editingId && !isStrongPassword(password)) {
       setFormError('La contraseña debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.');
       return;
     }
@@ -178,7 +208,7 @@ export default function CatalogoAlumnos() {
         nombre,
         apellido,
         email: formatearEmailInstitucional(form.email, 'ALUMNO'),
-        plantelId: canChoosePlantel ? (form.plantelId ?? defaultPlantelId) : (defaultPlantelId ?? form.plantelId ?? planteles[0]?.id ?? null),
+        plantelId: canChoosePlantel ? (form.plantelId ?? activePlantelId) : (activePlantelId ?? form.plantelId ?? planteles[0]?.id ?? null),
         rol: 'ALUMNO' as const,
       };
 
@@ -192,7 +222,7 @@ export default function CatalogoAlumnos() {
           id: crypto.randomUUID(),
           ...payload,
           activo: true,
-          password: form.password.trim(),
+          password,
         });
         const created = response.data as PersonaRecord;
         setAlumnos((prev) => [created, ...prev]);
@@ -337,6 +367,7 @@ export default function CatalogoAlumnos() {
           onSubmit={handleSubmit}
           onChange={setForm}
           canChoosePlantel={canChoosePlantel}
+          hidePlantelField={role === 'coordinador' || role === 'directorPlantel'}
           defaultPlantelName={selectedPlantel?.nombre ?? planteles[0]?.nombre ?? 'Plantel'}
         />,
         document.body,
@@ -389,10 +420,11 @@ interface AlumnoModalProps {
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void> | void;
   onChange: (next: AlumnoFormState) => void;
   canChoosePlantel: boolean;
+  hidePlantelField: boolean;
   defaultPlantelName: string;
 }
 
-function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onSubmit, onChange, canChoosePlantel, defaultPlantelName }: AlumnoModalProps) {
+function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onSubmit, onChange, canChoosePlantel, hidePlantelField, defaultPlantelName }: AlumnoModalProps) {
   return (
     <article className="ca-modal-overlay">
       <article className="ca-modal" role="dialog" aria-modal="true" aria-labelledby="ca-modal-title">
@@ -433,7 +465,7 @@ function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onS
             </div>
           </label>
 
-          {canChoosePlantel ? (
+          {!hidePlantelField && canChoosePlantel ? (
             <label className="ca-field">
               <span className="ca-field-label">Plantel</span>
               <select
@@ -450,12 +482,12 @@ function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onS
                 ))}
               </select>
             </label>
-          ) : (
+          ) : !hidePlantelField ? (
             <label className="ca-field">
               <span className="ca-field-label">Plantel</span>
               <input className="ca-input" type="text" value={defaultPlantelName} readOnly />
             </label>
-          )}
+          ) : null}
 
           {!alumno && (
             <label className="ca-field">
@@ -463,6 +495,8 @@ function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onS
               <input
                 className="ca-input"
                 type="text"
+                name="password"
+                autoComplete="new-password"
                 value={form.password}
                 onChange={(e) => onChange({ ...form, password: e.target.value })}
                 placeholder="Ej. Alu#2026Segura"

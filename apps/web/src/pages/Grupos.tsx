@@ -2,30 +2,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import CreateGroupModal, { type NewGroupData } from '../components/ModalGrupos.tsx';
+import CreateGroupModal from '../components/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchPersonas, type PersonaRecord } from '../services/personaService';
+import type { GrupoBackend, GrupoListado } from '../types/GrupoTypes.ts';
+import type { NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/Grupos.css';
 
 interface GruposProps {
   soloMisGrupos?: boolean;
-}
-
-interface GrupoBackend {
-  id: string;
-  claveGrupo: string;
-  nombre: string;
-  semestre: string;
-  activo?: boolean;
-  docenteId: string;
-  plantelId: number | null;
-}
-
-interface GrupoListado extends GrupoBackend {
-  docenteNombre: string;
-  docenteEmail: string;
-  alumnosCount: number;
 }
 
 export default function Grupos({ soloMisGrupos = false }: GruposProps) {
@@ -185,7 +171,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
         .replace(/[^a-zA-Z0-9\s]/g, ' ')
         .split(/\s+/)
         .filter(Boolean)
-        .map((token) => token.slice(0, 3))
+        .map((token: string) => token.slice(0, 3))
         .join('')
         .slice(0, 6)
         .toUpperCase() || 'MAT';

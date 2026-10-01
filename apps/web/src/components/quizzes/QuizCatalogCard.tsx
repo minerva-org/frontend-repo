@@ -1,22 +1,8 @@
 import { useEffect, useState } from 'react';
 import { apiClient } from '../../services/ApiClient';
+import type { QuizCatalogCardData, QuizCatalogState, QuizPreguntaPreview } from '../../types/QuizTypes.ts';
 
-export interface QuizCatalogCardData {
-  id: string;
-  nombre: string;
-  fechaCreacion?: string | null;
-  fechaInicio?: string | null;
-  fechaFinalizacion?: string | null;
-  grupoId?: string | null;
-}
-
-export type QuizCatalogState = 'proximo' | 'activo' | 'pasado';
-
-interface QuizPreguntaPreview {
-  id: string;
-  descripcion?: string;
-  enunciado?: string;
-}
+export type { QuizCatalogCardData, QuizCatalogState } from '../../types/QuizTypes.ts';
 
 interface QuizCatalogCardProps {
   quiz: QuizCatalogCardData;
@@ -45,12 +31,13 @@ function formatDate(value?: string | null): string {
 }
 
 export function getQuizCatalogState(quiz: QuizCatalogCardData, now = new Date()): QuizCatalogState {
+  const actual = now.getTime();
   const fechaInicio = parseDate(quiz.fechaInicio)?.getTime();
   const fechaFinalizacion = parseDate(quiz.fechaFinalizacion)?.getTime();
 
-  if (fechaInicio && now < fechaInicio) return 'proximo';
-  if (fechaInicio && fechaFinalizacion && now >= fechaInicio && now < fechaFinalizacion) return 'activo';
-  if (fechaFinalizacion && now >= fechaFinalizacion) return 'pasado';
+  if (fechaInicio && actual < fechaInicio) return 'proximo';
+  if (fechaInicio && fechaFinalizacion && actual >= fechaInicio && actual < fechaFinalizacion) return 'activo';
+  if (fechaFinalizacion && actual >= fechaFinalizacion) return 'pasado';
   return 'proximo';
 }
 
