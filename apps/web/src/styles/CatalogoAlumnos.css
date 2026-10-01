@@ -236,7 +236,7 @@
   text-decoration: underline;
 }
 .ca-link-danger {
-  color: var(--seige-error-texto);
+  color: #b42318;
 }
 .ca-link-success {
   color: var(--seige-exito);
@@ -247,6 +247,96 @@
   padding: 2rem 1rem;
   text-align: center;
   color: var(--ca-texto-suave);
+}
+
+.ca-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.ca-confirm-modal {
+  width: min(100%, 30rem);
+  overflow: hidden;
+  background: var(--seige-superficie);
+  border: 2px solid color-mix(in srgb, #b42318 65%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+}
+
+.ca-confirm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.25rem 0.9rem;
+  color: var(--ar-nieve);
+  background: linear-gradient(
+    135deg,
+    #7f1d1d,
+    color-mix(in srgb, #7f1d1d 60%, #b42318)
+  );
+}
+
+.ca-confirm-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ar-nieve);
+}
+
+.ca-confirm-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.ca-confirm-body {
+  padding: 1rem 1.25rem 0.25rem;
+}
+
+.ca-confirm-text {
+  margin: 0;
+  color: var(--ca-texto-suave);
+  line-height: 1.6;
+}
+
+.ca-confirm-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+@media (min-width: 641px) {
+  .ca-confirm-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
+}
+
+.ca-confirm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  font-family: sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ar-nieve);
+  background: #b42318;
+  border: 0;
+  border-radius: 0.6rem;
+  cursor: pointer;
+}
+
+.ca-confirm-button:hover {
+  filter: brightness(1.08);
 }
 
 .ca-search-input:focus-visible,

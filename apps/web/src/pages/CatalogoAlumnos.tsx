@@ -19,6 +19,8 @@ interface PlantelItem {
   activo: boolean;
 }
 
+const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
 const emptyForm: AlumnoFormState = {
   nombreCompleto: '',
   email: '',
@@ -26,9 +28,8 @@ const emptyForm: AlumnoFormState = {
   password: '',
 };
 
-function generarPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*';
-  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+function isStrongPassword(password: string) {
+  return SAFE_PASSWORD_REGEX.test(password.trim());
 }
 
 function splitNombreCompleto(nombreCompleto: string) {
@@ -118,7 +119,7 @@ export default function CatalogoAlumnos() {
     setForm({
       ...emptyForm,
       plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (selectedPlantel?.id ?? planteles[0]?.id ?? null),
-      password: generarPassword(),
+      password: '',
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -153,6 +154,11 @@ export default function CatalogoAlumnos() {
 
     if (!editingId && !form.password.trim()) {
       setFormError('Define una contraseña temporal para el alumno.');
+      return;
+    }
+
+    if (!editingId && !isStrongPassword(form.password)) {
+      setFormError('La contraseña debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.');
       return;
     }
 
@@ -339,27 +345,27 @@ export default function CatalogoAlumnos() {
       )}
 
       {confirmDeactivate && createPortal(
-        <article className="ca-modal-overlay">
-          <article className="ca-modal" role="alertdialog" aria-modal="true" aria-labelledby="ca-deactivate-title">
-            <article className="ca-modal-header">
+        <div className="ca-confirm-backdrop" role="presentation" onClick={() => setConfirmDeactivate(null)}>
+          <article className="ca-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="ca-deactivate-title" onClick={(event) => event.stopPropagation()}>
+            <header className="ca-confirm-header">
               <article>
-                <h2 id="ca-deactivate-title" className="ca-modal-title">Confirmar desactivación</h2>
-                <p className="ca-modal-subtitle">{getNombreCompleto(confirmDeactivate)}</p>
+                <h2 id="ca-deactivate-title" className="ca-confirm-title">Confirmar desactivación</h2>
+                <p className="ca-confirm-subtitle">{getNombreCompleto(confirmDeactivate)}</p>
               </article>
-            </article>
-            <section style={{ padding: '1rem', color: 'var(--ca-texto-suave)' }}>
-              <p style={{ marginTop: 0 }}>El alumno dejará de estar disponible para asignaciones, pero conservará su historial.</p>
+            </header>
+            <section className="ca-confirm-body">
+              <p className="ca-confirm-text">El alumno dejará de estar disponible para asignaciones, pero conservará su historial.</p>
             </section>
-            <article className="ca-modal-actions">
+            <article className="ca-confirm-actions">
               <button type="button" className="ca-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
                 Cancelar
               </button>
-              <button type="button" className="ca-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)}>
+              <button type="button" className="ca-confirm-button" onClick={() => void handleDeactivate(confirmDeactivate)}>
                 Confirmar
               </button>
             </article>
           </article>
-        </article>,
+        </div>,
         document.body,
       )}
 
@@ -461,9 +467,12 @@ function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onS
                 type="text"
                 value={form.password}
                 onChange={(e) => onChange({ ...form, password: e.target.value })}
-                placeholder="Contraseña para primer acceso"
+                placeholder="Ej. Alu#2026Segura"
                 required
               />
+              <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--ca-texto-suave)' }}>
+                Debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.
+              </small>
             </label>
           )}
 

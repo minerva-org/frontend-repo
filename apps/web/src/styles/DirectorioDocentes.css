@@ -254,9 +254,9 @@
   background: color-mix(in srgb, var(--ar-neblina) 25%, white);
 }
 .dd-btn-danger {
-  color: var(--seige-error-texto);
-  background: var(--seige-error-fondo);
-  border: 1px solid color-mix(in srgb, var(--seige-error-texto) 35%, transparent);
+  color: #b42318;
+  background: #fee4e2;
+  border: 1px solid rgba(180, 35, 24, 0.28);
 }
 .dd-btn-danger:hover {
   filter: brightness(0.97);
@@ -275,6 +275,96 @@
   padding: 2rem 1rem;
   text-align: center;
   color: var(--dd-texto-suave);
+}
+
+.dd-confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(15, 23, 42, 0.46);
+}
+
+.dd-confirm-modal {
+  width: min(100%, 30rem);
+  overflow: hidden;
+  background: var(--seige-superficie);
+  border: 2px solid color-mix(in srgb, #b42318 65%, transparent);
+  border-radius: 1rem;
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.2);
+}
+
+.dd-confirm-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.1rem 1.25rem 0.9rem;
+  color: var(--ar-nieve);
+  background: linear-gradient(
+    135deg,
+    #7f1d1d,
+    color-mix(in srgb, #7f1d1d 60%, #b42318)
+  );
+}
+
+.dd-confirm-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--ar-nieve);
+}
+
+.dd-confirm-subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.dd-confirm-body {
+  padding: 1rem 1.25rem 0.25rem;
+}
+
+.dd-confirm-text {
+  margin: 0;
+  color: var(--dd-texto-suave);
+  line-height: 1.6;
+}
+
+.dd-confirm-actions {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.6rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.dd-confirm-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  font-family: sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ar-nieve);
+  background: #b42318;
+  border: 0;
+  border-radius: 0.6rem;
+  cursor: pointer;
+}
+
+.dd-confirm-button:hover {
+  filter: brightness(1.08);
+}
+
+@media (min-width: 641px) {
+  .dd-confirm-actions {
+    flex-direction: row;
+    justify-content: flex-end;
+  }
 }
 
 .dd-search-input:focus-visible,

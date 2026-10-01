@@ -20,6 +20,8 @@ interface DocenteFormState {
   password: string;
 }
 
+const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
 const emptyForm: DocenteFormState = {
   nombreCompleto: '',
   email: '',
@@ -28,9 +30,8 @@ const emptyForm: DocenteFormState = {
   password: '',
 };
 
-function generarPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+function isStrongPassword(password: string) {
+  return SAFE_PASSWORD_REGEX.test(password.trim());
 }
 
 function splitNombreCompleto(nombreCompleto: string) {
@@ -124,7 +125,7 @@ export default function DirectorioDocentes() {
       ...emptyForm,
       plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (selectedPlantel?.id ?? planteles[0]?.id ?? null),
       rol: 'DOCENTE',
-      password: generarPassword(),
+      password: '',
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -171,6 +172,11 @@ export default function DirectorioDocentes() {
 
     if (!editingId && !form.password.trim()) {
       setFormError('Define una contraseña temporal para el usuario.');
+      return;
+    }
+
+    if (!editingId && !isStrongPassword(form.password)) {
+      setFormError('La contraseña debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.');
       return;
     }
 
@@ -345,27 +351,27 @@ export default function DirectorioDocentes() {
       )}
 
       {confirmDeactivate && createPortal(
-        <article className="dd-modal-overlay">
-          <article className="dd-modal" role="alertdialog" aria-modal="true" aria-labelledby="dd-deactivate-title">
-            <article className="dd-modal-header">
+        <div className="dd-confirm-backdrop" role="presentation" onClick={() => setConfirmDeactivate(null)}>
+          <article className="dd-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="dd-deactivate-title" onClick={(event) => event.stopPropagation()}>
+            <header className="dd-confirm-header">
               <article>
-                <h2 id="dd-deactivate-title" className="dd-modal-title">Confirmar desactivación</h2>
-                <p className="dd-modal-subtitle">{getNombreCompleto(confirmDeactivate)}</p>
+                <h2 id="dd-deactivate-title" className="dd-confirm-title">Confirmar desactivación</h2>
+                <p className="dd-confirm-subtitle">{getNombreCompleto(confirmDeactivate)}</p>
               </article>
-            </article>
-            <section style={{ padding: '1rem', color: 'var(--dd-texto-suave)' }}>
-              <p style={{ marginTop: 0 }}>El docente dejará de estar disponible para asignaciones, pero conservará su historial.</p>
+            </header>
+            <section className="dd-confirm-body">
+              <p className="dd-confirm-text">El docente dejará de estar disponible para asignaciones, pero conservará su historial.</p>
             </section>
-            <article className="dd-modal-actions">
+            <article className="dd-confirm-actions">
               <button type="button" className="dd-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
                 Cancelar
               </button>
-              <button type="button" className="dd-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)}>
+              <button type="button" className="dd-confirm-button" onClick={() => void handleDeactivate(confirmDeactivate)}>
                 Confirmar
               </button>
             </article>
           </article>
-        </article>,
+        </div>,
         document.body,
       )}
 
@@ -480,9 +486,12 @@ function DocenteModal({ planteles, docente, loading, form, formError, onClose, o
                   type="text"
                   value={form.password}
                   onChange={(e) => onChange({ ...form, password: e.target.value })}
-                  placeholder="Contraseña para primer acceso"
+                  placeholder="Ej. Doc#2026Segura"
                   required
                 />
+                <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--dd-texto-suave)' }}>
+                  Debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.
+                </small>
               </label>
             </>
           )}
