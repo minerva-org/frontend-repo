@@ -350,7 +350,6 @@ export default function Planteles() {
             <section className="pl-modal-form">
               <p>¿Deseas desactivar el registro "{confirmDeactivate.nombre}"?</p>
               <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
-            </section>
             <footer className="pl-modal-actions">
               <button type="button" onClick={() => setConfirmDeactivate(null)} className="pl-btn-secondary">
                 Cancelar
@@ -359,6 +358,7 @@ export default function Planteles() {
                 Confirmar
               </button>
             </footer>
+            </section>
           </article>
         </article>,
         document.body,
