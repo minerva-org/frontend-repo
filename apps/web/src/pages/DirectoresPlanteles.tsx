@@ -375,15 +375,15 @@ export default function DirectoresPlanteles() {
             <section className="dp-modal-form">
               <p>¿Deseas desactivar el registro "{getNombreCompleto(confirmDeactivate)}"?</p>
               <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
+              <footer className="dp-modal-actions">
+                <button type="button" className="dp-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
+                  Cancelar
+                </button>
+                <button type="button" className="dp-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)} style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
+                  Confirmar
+                </button>
+              </footer>
             </section>
-            <footer className="dp-modal-actions">
-              <button type="button" className="dp-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
-                Cancelar
-              </button>
-              <button type="button" className="dp-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)} style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
-                Confirmar
-              </button>
-            </footer>
           </article>
         </article>,
         document.body,
