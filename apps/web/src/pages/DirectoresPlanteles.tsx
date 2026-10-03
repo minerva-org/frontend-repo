@@ -252,6 +252,25 @@ export default function DirectoresPlanteles() {
     }
   }
 
+    async function handleActivate(director: DirectorPersona) {
+      setLoading(true);
+  
+      try {
+        const response = await updatePersona(director.id, { activo: true });
+        const updated = response.data as DirectorPersona;
+  
+        setDirectores((prev) =>
+          prev.map((item) => (item.id === director.id ? updated : item)),
+        );
+  
+        setToast('Director reactivado correctamente.');
+      } catch {
+        setToast('No se pudo reactivar el Director.');
+      } finally {
+        setLoading(false);
+      }
+  }
+
   const filteredDirectores = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return directores;
@@ -329,17 +348,25 @@ export default function DirectoresPlanteles() {
                         {director.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="dp-acciones">
-                      <button className="dp-btn dp-btn-neutral" type="button" onClick={() => openEditModal(director)}>
-                        Editar
+                    <td className="ca-acciones">
+                      <button
+                        type="button"
+                        className="ca-link-button"
+                        disabled={director.activo === false || loading}
+                        onClick={() => openEditModal(director)}
+                      >
+                        <i className="bi bi-pencil"></i> Editar
                       </button>
                       <button
-                        className={`dp-btn ${director.activo ? 'dp-btn-danger' : 'dp-btn-success'}`}
-                        type="button"
-                        disabled={!director.activo || loading}
-                        onClick={() => setConfirmDeactivate(director)}
+                        className={`ca-link-button ${director.activo ? 'ca-link-danger' : 'ca-link-success'}`}
+                        disabled={loading}
+                        onClick={() =>
+                          director.activo
+                            ? setConfirmDeactivate(director)
+                            : void handleActivate(director)
+                        }
                       >
-                        Desactivar
+                        {director.activo ? 'Desactivar' : 'Reactivar'}
                       </button>
                     </td>
                   </tr>
@@ -369,7 +396,7 @@ export default function DirectoresPlanteles() {
       {confirmDeactivate && createPortal(
         <article className="dp-modal-overlay">
           <article className="dp-modal">
-            <header className="dp-modal-header" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, var(--ar-profundo))' }}>
+            <header className="dp-modal-header">
               Confirmar
             </header>
             <section className="dp-modal-form">
@@ -379,7 +406,7 @@ export default function DirectoresPlanteles() {
                 <button type="button" className="dp-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
                   Cancelar
                 </button>
-                <button type="button" className="dp-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)} style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
+                <button type="button" className="dp-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)}>
                   Confirmar
                 </button>
               </footer>

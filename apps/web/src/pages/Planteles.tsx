@@ -344,7 +344,7 @@ export default function Planteles() {
       {confirmDeactivate && createPortal(
         <article className="pl-modal-overlay">
           <article className="pl-modal">
-            <header className="pl-modal-header" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, var(--ar-profundo))' }}>
+            <header className="pl-modal-header">
               Confirmar
             </header>
             <section className="pl-modal-form">
@@ -354,7 +354,7 @@ export default function Planteles() {
               <button type="button" onClick={() => setConfirmDeactivate(null)} className="pl-btn-secondary">
                 Cancelar
               </button>
-              <button type="button" onClick={() => void handleDeactivate(confirmDeactivate)} className="pl-btn-primary" style={{ background: 'color-mix(in srgb, var(--seige-error-texto) 88%, white)' }}>
+              <button type="button" onClick={() => void handleDeactivate(confirmDeactivate)} className="pl-btn-primary">
                 Confirmar
               </button>
             </footer>

@@ -223,7 +223,7 @@ export default function Materias() {
               aria-label="Buscar materias"
             />
           </article>
-          <button className="mat-btn mat-btn-primary" type="button" onClick={() => setModal({ tipo: 'nueva' })}>
+          <button className="mat-btn" type="button" onClick={() => setModal({ tipo: 'nueva' })}>
             <i className="bi bi-plus-lg"></i> Nueva materia
           </button>
         </section>

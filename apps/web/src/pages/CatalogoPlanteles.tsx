@@ -198,16 +198,16 @@ function PlantelModal({ plantel, onCerrar, onGuardar }: PlantelModalProps) {
       >
         <article className="pl-modal-header">
           <article>
-            <h2 id="pl-modal-title" className="pl-modal-title">
+            <h2 id="dd-modal-title" className="dd-modal-title">
               {esEdicion ? 'Editar plantel' : 'Agregar plantel'}
             </h2>
-            <p className="pl-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
+            <p className="dd-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
           </article>
         </article>
 
-        <form className="pl-modal-form" onSubmit={handleSubmit}>
-          <label className="pl-field">
-            <span className="pl-field-label">Nombre del plantel</span>
+        <form className="dd-modal-form" onSubmit={handleSubmit}>
+          <label className="dd-field">
+            <span className="dd-field-label">Nombre del plantel</span>
             <input
               className="pl-input"
               type="text"

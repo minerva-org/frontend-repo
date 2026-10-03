@@ -365,18 +365,17 @@ export default function DirectorioDocentes() {
                         {docente.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="dd-acciones">
+                    <td className="ca-acciones">
                       <button
-                        className="dd-btn dd-btn-neutral"
+                        type="button"
+                        className="ca-link-button"
                         disabled={docente.activo === false || loading}
                         onClick={() => openEditModal(docente)}
                       >
-                        Editar
+                        <i className="bi bi-pencil"></i> Editar
                       </button>
                       <button
-                        className={`dd-btn ${
-                          docente.activo ? 'dd-btn-danger' : 'dd-btn-success'
-                        }`}
+                        className={`ca-link-button ${docente.activo ? 'ca-link-danger' : 'ca-link-success'}`}
                         disabled={loading}
                         onClick={() =>
                           docente.activo

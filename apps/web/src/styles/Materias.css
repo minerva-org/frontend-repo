@@ -129,10 +129,11 @@
   border: 1px solid var(--mat-borde);
   border-radius: 0.55rem;
   cursor: pointer;
+  color: var(--seige-superficie); background: var(--seige-acento); border-color: transparent;
 }
-.mat-btn:hover { background: color-mix(in srgb, var(--ar-neblina) 30%, white); }
-.mat-btn-primary { color: var(--seige-superficie); background: var(--seige-acento); border-color: transparent; }
-.mat-btn-primary:hover { filter: brightness(1.1); }
+.mat-btn:hover {filter: brightness(1.1);}
+/* .mat-btn-primary { color: var(--seige-superficie); background: var(--seige-acento); border-color: transparent; } */
+.mat-btn-primary:hover {background: var(--ar-profundo);}
 .mat-btn:focus-visible { outline: 2px solid var(--seige-acento); outline-offset: 2px; }
 
 /* ---------- Tabla ---------- */
