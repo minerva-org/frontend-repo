@@ -11,16 +11,11 @@ import Materias from './pages/Materias.tsx';
 import AppLayout from './components/AppLayout.tsx';
 import MisGrupos from './pages/MisGrupos.tsx';
 import PlantelDashboard from './pages/PlantelDashboard.tsx';
-import Planteles from './pages/CatalogoPlanteles.tsx';
-import DirectoresPlanteles from './pages/CatalogoDirectoresPlantel.tsx';
+import Planteles from './pages/Planteles.tsx';
+import DirectoresPlanteles from './pages/DirectoresPlanteles.tsx';
 import MetricasTroncoComun from './pages/MetricasTroncoComun.tsx';
 import DirectorioDocentes from './pages/DirectorioDocentes.tsx';
 import CatalogoAlumnos from './pages/CatalogoAlumnos.tsx';
-// NOTA: CatalogoPlanteles.tsx quedó sin usar — antes se importaba aquí como
-// "DirectoresPlantel" y competía con la ruta de abajo. Revisa qué contiene
-// ese archivo: si es otra versión del catálogo de Planteles, probablemente
-// ya no lo necesitas; si es en realidad el catálogo de Directores, avísame
-// y cambiamos el import de la línea de arriba por ese archivo.
 
 
 export default function App() {
@@ -28,11 +23,12 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
 
           <Route element={<AppLayout />}>
             <Route path="/grupos" element={
-              <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorGeneral']}>
+              <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorGeneral', 'directorPlantel', 'admin', 'dev']}>
                 <Grupos soloMisGrupos/>
               </ProtectedRoute>
             } />
@@ -44,31 +40,31 @@ export default function App() {
             } />
 
             <Route path="/plantel/dashboard" element={
-              <ProtectedRoute allowedRoles={['directorPlantel']}>
+              <ProtectedRoute allowedRoles={['directorPlantel', 'directorGeneral', 'admin', 'dev']}>
                 <PlantelDashboard />
               </ProtectedRoute>
             } />
 
             <Route path="/plantel/directorio-docente" element={
-              <ProtectedRoute allowedRoles={['coordinador','directorPlantel']}>
+              <ProtectedRoute allowedRoles={['coordinador','directorPlantel', 'directorGeneral', 'admin', 'dev']}>
                 <DirectorioDocentes />
               </ProtectedRoute>
              } />
 
             <Route path="/catalogo-grupos" element={
-              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral']}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral', 'admin', 'dev']}>
                 <Grupos />
               </ProtectedRoute>
               } />
 
             <Route path="/catalogo-docentes" element={
-              <ProtectedRoute allowedRoles={['coordinador']}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral']}>
                 <DirectorioDocentes />
               </ProtectedRoute>
             } />
 
             <Route path="/catalogo-alumnos" element={
-              <ProtectedRoute allowedRoles={['coordinador']}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral']}>
                 <CatalogoAlumnos />
               </ProtectedRoute>
             } />
@@ -86,43 +82,43 @@ export default function App() {
             } />
 
             <Route path="/grupos/:code" element={
-              <ProtectedRoute allowedRoles={['alumno', 'docente', 'coordinador']}>
+              <ProtectedRoute allowedRoles={['alumno', 'docente', 'coordinador', 'directorGeneral', 'directorPlantel', 'admin', 'dev']}>
                 <GroupDetail/>
               </ProtectedRoute>
             } />
 
             <Route path="/grupos/:code/quizzes/nuevo" element={
-              <ProtectedRoute allowedRoles={['docente','coordinador']}>
+              <ProtectedRoute allowedRoles={['docente','coordinador','directorGeneral','directorPlantel','admin','dev']}>
                 <QuizNuevo/>
               </ProtectedRoute>
             } />
 
             <Route path="/grupos/:code/quizzes/:quizId/editar" element={
-              <ProtectedRoute allowedRoles={['docente','coordinador']}>
+              <ProtectedRoute allowedRoles={['docente','coordinador','directorGeneral','directorPlantel','admin','dev']}>
                 <QuizNuevo/>
               </ProtectedRoute>
             } />
 
             <Route path="/materias" element={
-              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel']}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral', 'admin', 'dev']}>
                 <Materias/>
               </ProtectedRoute>
             } />
 
             <Route path="/planteles" element={
-              <ProtectedRoute allowedRoles={['directorGeneral']}>
+              <ProtectedRoute allowedRoles={['directorGeneral', 'directorPlantel', 'admin', 'dev']}>
                 <Planteles />
               </ProtectedRoute>
-             } />
+            } />
 
             <Route path="/directores-planteles" element={
-              <ProtectedRoute allowedRoles={['directorGeneral']}>
+              <ProtectedRoute allowedRoles={[ 'directorGeneral', 'admin', 'dev']}>
                 <DirectoresPlanteles />
               </ProtectedRoute>
             } />
 
             <Route path="/metricas-tronco-comun" element={
-              <ProtectedRoute allowedRoles={['directorGeneral']}>
+              <ProtectedRoute allowedRoles={['directorGeneral', 'admin', 'dev']}>
                 <MetricasTroncoComun />
               </ProtectedRoute>
             } />

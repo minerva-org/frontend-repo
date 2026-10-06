@@ -23,15 +23,14 @@ export interface Unidad {
   nombre: string;
   temas: Tema[];
 }
- 
-export type StatusMateria = 'Activa' | 'Inactiva';
- 
+
 export interface Materia {
   id: string;
   nombre: string;
-  planEstudioNombre: string | null;
-  unidades: Unidad[];
-  status: StatusMateria;
+  prefijo: string;
+  planEstudioId: string;
+  unidades?: Unidad[];
+  activo?: boolean;
 }
 
 export interface Group {
@@ -50,6 +49,6 @@ export interface Plantel {
   id: number;
   nombre: string;
   direccion: string;
-  universidadId: number;
+  institucionId: number;
   activo: boolean;
 }

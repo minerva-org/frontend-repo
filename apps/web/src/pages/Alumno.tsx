@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 
 interface QuizAlumno {
   id: string;
@@ -10,24 +12,13 @@ interface QuizAlumno {
   grupoNombre: string;
   preguntas: number;
   segundosPorPregunta: number;
-  abre: number; // timestamp en ms
-  cierra: number; // timestamp en ms
+  abre: number;   
+  cierra: number;
 }
 
 const MIN = 60_000;
-const HORA = 60 * MIN;
-const DIA = 24 * HORA;
-const BASE = Date.now();
 
-const NOMBRE_ALUMNO = 'Carlos';
 
-const MOCK_QUIZZES: QuizAlumno[] = [
-  { id: 'q3', titulo: 'Quiz 3: Cinemática', grupoCode: 'FIS2-B', grupoNombre: 'Física II · 2.° B', preguntas: 3, segundosPorPregunta: 40, abre: BASE - HORA, cierra: BASE + 5 * HORA },
-  { id: 'q5', titulo: 'Quiz 5: Identidades Recíprocas', grupoCode: 'MAT3-A', grupoNombre: 'Matemáticas III · 3.° A', preguntas: 4, segundosPorPregunta: 45, abre: BASE - 2 * HORA, cierra: BASE + DIA + 22 * HORA },
-  { id: 'q4', titulo: 'Quiz 4: Leyes de Newton', grupoCode: 'FIS2-B', grupoNombre: 'Física II · 2.° B', preguntas: 3, segundosPorPregunta: 40, abre: BASE + DIA, cierra: BASE + 2 * DIA },
-  { id: 'q6', titulo: 'Quiz 6: Geometría Analítica', grupoCode: 'MAT3-A', grupoNombre: 'Matemáticas III · 3.° A', preguntas: 3, segundosPorPregunta: 45, abre: BASE + 3 * DIA, cierra: BASE + 4 * DIA },
-  { id: 'q2', titulo: 'Quiz 2: Ciclos', grupoCode: 'PROG1-A', grupoNombre: 'Programación I · 1.° A', preguntas: 3, segundosPorPregunta: 50, abre: BASE + 5 * DIA, cierra: BASE + 6 * DIA },
-];
 
 const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -42,11 +33,13 @@ function formatFecha(ts: number): string {
 
 function formatRestante(ms: number): string {
   const totalMin = Math.max(0, Math.floor(ms / MIN));
-  const d = Math.floor(totalMin / 1440);
-  const h = Math.floor((totalMin % 1440) / 60);
-  const m = totalMin % 60;
-  return d > 0 ? `${d} d ${h} h` : `${h} h ${m} min`;
+  const dias = Math.floor(totalMin / 1440);
+  const horas = Math.floor((totalMin % 1440) / 60);
+  const minutos = totalMin % 60;
+  return dias > 0 ? `${dias} d ${horas} h` : `${horas} h ${minutos} min`;
 }
+
+
 
 function textoSaludo(activos: number): string {
   if (activos === 0) return 'No tienes quizzes activos por ahora.';
@@ -57,21 +50,68 @@ function textoSaludo(activos: number): string {
 export default function AlumnoInicio() {
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
+  const { user } = useAuth();
+
+  const nombreAlumno =
+    `${user?.nombre ?? ''} ${user?.apellido ?? ''}`.trim() ||
+    user?.email ||
+    'Alumno';
+
   const [ahora, setAhora] = useState(() => Date.now());
+  const [quizzes, setQuizzes] = useState<QuizAlumno[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setAhora(Date.now()), MIN);
     return () => clearInterval(id);
   }, []);
 
-  const vigentes = MOCK_QUIZZES.filter((q) => q.cierra > ahora).map((q) => ({
+  useEffect(() => {
+    async function cargarQuizzes() {
+      try {
+        const response = await apiClient.get<
+          Array<{
+            id: string;
+            nombre: string;
+            fechaInicio: string | null;
+            fechaFinalizacion: string | null;
+            grupoId: string | null;
+          }>
+        >('/api/quizzes');
+
+        const datos: QuizAlumno[] = (response.data ?? []).map((quiz) => ({
+          id: quiz.id,
+          titulo: quiz.nombre,
+          grupoCode: quiz.grupoId ?? '',
+          grupoNombre: `Grupo ${quiz.grupoId ?? '-'}`,
+          preguntas: 0,
+          segundosPorPregunta: 0,
+          abre: quiz.fechaInicio ? Date.parse(quiz.fechaInicio) : Date.now(),
+          cierra: quiz.fechaFinalizacion
+            ? Date.parse(quiz.fechaFinalizacion)
+            : Date.now(),
+        }));
+
+        setQuizzes(datos);
+      } catch {
+        setError('No se pudieron cargar los quizzes.');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    void cargarQuizzes();
+  }, []);
+
+  const vigentes = quizzes.filter((q) => q.cierra > ahora).map((q) => ({
     ...q,
     activo: q.abre <= ahora,
   }));
 
   const activos = vigentes.filter((q) => q.activo).sort((a, b) => a.cierra - b.cierra);
   const proximos = vigentes.filter((q) => !q.activo).sort((a, b) => a.abre - b.abre);
-  const ordenados = [...activos, ...proximos];
+  const ordenados = useMemo(() => [...activos, ...proximos], [activos, proximos]);
 
   return (
     <article className="al-screen">
@@ -89,7 +129,7 @@ export default function AlumnoInicio() {
         <section className="al-intro">
           <h1 className="al-title">Inicio</h1>
           <p className="al-greeting">
-            Hola, {NOMBRE_ALUMNO}. {textoSaludo(activos.length)}
+            Hola, {nombreAlumno}. {textoSaludo(activos.length)}
           </p>
           <article className="al-counters">
             <span className="al-counter">Activos <strong>{activos.length}</strong></span>
@@ -97,42 +137,43 @@ export default function AlumnoInicio() {
           </article>
         </section>
 
-        <h2 className="al-section-label">TUS QUIZZES MÁS CERCANOS</h2>
+        {loading && <p className="al-empty">Cargando quizzes...</p>}
+        {error && <p className="al-empty">{error}</p>}
 
-        {ordenados.length === 0 && <p className="al-empty">No tienes quizzes pendientes.</p>}
+        {!loading && !error && (
+          <article className="al-list">
+            {ordenados.map((q) => (
+              <article key={`${q.grupoCode}-${q.id}`} className={`al-card ${q.activo ? 'al-card-activo' : ''}`}>
+                <article className="al-card-top">
+                  <span className={`al-status ${q.activo ? 'al-status-activo' : 'al-status-proximo'}`}>
+                    {q.activo && <i className="bi bi-circle-fill"></i>}
+                    {q.activo ? 'ACTIVO' : 'PRÓXIMO'}
+                  </span>
+                  <button className="al-group-link" onClick={() => navigate(`/grupos/${q.grupoCode}`)}>
+                    {q.grupoNombre} →
+                  </button>
+                </article>
 
-        <article className="al-list">
-          {ordenados.map((q) => (
-            <article key={`${q.grupoCode}-${q.id}`} className={`al-card ${q.activo ? 'al-card-activo' : ''}`}>
-              <article className="al-card-top">
-                <span className={`al-status ${q.activo ? 'al-status-activo' : 'al-status-proximo'}`}>
-                  {q.activo && <i className="bi bi-circle-fill"></i>}
-                  {q.activo ? 'ACTIVO' : 'PRÓXIMO'}
-                </span>
-                <button className="al-group-link" onClick={() => navigate(`/grupos/${q.grupoCode}`)}>
-                  {q.grupoNombre} →
+                <h3 className="al-card-title">{q.titulo}</h3>
+
+                <p className="al-card-meta">
+                  {q.preguntas} preguntas · {q.segundosPorPregunta} s por pregunta ·{' '}
+                  {q.activo
+                    ? `Cierra en ${formatRestante(q.cierra - ahora)} · ${formatFecha(q.cierra)}`
+                    : `Se habilita el ${formatFecha(q.abre)}`}
+                </p>
+
+                <button
+                  className={`al-btn ${q.activo ? 'al-btn-primary' : ''}`}
+                  disabled={!q.activo}
+                  onClick={() => navigate(`/grupos/${q.grupoCode}/quizzes/${q.id}/resolver`)}
+                >
+                  {q.activo ? 'Iniciar quiz' : 'Aún no disponible'}
                 </button>
               </article>
-
-              <h3 className="al-card-title">{q.titulo}</h3>
-
-              <p className="al-card-meta">
-                {q.preguntas} preguntas · {q.segundosPorPregunta} s por pregunta ·{' '}
-                {q.activo
-                  ? `Cierra en ${formatRestante(q.cierra - ahora)} · ${formatFecha(q.cierra)}`
-                  : `Se habilita el ${formatFecha(q.abre)}`}
-              </p>
-
-              <button
-                className={`al-btn ${q.activo ? 'al-btn-primary' : ''}`}
-                disabled={!q.activo}
-                onClick={() => navigate(`/grupos/${q.grupoCode}/quizzes/${q.id}/resolver`)}
-              >
-                {q.activo ? 'Iniciar quiz' : 'Aún no disponible'}
-              </button>
-            </article>
-          ))}
-        </article>
+            ))}
+          </article>
+        )}
       </main>
     </article>
   );

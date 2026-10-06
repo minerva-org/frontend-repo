@@ -1,16 +1,22 @@
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import { createPortal } from 'react-dom';
 import type { SidebarConfig, SidebarNavItem } from '../services/sidebarTypes.ts';
+import { apiClient } from '../services/ApiClient';
 import '../styles/Sidebar.css';
-import { create } from 'axios';
 import logo from '../assets/logo.webp';
 
 interface SidebarProps {
   config: SidebarConfig;
   dynamicGroupItems?: SidebarNavItem[];
+}
+
+interface PlantelOption {
+  id: number;
+  nombre: string;
+  activo: boolean;
 }
 
 const CICLO_ACTIVO = 'Ciclo Activo Ago-Dic 2026';
@@ -25,20 +31,50 @@ function iniciales(nombre: string): string {
 }
 
 export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps) {
-  const { email, logout } = useAuth() as { email?: string | null; logout?: () => void };
+  const {
+    email,
+    logout,
+    role,
+    selectedPlantel,
+    setSelectedPlantel,
+  } = useAuth() as {
+    email?: string | null;
+    logout?: () => void;
+    role?: string | null;
+    selectedPlantel?: { id: number; nombre: string } | null;
+    setSelectedPlantel?: (next: { id: number; nombre: string } | null) => void;
+  };
   const { collapsed } = useSidebar();
-  const cancelarRef = useRef<HTMLButtonElement>(null);
+  const navigate = useNavigate();
+  const [planteles, setPlanteles] = useState<PlantelOption[]>([]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmarLogout, setConfirmarLogout] = useState(false);
+  const cancelarRef = useRef<HTMLButtonElement>(null);
   const userRef = useRef<HTMLDivElement>(null);
-
+  const isDG = role === 'directorGeneral';
   const nombre = email ?? config.roleLabel;
 
   useEffect(() => {
-  if (confirmarLogout) {
-    cancelarRef.current?.focus();
-  }
-}, [confirmarLogout]);
+    if (!isDG) return;
+
+    async function loadPlanteles() {
+      try {
+        const response = await apiClient.get<PlantelOption[]>('/api/planteles');
+        const activos = (response.data ?? []).filter((item) => item.activo !== false);
+        setPlanteles(activos);
+      } catch {
+        setPlanteles([]);
+      }
+    }
+
+    void loadPlanteles();
+  }, [isDG]);
+
+  useEffect(() => {
+    if (confirmarLogout) {
+      cancelarRef.current?.focus();
+    }
+  }, [confirmarLogout]);
 
   useEffect(() => {
     function handleClickFuera(e: MouseEvent) {
@@ -47,15 +83,13 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
       }
     }
 
-
-  
-    
     function handleEscape(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         setMenuOpen(false);
         setConfirmarLogout(false);
       }
     }
+
     document.addEventListener('mousedown', handleClickFuera);
     document.addEventListener('keydown', handleEscape);
     return () => {
@@ -64,10 +98,16 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
     };
   }, []);
 
+  function handlePlantelClick(plantel: PlantelOption) {
+    setSelectedPlantel?.({ id: plantel.id, nombre: plantel.nombre });
+    navigate(`/catalogo-grupos?plantelId=${plantel.id}`);
+  }
+
   function handleConfirmarLogout() {
     setConfirmarLogout(false);
     setMenuOpen(false);
     logout?.();
+    navigate('/login', { replace: true });
   }
 
   return (
@@ -106,6 +146,51 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
         })}
       </nav>
 
+      {isDG && (
+        <article className="sd-dg-panel">
+          <p className="sd-dg-title">
+            Planteles
+          </p>
+          <article className="sd-dg-planteles" aria-label="Listado de planteles">
+            {planteles.map((plantel) => {
+              const active = selectedPlantel?.id === plantel.id;
+              return (
+                <button
+                  key={plantel.id}
+                  type="button"
+                  className={`sd-dg-plantel-item ${active ? 'active' : ''}`}
+                  onClick={() => handlePlantelClick(plantel)}
+                >
+                  <i className="bi bi-building"></i>
+                  <span>{plantel.nombre}</span>
+                </button>
+              );
+            })}
+          </article>
+
+          {selectedPlantel && (
+            <article className="sd-dg-extra" aria-label="Accesos del plantel seleccionado">
+              <p className="sd-dg-title">Gestión de {selectedPlantel.nombre}</p>
+              <NavLink to={`/catalogo-grupos?plantelId=${selectedPlantel.id}`} className="sd-nav-link" end>
+                <i className="bi bi-collection"></i>
+                <span>Grupos del plantel</span>
+              </NavLink>
+              <NavLink to={`/catalogo-docentes?plantelId=${selectedPlantel.id}`} className="sd-nav-link" end>
+                <i className="bi bi-people"></i>
+                <span>Docentes</span>
+              </NavLink>
+              <NavLink to={`/catalogo-alumnos?plantelId=${selectedPlantel.id}`} className="sd-nav-link" end>
+                <i className="bi bi-mortarboard"></i>
+                <span>Alumnos</span>
+              </NavLink>
+              <NavLink to={`/plantel/dashboard?plantelId=${selectedPlantel.id}`} className="sd-nav-link" end>
+                <i className="bi bi-bar-chart-line"></i>
+                <span>Métricas de plantel</span>
+              </NavLink>
+            </article>
+          )}
+        </article>
+      )}
       <article className="sd-user-wrap" ref={userRef}>
         <button
           type="button"
@@ -140,23 +225,24 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
           </article>
         )}
       </article>
-        {confirmarLogout &&
-      createPortal(
-  <article className="sd-logout-overlay">
-    <article className="sd-logout-modal" role="alertdialog" aria-modal="true" aria-labelledby="sd-logout-title">
-      <h2 id="sd-logout-title" className="sd-logout-title">¿Seguro que quieres salir?</h2>
-      <article className="sd-logout-actions">
-        <button type="button" className="sd-logout-btn-secondary" ref={cancelarRef} onClick={() => setConfirmarLogout(false)}>
-          Cancelar
-        </button>
-        <button type="button" className="sd-logout-btn-primary" onClick={handleConfirmarLogout}>
-          Aceptar
-        </button>
-      </article>
-    </article>
-  </article>,
-  document.body
-)}
+
+      {confirmarLogout &&
+        createPortal(
+          <article className="sd-logout-overlay">
+            <article className="sd-logout-modal" role="alertdialog" aria-modal="true" aria-labelledby="sd-logout-title">
+              <h2 id="sd-logout-title" className="sd-logout-title">¿Seguro que quieres salir?</h2>
+              <article className="sd-logout-actions">
+                <button type="button" className="sd-logout-btn-secondary" ref={cancelarRef} onClick={() => setConfirmarLogout(false)}>
+                  Cancelar
+                </button>
+                <button type="button" className="sd-logout-btn-primary" onClick={handleConfirmarLogout}>
+                  Aceptar
+                </button>
+              </article>
+            </article>
+          </article>,
+          document.body
+        )}
     </aside>
   );
 }

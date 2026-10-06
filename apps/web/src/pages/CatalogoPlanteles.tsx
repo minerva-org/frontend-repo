@@ -37,7 +37,7 @@ const MOCK_PLANTELES: Plantel[] = [
   },
 ];
 
-// TODO: reemplazar por el catálogo real de universidades del backend
+
 const MOCK_UNIVERSIDADES = [
   'Tecnológico Nacional de México',
   'Universidad de Guadalajara',
@@ -61,14 +61,12 @@ export default function CatalogoPlanteles() {
   );
 
   function handleToggleEstado(id: string) {
-    // TODO backend: PATCH /planteles/:id/status
     setPlanteles((prev) =>
       prev.map((p) => (p.id === id ? { ...p, estado: p.estado === 'Activo' ? 'Inactivo' : 'Activo' } : p)),
     );
   }
 
   function handleGuardar(datos: { nombre: string; universidad: string; direccion: string }) {
-    // TODO backend: POST /planteles o PATCH /planteles/:id
     if (modal?.tipo === 'editar') {
       const id = modal.plantel.id;
       setPlanteles((prev) => prev.map((p) => (p.id === id ? { ...p, ...datos } : p)));
@@ -200,16 +198,16 @@ function PlantelModal({ plantel, onCerrar, onGuardar }: PlantelModalProps) {
       >
         <article className="pl-modal-header">
           <article>
-            <h2 id="pl-modal-title" className="pl-modal-title">
+            <h2 id="dd-modal-title" className="dd-modal-title">
               {esEdicion ? 'Editar plantel' : 'Agregar plantel'}
             </h2>
-            <p className="pl-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
+            <p className="dd-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
           </article>
         </article>
 
-        <form className="pl-modal-form" onSubmit={handleSubmit}>
-          <label className="pl-field">
-            <span className="pl-field-label">Nombre del plantel</span>
+        <form className="dd-modal-form" onSubmit={handleSubmit}>
+          <label className="dd-field">
+            <span className="dd-field-label">Nombre del plantel</span>
             <input
               className="pl-input"
               type="text"

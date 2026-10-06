@@ -117,6 +117,107 @@
 .al-btn:focus-visible,
 .al-group-link:focus-visible { outline: 2px solid var(--seige-acento); outline-offset: 2px; }
 
+.al-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, black 55%, transparent);
+}
+
+.al-modal {
+  width: min(26rem, 100%);
+  max-height: 90dvh;
+  overflow-y: auto;
+  background: var(--seige-superficie);
+  border-radius: 1rem;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.18);
+}
+
+.al-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1.25rem 1.25rem 1rem;
+  color: var(--ar-nieve);
+  background: linear-gradient(135deg, var(--ar-profundo), color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul)));
+  border-radius: 1rem 1rem 0 0;
+}
+
+.al-modal-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ar-nieve);
+}
+
+.al-modal-subtitle {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: color-mix(in srgb, var(--ar-nieve) 80%, var(--ar-neblina));
+}
+
+.al-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.al-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  color: var(--al-suave);
+}
+
+.al-field-label {
+  font-weight: 700;
+  color: var(--seige-texto);
+}
+
+.al-input {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  color: var(--seige-texto);
+  background: var(--seige-superficie);
+  border: 1px solid var(--al-borde);
+  border-radius: 0.6rem;
+}
+
+.al-input:focus-visible {
+  outline: 2px solid var(--seige-acento);
+  outline-offset: 2px;
+}
+
+.al-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.al-btn-secondary {
+  padding: 0.6rem 1rem;
+  font: inherit;
+  font-weight: 700;
+  color: var(--seige-texto);
+  background: var(--seige-superficie);
+  border: 1px solid var(--al-borde);
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.al-btn-secondary:hover {
+  background: color-mix(in srgb, var(--ar-neblina) 20%, white);
+}
+
 @media (min-width: 641px) {
   .al-topbar { padding: 0.85rem 2rem; }
   .al-content { padding-inline: 2rem; }

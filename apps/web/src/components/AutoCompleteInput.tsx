@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import '../styles/AutocompleteInput.css';
+import '../styles/AutoCompleteInput.css';
 
 interface AutocompleteInputProps {
   label: string;
@@ -8,6 +8,7 @@ interface AutocompleteInputProps {
   multiple?: boolean;
   selected: string[];
   onChange: (selected: string[]) => void;
+  onSearch?: (query: string) => void;
 }
 
 export default function AutocompleteInput({
@@ -17,6 +18,7 @@ export default function AutocompleteInput({
   multiple = false,
   selected,
   onChange,
+  onSearch,
 }: AutocompleteInputProps) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -78,6 +80,7 @@ export default function AutocompleteInput({
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
+            onSearch?.(e.target.value);
             setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}

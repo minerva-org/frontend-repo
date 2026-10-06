@@ -1,74 +1,298 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import { apiClient } from '../services/ApiClient';
+import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/DirectorioDocentes.css';
+import type { PlantelItem } from '../types/PlantelTypes.ts';
 
-type RolDocente = 'docente' | 'coordinador';
-type EstadoDocente = 'activo' | 'inactivo';
-
-interface Docente {
-  id: string;
-  nombre: string;
-  correo: string;
-  rol: RolDocente;
-  estado: EstadoDocente;
+interface DocenteFormState {
+  nombreCompleto: string;
+  email: string;
+  plantelId: number | null;
+  rol: 'DOCENTE' | 'COORDINADOR';
+  password: string;
 }
 
-const MOCK_DOCENTES: Docente[] = [
-  { id: '1', nombre: 'Prof. García', correo: 'garcia@chapalagutierrez.edu.mx', rol: 'docente', estado: 'activo' },
-  { id: '2', nombre: 'Prof. Ruiz', correo: 'ruiz@chapalagutierrez.edu.mx', rol: 'docente', estado: 'activo' },
-  { id: '3', nombre: 'Profa. Méndez', correo: 'mendez@chapalagutierrez.edu.mx', rol: 'coordinador', estado: 'activo' },
-  { id: '4', nombre: 'Prof. López', correo: 'lopez@chapalagutierrez.edu.mx', rol: 'docente', estado: 'inactivo' },
-];
+const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
-function generarPassword(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789';
-  return Array.from({ length: 10 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+const emptyForm: DocenteFormState = {
+  nombreCompleto: '',
+  email: '',
+  plantelId: null,
+  rol: 'DOCENTE',
+  password: '',
+};
+
+function isStrongPassword(password: string) {
+  return SAFE_PASSWORD_REGEX.test(password.trim());
 }
 
-function rolATexto(role: string): string {
-  return role.replace(/([a-z])([A-Z])/g, '$1_$2').toUpperCase();
+function splitNombreCompleto(nombreCompleto: string) {
+  const limpio = nombreCompleto.trim().replace(/\s+/g, ' ');
+  if (!limpio) return { nombre: '', apellido: '' };
+
+  const partes = limpio.split(' ');
+  if (partes.length === 1) return { nombre: partes[0], apellido: '-' };
+
+  return {
+    nombre: partes[0],
+    apellido: partes.slice(1).join(' '),
+  };
+}
+
+function formatearEmailInstitucional(localPart: string) {
+  const limpio = localPart.trim().replace(/@.*$/, '').replace(/\s+/g, '');
+  if (!limpio) return '';
+  return `${limpio}@chapala.edu.mx`;
+}
+
+function getLocalPart(email: string) {
+  return email.trim().split('@')[0] || '';
+}
+
+function getNombreCompleto(docente: PersonaRecord) {
+  return `${docente.nombre} ${docente.apellido}`.trim();
 }
 
 export default function DirectorioDocentes() {
-  const { role } = useAuth();
+  const { role, email, selectedPlantel } = useAuth();
   const { toggleSidebar } = useSidebar();
-  const puedeAsignarRol = role === 'directorPlantel';
-  const ambito = role === 'directorPlantel' ? 'Sede Central' : 'Tus grupos';
-
-  const [docentes, setDocentes] = useState<Docente[]>(MOCK_DOCENTES);
+  const canChoosePlantel = role === 'directorGeneral';
+  const [docentes, setDocentes] = useState<PersonaRecord[]>([]);
+  const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
+  const [ownPlantelId, setOwnPlantelId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<DocenteFormState>(emptyForm);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<PersonaRecord | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+  const activePlantelId = canChoosePlantel
+    ? (selectedPlantel?.id ?? planteles[0]?.id ?? null)
+    : (ownPlantelId ?? selectedPlantel?.id ?? planteles[0]?.id ?? null);
 
-  const filtrados = docentes.filter(
-    (d) =>
-      d.nombre.toLowerCase().includes(search.toLowerCase()) ||
-      d.correo.toLowerCase().includes(search.toLowerCase())
-  );
+  useEffect(() => {
+    let cancelled = false;
 
-  function handleCambiarRol(id: string, nuevoRol: RolDocente) {
-    setDocentes((prev) => prev.map((d) => (d.id === id ? { ...d, rol: nuevoRol } : d)));
-  }
+    async function resolveOwnPlantel() {
+      if (canChoosePlantel || !email) {
+        setOwnPlantelId(null);
+        return;
+      }
 
-  function handleToggleEstado(id: string) {
-    setDocentes((prev) =>
-      prev.map((d) =>
-        d.id === id ? { ...d, estado: d.estado === 'activo' ? 'inactivo' : 'activo' } : d
-      )
-    );
-  }
+      try {
+        const persona = await fetchPersonaByEmail(email);
+        if (!cancelled) {
+          setOwnPlantelId(persona?.plantelId ?? null);
+        }
+      } catch {
+        if (!cancelled) {
+          setOwnPlantelId(null);
+        }
+      }
+    }
 
-  function handleCreate(nuevo: { nombre: string; correo: string }) {
-    const docente: Docente = {
-      id: crypto.randomUUID(),
-      nombre: nuevo.nombre,
-      correo: nuevo.correo,
-      rol: 'docente',
-      estado: 'activo',
+    void resolveOwnPlantel();
+
+    return () => {
+      cancelled = true;
     };
-    setDocentes((prev) => [docente, ...prev]);
-    setShowModal(false);
+  }, [canChoosePlantel, email]);
+
+  async function loadDocentes() {
+    if (!activePlantelId) {
+      setDocentes([]);
+      return;
+    }
+
+    try {
+      const response = await fetchPersonasByPlantelAndRol(activePlantelId, 'DOCENTE');
+      setDocentes((response.data ?? []) as PersonaRecord[]);
+      setFetchError(null);
+    } catch {
+      setDocentes([]);
+      setFetchError('No se pudieron cargar los docentes. Intenta recargar la página.');
+    }
   }
+
+  async function loadPlanteles() {
+    try {
+      const response = await apiClient.get<PlantelItem[]>('/api/planteles');
+      const activos = (response.data ?? []).filter((item) => item.activo !== false);
+      setPlanteles(activos);
+      setForm((prev) => ({
+        ...prev,
+        plantelId: prev.plantelId ?? activePlantelId ?? activos[0]?.id ?? null,
+      }));
+    } catch {
+      setPlanteles([]);
+    }
+  }
+
+  useEffect(() => {
+    void loadPlanteles();
+  }, []);
+
+  useEffect(() => {
+    void loadDocentes();
+  }, [activePlantelId]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 2600);
+    return () => window.clearTimeout(id);
+  }, [toast]);
+
+  function openCreateModal() {
+    setEditingId(null);
+    setForm({
+      ...emptyForm,
+      plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (activePlantelId ?? planteles[0]?.id ?? null),
+      password: '',
+    });
+    setFormError(null);
+    setIsModalOpen(true);
+  }
+
+  function openEditModal(docente: PersonaRecord) {
+    if (docente.activo === false) return;
+
+    setEditingId(docente.id);
+    setForm({
+      nombreCompleto: getNombreCompleto(docente),
+      email: getLocalPart(docente.email),
+      plantelId: canChoosePlantel
+        ? (docente.plantelId ?? planteles[0]?.id ?? null)
+        : (selectedPlantel?.id ?? docente.plantelId ?? planteles[0]?.id ?? null),
+      rol: docente.rol === 'COORDINADOR' ? 'COORDINADOR' : 'DOCENTE',
+      password: '',
+    });
+    setFormError(null);
+    setIsModalOpen(true);
+  }
+
+  function closeModal() {
+    setIsModalOpen(false);
+    setEditingId(null);
+    setFormError(null);
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setFormError(null);
+    const formData = new FormData(event.currentTarget);
+    const password = String(formData.get('password') ?? '').trim();
+
+    if (!form.nombreCompleto.trim() || !form.email.trim()) {
+      setFormError('Completa nombre completo y correo electrónico oficial.');
+      return;
+    }
+
+    const { nombre, apellido } = splitNombreCompleto(form.nombreCompleto);
+    if (!nombre || !apellido) {
+      setFormError('Ingresa nombre y apellido.');
+      return;
+    }
+
+    if (!form.plantelId) {
+      setFormError('Selecciona un plantel para el docente.');
+      return;
+    }
+
+    if (!editingId && !password) {
+      setFormError('Define una contraseña temporal para el usuario.');
+      return;
+    }
+
+    if (!editingId && !isStrongPassword(password)) {
+      setFormError('La contraseña debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const payload = {
+        nombre,
+        apellido,
+        email: formatearEmailInstitucional(form.email),
+        plantelId: canChoosePlantel ? (form.plantelId ?? activePlantelId) : (activePlantelId ?? form.plantelId ?? planteles[0]?.id ?? null),
+        rol: role === 'coordinador' ? 'DOCENTE' : form.rol,
+      };
+
+      if (editingId) {
+        const response = await updatePersona(editingId, payload);
+        const updated = response.data as PersonaRecord;
+        setDocentes((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
+        setToast('Docente actualizado correctamente.');
+      } else {
+        const response = await createPersona({
+          id: crypto.randomUUID(),
+          ...payload,
+          activo: true,
+          password,
+        });
+        const created = response.data as PersonaRecord;
+        setDocentes((prev) => [created, ...prev]);
+        setToast('Docente creado correctamente.');
+      }
+
+      closeModal();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : 'No se pudo guardar el docente.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDeactivate(docente: PersonaRecord) {
+    setLoading(true);
+    try {
+      const response = await updatePersona(docente.id, { activo: false });
+      const updated = response.data as PersonaRecord;
+      setDocentes((prev) => prev.map((item) => (item.id === docente.id ? updated : item)));
+      setConfirmDeactivate(null);
+      setToast('Docente desactivado correctamente.');
+    } catch {
+      setToast('No se pudo desactivar el docente.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleActivate(docente: PersonaRecord) {
+    setLoading(true);
+
+    try {
+      const response = await updatePersona(docente.id, { activo: true });
+      const updated = response.data as PersonaRecord;
+
+      setDocentes((prev) =>
+        prev.map((item) => (item.id === docente.id ? updated : item)),
+      );
+
+      setToast('Docente reactivado correctamente.');
+    } catch {
+      setToast('No se pudo reactivar el docente.');
+    } finally {
+      setLoading(false);
+    }
+}
+
+  const filteredDocentes = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return docentes;
+
+    return docentes.filter((docente) => {
+      const fullName = getNombreCompleto(docente).toLowerCase();
+      const plantelNombre = planteles.find((item) => item.id === docente.plantelId)?.nombre.toLowerCase() ?? '';
+      return fullName.includes(query) || docente.email.toLowerCase().includes(query) || plantelNombre.includes(query);
+    });
+  }, [docentes, search, planteles]);
 
   return (
     <article className="dd-screen">
@@ -81,32 +305,16 @@ export default function DirectorioDocentes() {
         >
           <i className="bi bi-list"></i>
         </button>
-        <span className="dd-topbar-title">
-          {role === 'directorPlantel' ? 'Plantel' : 'Docentes'}
-        </span>
+        <span className="dd-topbar-title">Docentes</span>
       </header>
 
       <div className="dd-body">
         <header className="dd-header">
           <article>
-            <h1 className="dd-title">
-              {role === 'directorPlantel' ? 'Tablero Directivo de Plantel' : 'Catálogo de Docentes'}
-            </h1>
-            <p className="dd-subtitle">
-              {role === 'directorPlantel'
-                ? 'Supervisión de indicadores de reproducción, cumplimiento docente y riesgo formativo local.'
-                : 'Docentes de los grupos que coordinas.'}
-            </p>
+            <h1 className="dd-title">Catálogo de Docentes</h1>
+            <p className="dd-subtitle">Docentes de los grupos y planteles que gestionas.</p>
           </article>
-          <span className="dd-badge">{ambito}</span>
         </header>
-
-        <article className="dd-scope-row">
-          <p className="dd-scope-text">
-            <strong>Ámbito Operativo:</strong> Asignaturas y grupos bajo tu titularidad académica · {ambito}
-          </p>
-          <span className="dd-scope-badge">ROL ACTIVO: {role ? rolATexto(role) : '—'}</span>
-        </article>
 
         <article className="dd-toolbar">
           <article className="dd-search-row">
@@ -114,187 +322,255 @@ export default function DirectorioDocentes() {
             <input
               className="dd-search-input"
               type="text"
-              placeholder="Buscar docente por nombre o materia..."
+              placeholder="Buscar docente por nombre, correo o plantel..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </article>
-          <button className="dd-new-button" onClick={() => setShowModal(true)}>
+          <button className="dd-new-button" onClick={openCreateModal}>
             <i className="bi bi-plus-lg"></i> Nuevo docente
           </button>
         </article>
+
+        {fetchError && <p className="dd-empty">{fetchError}</p>}
 
         <article className="dd-table-wrap">
           <table className="dd-table">
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>Rol</th>
+                <th>Correo</th>
+                <th>Plantel</th>
                 <th>Estado</th>
                 <th className="dd-th-acciones">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtrados.map((d) => (
-                <tr key={d.id} className={d.estado === 'inactivo' ? 'dd-row-inactivo' : ''}>
-                  <td>
-                    <span className="dd-nombre">{d.nombre}</span>
-                    <span className="dd-correo">{d.correo}</span>
-                  </td>
-                  <td>
-                    <select
-                      className="dd-rol-select"
-                      value={d.rol}
-                      disabled={!puedeAsignarRol || d.estado === 'inactivo'}
-                      onChange={(e) => handleCambiarRol(d.id, e.target.value as RolDocente)}
-                    >
-                      <option value="docente">Docente</option>
-                      <option value="coordinador">Coordinador</option>
-                    </select>
-                  </td>
-                  <td>
-                    <span className={`dd-estado ${d.estado === 'activo' ? 'dd-estado-activo' : 'dd-estado-inactivo'}`}>
-                      {d.estado === 'activo' ? 'Activo' : 'Inactivo'}
-                    </span>
-                  </td>
-                  <td className="dd-acciones">
-                    <button className="dd-btn dd-btn-neutral">
-                      Editar
-                    </button>
-                    <button
-                      className={`dd-btn ${d.estado === 'activo' ? 'dd-btn-danger' : 'dd-btn-success'}`}
-                      onClick={() => handleToggleEstado(d.id)}
-                    >
-                      {d.estado === 'activo' ? 'Desactivar' : 'Activar'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {filteredDocentes.map((docente) => {
+                const plantelNombre = planteles.find((item) => item.id === docente.plantelId)?.nombre ?? `Plantel ${docente.plantelId ?? '-'}`;
+                return (
+                  <tr key={docente.id} className={docente.activo ? '' : 'dd-row-inactivo'}>
+                    <td>
+                      <span className="dd-nombre">{getNombreCompleto(docente)}</span>
+                      <span className="dd-correo">{docente.rol}</span>
+                    </td>
+                    <td>
+                      <span className="dd-correo">{docente.email}</span>
+                    </td>
+                    <td>
+                      <span className="dd-correo">{plantelNombre}</span>
+                    </td>
+                    <td>
+                      <span className={`dd-estado ${docente.activo ? 'dd-estado-activo' : 'dd-estado-inactivo'}`}>
+                        {docente.activo ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </td>
+                    <td className="ca-acciones">
+                      <button
+                        type="button"
+                        className="ca-link-button"
+                        disabled={docente.activo === false || loading}
+                        onClick={() => openEditModal(docente)}
+                      >
+                        <i className="bi bi-pencil"></i> Editar
+                      </button>
+                      <button
+                        className={`ca-link-button ${docente.activo ? 'ca-link-danger' : 'ca-link-success'}`}
+                        disabled={loading}
+                        onClick={() =>
+                          docente.activo
+                            ? setConfirmDeactivate(docente)
+                            : void handleActivate(docente)
+                        }
+                      >
+                        {docente.activo ? 'Desactivar' : 'Reactivar'}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
-          {filtrados.length === 0 && <p className="dd-empty">No se encontraron docentes.</p>}
+          {filteredDocentes.length === 0 && !fetchError && <p className="dd-empty">No se encontraron docentes.</p>}
         </article>
       </div>
 
-      {showModal && (
-        <NuevoDocenteModal
-          puedeAsignarRol={puedeAsignarRol}
-          onClose={() => setShowModal(false)}
-          onCreate={handleCreate}
-        />
+      {isModalOpen && createPortal(
+        <DocenteModal
+          planteles={planteles}
+          docente={editingId ? docentes.find((item) => item.id === editingId) ?? null : null}
+          loading={loading}
+          form={form}
+          formError={formError}
+          onClose={closeModal}
+          onSubmit={handleSubmit}
+          onChange={setForm}
+          canChoosePlantel={canChoosePlantel}
+          hidePlantelField={role === 'coordinador' || role === 'directorPlantel'}
+          hideRoleField={role === 'coordinador'}
+          defaultPlantelName={selectedPlantel?.nombre ?? planteles[0]?.nombre ?? 'Plantel'}
+        />,
+        document.body,
+      )}
+
+      {confirmDeactivate && createPortal(
+        <div className="dd-confirm-backdrop" role="presentation" onClick={() => setConfirmDeactivate(null)}>
+          <article className="dd-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="dd-deactivate-title" onClick={(event) => event.stopPropagation()}>
+            <header className="dd-confirm-header">
+              <article>
+                <h2 id="dd-deactivate-title" className="dd-confirm-title">Confirmar desactivación</h2>
+                <p className="dd-confirm-subtitle">{getNombreCompleto(confirmDeactivate)}</p>
+              </article>
+            </header>
+            <section className="dd-confirm-body">
+              <p className="dd-confirm-text">El docente dejará de estar disponible para asignaciones, pero conservará su historial.</p>
+            </section>
+            <article className="dd-confirm-actions">
+              <button type="button" className="dd-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
+                Cancelar
+              </button>
+              <button type="button" className="dd-confirm-button" onClick={() => void handleDeactivate(confirmDeactivate)}>
+                Confirmar
+              </button>
+            </article>
+          </article>
+        </div>,
+        document.body,
+      )}
+
+      {toast && createPortal(
+        <article style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>
+          <section style={{ background: 'var(--ar-profundo)', color: 'var(--seige-superficie)', padding: '10px 14px', borderRadius: 10, boxShadow: '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)' }}>
+            {toast}
+          </section>
+        </article>,
+        document.body,
       )}
     </article>
   );
 }
 
-interface NuevoDocenteModalProps {
-  puedeAsignarRol: boolean;
+interface DocenteModalProps {
+  planteles: PlantelItem[];
+  docente: PersonaRecord | null;
+  loading: boolean;
+  form: DocenteFormState;
+  formError: string | null;
   onClose: () => void;
-  onCreate: (data: { nombre: string; correo: string }) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void> | void;
+  onChange: (next: DocenteFormState) => void;
+  canChoosePlantel: boolean;
+  hidePlantelField: boolean;
+  hideRoleField: boolean;
+  defaultPlantelName: string;
 }
 
-function NuevoDocenteModal({ puedeAsignarRol, onClose, onCreate }: NuevoDocenteModalProps) {
-  const [nombre, setNombre] = useState('');
-  const [correo, setCorreo] = useState('');
-  const [password, setPassword] = useState(generarPassword);
-  const [copiado, setCopiado] = useState(false);
-
-  function handleRegenerar() {
-    setPassword(generarPassword());
-    setCopiado(false);
-  }
-
-  async function handleCopiar() {
-    try {
-      await navigator.clipboard.writeText(password);
-      setCopiado(true);
-      setTimeout(() => setCopiado(false), 1500);
-    } catch {
-      setCopiado(false);
-    }
-  }
-
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!nombre.trim() || !correo.trim()) return;
-    onCreate({ nombre: nombre.trim(), correo: correo.trim() });
-  }
-
+function DocenteModal({ planteles, docente, loading, form, formError, onClose, onSubmit, onChange, canChoosePlantel, hidePlantelField, hideRoleField, defaultPlantelName }: DocenteModalProps) {
   return (
     <article className="dd-modal-overlay">
-      <article
-        className="dd-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dd-modal-title"
-      >
+      <article className="dd-modal" role="dialog" aria-modal="true" aria-labelledby="dd-modal-title">
         <article className="dd-modal-header">
           <article>
-            <h2 id="dd-modal-title" className="dd-modal-title">Nuevo docente</h2>
-            <p className="dd-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
+            <h2 id="dd-modal-title" className="dd-modal-title">
+              {docente ? 'Editar docente' : 'Nuevo docente'}
+            </h2>
+            <p className="dd-modal-subtitle">Alta y edición de usuarios docentes</p>
           </article>
         </article>
 
-        <form className="dd-modal-form" onSubmit={handleSubmit}>
+        <form className="dd-modal-form" onSubmit={onSubmit}>
           <label className="dd-field">
             <span className="dd-field-label">Nombre completo</span>
             <input
               className="dd-input"
               type="text"
-              value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
+              value={form.nombreCompleto}
+              onChange={(e) => onChange({ ...form, nombreCompleto: e.target.value })}
               placeholder="Ej. Prof. Carlos Méndez"
               required
             />
           </label>
 
           <label className="dd-field">
-            <span className="dd-field-label">Correo institucional (usuario de acceso)</span>
-            <input
-              className="dd-input"
-              type="email"
-              value={correo}
-              onChange={(e) => setCorreo(e.target.value)}
-              placeholder="nombre@chapalagutierrez.edu.mx"
-              required
-            />
+            <span className="dd-field-label">Correo institucional</span>
+            <div className="dd-email-row">
+              <input
+                className="dd-input dd-email-input"
+                type="text"
+                value={form.email}
+                onChange={(e) => onChange({ ...form, email: e.target.value })}
+                placeholder="ejemplo.nombre"
+                required
+              />
+              <span className="dd-email-domain">@chapala.edu.mx</span>
+            </div>
           </label>
 
-          <article className="dd-field">
-            <span className="dd-field-label">Contraseña temporal generada</span>
-            <article className="dd-password-row">
-              <input className="dd-input dd-password-input" type="text" value={password} readOnly />
-              <button type="button" className="dd-password-btn" onClick={handleRegenerar}>
-                Regenerar
-              </button>
-              <button type="button" className="dd-password-btn" onClick={handleCopiar}>
-                {copiado ? 'Copiado' : 'Copiar'}
-              </button>
-            </article>
-            <p className="dd-field-hint">
-              Se le entrega al docente para su primer inicio de sesión; deberá cambiarla.
-            </p>
-          </article>
+          {!hidePlantelField && canChoosePlantel ? (
+            <label className="dd-field">
+              <span className="dd-field-label">Plantel</span>
+              <select
+                className="dd-input"
+                value={form.plantelId ?? ''}
+                onChange={(e) => onChange({ ...form, plantelId: Number(e.target.value) || null })}
+                required
+              >
+                <option value="">Selecciona un plantel</option>
+                {planteles.map((plantel) => (
+                  <option key={plantel.id} value={plantel.id}>
+                    {plantel.nombre}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : !hidePlantelField ? (
+            <label className="dd-field">
+              <span className="dd-field-label">Plantel</span>
+              <input className="dd-input" type="text" value={defaultPlantelName} readOnly />
+            </label>
+          ) : null}
 
-          <label className="dd-field">
-            <span className="dd-field-label">Rol</span>
-            <select className="dd-input" defaultValue="docente" disabled={!puedeAsignarRol}>
-              <option value="docente">Docente</option>
-              <option value="coordinador">Coordinador</option>
-            </select>
-            {!puedeAsignarRol && (
-              <p className="dd-field-hint">
-                <i className="bi bi-lock-fill"></i> Solo el Director de Plantel puede otorgar o cambiar el rol
-              </p>
-            )}
-          </label>
+          {!docente && !hideRoleField && (
+            <label className="dd-field">
+              <span className="dd-field-label">Rol</span>
+              <select
+                className="dd-input"
+                value={form.rol}
+                onChange={(e) => onChange({ ...form, rol: e.target.value as 'DOCENTE' | 'COORDINADOR' })}
+              >
+                <option value="DOCENTE">Docente</option>
+                <option value="COORDINADOR">Coordinador</option>
+              </select>
+            </label>
+          )}
+
+          {!docente && (
+            <label className="dd-field">
+              <span className="dd-field-label">Contraseña temporal</span>
+              <input
+                className="dd-input"
+                type="text"
+                name="password"
+                autoComplete="new-password"
+                value={form.password}
+                onChange={(e) => onChange({ ...form, password: e.target.value })}
+                placeholder="Ej. Doc#2026Segura"
+                required
+              />
+              <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--dd-texto-suave)' }}>
+                Debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.
+              </small>
+            </label>
+          )}
+
+          {formError && <p className="dd-field-hint" style={{ color: 'var(--seige-error-texto)' }}>{formError}</p>}
 
           <article className="dd-modal-actions">
             <button type="button" className="dd-btn-secondary" onClick={onClose}>
               Cancelar
             </button>
-            <button type="submit" className="dd-btn-primary">
-              Guardar
+            <button type="submit" className="dd-btn-primary" disabled={loading}>
+              {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </article>
         </form>

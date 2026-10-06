@@ -251,6 +251,53 @@
   outline-offset: 2px;
 }
 
+.sd-dg-panel {
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--sd-borde);
+}
+.sd-dg-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.72rem;
+  color: var(--sd-texto-suave);
+  font-weight: 700;
+}
+.sd-dg-planteles {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.sd-dg-plantel-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.48rem 0.58rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, white 22%, transparent);
+  background: color-mix(in srgb, var(--ar-neblina) 10%, var(--ar-profundo));
+  color: var(--ar-nieve);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+.sd-dg-plantel-item:hover {
+  background: color-mix(in srgb, var(--ar-azul) 35%, var(--ar-profundo));
+  border-color: color-mix(in srgb, var(--ar-azul) 55%, white 10%);
+  transform: translateX(2px);
+}
+.sd-dg-plantel-item.active {
+  background: color-mix(in srgb, var(--ar-azul) 55%, transparent);
+  border-color: color-mix(in srgb, var(--ar-azul) 65%, white 18%);
+}
+.sd-dg-extra {
+  margin-top: 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
 @media (max-width: 900px) {
   .sd-sidebar {
     width: 100%;
@@ -268,6 +315,7 @@
   .sd-nav-link span { display: none; }
   .sd-user { border-top: 0; }
   .sd-user-text { display: none; }
+  .sd-dg-panel { display: none; }
   .sd-user-menu {
     left: auto;
     right: 0.5rem;
