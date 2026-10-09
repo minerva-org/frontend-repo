@@ -111,6 +111,7 @@ export default function Materias() {
         nombre: datos.nombre,
         prefijo: datos.prefijo,
         planEstudioId: null,
+        activo: true,
         unidades: (datos.unidades ?? []).map((unidad) => ({
           id: unidad.id,
           nombre: unidad.nombre.trim(),
@@ -139,44 +140,36 @@ export default function Materias() {
 
   const [confirmDeactivate, setConfirmDeactivate] = useState<Materia | null>(null);
 
-  async function handleDeactivate(materia: Materia) {
-    try {
-      const response = await apiClient.patch<Materia>(
-        `/api/materias/${materia.id}`,
-        { activo: false },
-      );
+  async function cambiarEstado(materia: Materia, estado: boolean) {
+  await apiClient.patch(`/api/materias/${materia.id}/estado`, null, {
+    params: { estado },
+  });
+}
 
-      setMaterias((prev) =>
-        prev.map((item) =>
-          item.id === materia.id
-            ? { ...item, ...response.data, activo: false }
-            : item,
-        ),
-      );
-
-      setConfirmDeactivate(null);
-      setToast('Materia desactivada correctamente.');
-    } catch (err) {
-      setError(extractErrorMessage(err, 'No se pudo desactivar la materia.'));
-    }
+async function handleDeactivate(materia: Materia) {
+  try {
+    await cambiarEstado(materia, false);
+    setConfirmDeactivate(null);
+    setToast('Materia desactivada correctamente.');
+    await loadMaterias();
+  } catch (err) {
+    const message = extractErrorMessage(err, 'No se pudo desactivar la materia.');
+    setToast(message);
+    setError(message);
   }
+}
 
-  async function handleActivate(materia: Materia) {
-    try {
-      const response = await apiClient.patch(`/api/materias/${materia.id}`, {
-        activo: true,
-      });
-
-      setConfirmDeactivate(null);
-      setToast('Materia reactivada correctamente.');
-
-      await loadMaterias();
-    } catch (err) {
-      const message = extractErrorMessage(err, 'No se pudo reactivar la materia.');
-      setToast(message);
-      setError(message);
-    }
+async function handleActivate(materia: Materia) {
+  try {
+    await cambiarEstado(materia, true);
+    setToast('Materia reactivada correctamente.');
+    await loadMaterias();
+  } catch (err) {
+    const message = extractErrorMessage(err, 'No se pudo reactivar la materia.');
+    setToast(message);
+    setError(message);
   }
+}
 
   function abrirConfirmacionEliminacion(materia: Materia) {
     setConfirmDeactivate(materia);
