@@ -31,6 +31,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
 
   const urlPlantelId = Number(searchParams.get('plantelId')) || null;
   const activePlantelId = urlPlantelId ?? selectedPlantel?.id ?? null;
+  const [showArchived, setShowArchived] = useState(false);
 
   console.log({
     urlPlantelId,
@@ -188,6 +189,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   async function toggleGroupActivo(groupId: string, activo: boolean) {
     await apiClient.patch(`/api/grupos/${groupId}`, { activo });
     await loadGroups();
+    if (activo) setShowArchived(false);
     setOpenMenuGroupId(null);
     setPendingArchiveGroup(null);
   }
@@ -278,7 +280,13 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
             />
           </article>
 
-          {normalizedRole !== 'alumno' && (
+          <button className="groups-new-button" onClick={() => setShowArchived((prev) => !prev)}>
+            <i className={`bi ${showArchived ? 'bi-archive-fill' : 'bi-archive'}`}></i>
+            Archivados ({filteredArchived.length})
+
+          </button>
+
+          {normalizedRole !== 'alumno' && normalizedRole !== 'docente' && (
             <button
               className="groups-new-button"
               onClick={() => setShowModal(true)}
@@ -295,7 +303,8 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
           <p className="groups-empty">Cargando grupos...</p>
         ) : (
           <>
-            {filtered.length === 0 ? (
+            {!showArchived &&(
+              filtered.length === 0 ? (
               <p className="groups-empty">
                 {soloMisGrupos || normalizedRole === 'docente'
                   ? 'Aún no tienes grupos asignados.'
@@ -340,14 +349,18 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
                   </tbody>
                 </table>
               </article>
+            )
             )}
 
-            {filteredArchived.length > 0 && (
+            {showArchived && (
               <article className="groups-archived-section">
                 <h2 className="groups-archived-title">Archivados</h2>
-                <article className="groups-table-wrap groups-table-wrap-archived">
-                  <table className="groups-table">
-                    <thead>
+                {filteredArchived.length === 0 ? (
+                  <p className="groups-empty">No hay grupos archivados.</p>
+                ) : (
+                  <article className="groups-table-wrap groups-table-wrap-archived">
+                    <table className="groups-table">
+                      <thead>
                       <tr>
                         <th>Nombre</th>
                         <th>Clave</th>
@@ -384,6 +397,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
                     </tbody>
                   </table>
                 </article>
+                )}
               </article>
             )}
           </>
