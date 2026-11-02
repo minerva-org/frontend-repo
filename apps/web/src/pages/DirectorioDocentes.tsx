@@ -6,41 +6,36 @@ import { apiClient } from '../services/ApiClient';
 import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/DirectorioDocentes.css';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
+import { DocenteModal } from '../components/ModalDocentes.tsx';
+import type { DocenteFormState } from '../types/DocenteTypes.ts';
+import type { SubmitEvent } from 'react';
 
-interface DocenteFormState {
-  nombreCompleto: string;
-  email: string;
-  plantelId: number | null;
-  rol: 'DOCENTE' | 'COORDINADOR';
-  password: string;
-}
 
 const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 const emptyForm: DocenteFormState = {
-  nombreCompleto: '',
+  nombre: '',
+  apellidoPaterno: '',
+  apellidoMaterno: '',
+  calle: '',
+  colonia: '',
+  codigoPostal: '',
+  municipio: '',
+  estado: '',
+  numeroTelefono: '',
   email: '',
   plantelId: null,
   rol: 'DOCENTE',
   password: '',
+  carrera: '',
+  tituloEdu: '',
 };
 
 function isStrongPassword(password: string) {
   return SAFE_PASSWORD_REGEX.test(password.trim());
 }
 
-function splitNombreCompleto(nombreCompleto: string) {
-  const limpio = nombreCompleto.trim().replace(/\s+/g, ' ');
-  if (!limpio) return { nombre: '', apellido: '' };
 
-  const partes = limpio.split(' ');
-  if (partes.length === 1) return { nombre: partes[0], apellido: '-' };
-
-  return {
-    nombre: partes[0],
-    apellido: partes.slice(1).join(' '),
-  };
-}
 
 function formatearEmailInstitucional(localPart: string) {
   const limpio = localPart.trim().replace(/@.*$/, '').replace(/\s+/g, '');
@@ -53,7 +48,11 @@ function getLocalPart(email: string) {
 }
 
 function getNombreCompleto(docente: PersonaRecord) {
-  return `${docente.nombre} ${docente.apellido}`.trim();
+  return [
+    docente.nombre,
+    docente.apellidoPaterno,
+    docente.apellidoMaterno,
+  ].filter((parte) => parte != null && parte.trim() !== '').join(' ');
 }
 
 export default function DirectorioDocentes() {
@@ -61,6 +60,7 @@ export default function DirectorioDocentes() {
   const { toggleSidebar } = useSidebar();
   const canChoosePlantel = role === 'directorGeneral';
   const [docentes, setDocentes] = useState<PersonaRecord[]>([]);
+  const [coordinadores, setCoordinadores] = useState<PersonaRecord[]>([]);
   const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
   const [ownPlantelId, setOwnPlantelId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
@@ -74,7 +74,7 @@ export default function DirectorioDocentes() {
   const [toast, setToast] = useState<string | null>(null);
   const activePlantelId = canChoosePlantel
     ? (selectedPlantel?.id ?? planteles[0]?.id ?? null)
-    : (ownPlantelId ?? selectedPlantel?.id ?? planteles[0]?.id ?? null);
+    : ownPlantelId;
 
   useEffect(() => {
     let cancelled = false;
@@ -105,20 +105,29 @@ export default function DirectorioDocentes() {
   }, [canChoosePlantel, email]);
 
   async function loadDocentes() {
-    if (!activePlantelId) {
+    if (activePlantelId == null) {
       setDocentes([]);
+      setCoordinadores([]);
+      setFetchError(null);
       return;
     }
 
     try {
-      const response = await fetchPersonasByPlantelAndRol(activePlantelId, 'DOCENTE');
-      setDocentes((response.data ?? []) as PersonaRecord[]);
+      const [docentesResponse, coordinadoresResponse] = await Promise.all([
+        fetchPersonasByPlantelAndRol(activePlantelId, 'DOCENTE'),
+        fetchPersonasByPlantelAndRol(activePlantelId, 'COORDINADOR'),
+      ]);
+      setDocentes(docentesResponse.data);
+      setCoordinadores(coordinadoresResponse.data);
       setFetchError(null);
     } catch {
       setDocentes([]);
+      setCoordinadores([]);
       setFetchError('No se pudieron cargar los docentes. Intenta recargar la página.');
     }
   }
+
+  const todosDocentes = useMemo(() => [...docentes, ...coordinadores], [docentes, coordinadores]);
 
   async function loadPlanteles() {
     try {
@@ -127,7 +136,7 @@ export default function DirectorioDocentes() {
       setPlanteles(activos);
       setForm((prev) => ({
         ...prev,
-        plantelId: prev.plantelId ?? activePlantelId ?? activos[0]?.id ?? null,
+        plantelId: prev.plantelId ?? activePlantelId ?? selectedPlantel?.id ?? activos[0]?.id ?? null,
       }));
     } catch {
       setPlanteles([]);
@@ -152,7 +161,7 @@ export default function DirectorioDocentes() {
     setEditingId(null);
     setForm({
       ...emptyForm,
-      plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (activePlantelId ?? planteles[0]?.id ?? null),
+      plantelId: canChoosePlantel ? (selectedPlantel?.id ?? planteles[0]?.id ?? null) : (activePlantelId ??  null),
       password: '',
     });
     setFormError(null);
@@ -164,13 +173,24 @@ export default function DirectorioDocentes() {
 
     setEditingId(docente.id);
     setForm({
-      nombreCompleto: getNombreCompleto(docente),
+      ...emptyForm,
+      nombre: docente.nombre,
+      apellidoPaterno: docente.apellidoPaterno,
+      apellidoMaterno: docente.apellidoMaterno,
       email: getLocalPart(docente.email),
+      calle: docente.calle ?? '',
+      colonia: docente.colonia ?? '',
+      codigoPostal: docente.codigoPostal ?? '',
+      municipio: docente.municipio ?? '',
+      estado: docente.estado ?? '',
+      numeroTelefono: docente.numeroTelefono ?? '',
       plantelId: canChoosePlantel
-        ? (docente.plantelId ?? planteles[0]?.id ?? null)
-        : (selectedPlantel?.id ?? docente.plantelId ?? planteles[0]?.id ?? null),
+        ? (docente.plantelId ?? selectedPlantel?.id ?? null)
+        : docente.plantelId ?? activePlantelId ?? null,
       rol: docente.rol === 'COORDINADOR' ? 'COORDINADOR' : 'DOCENTE',
       password: '',
+      carrera: docente.carrera ?? '',
+      tituloEdu: docente.tituloEdu ?? '',
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -182,27 +202,16 @@ export default function DirectorioDocentes() {
     setFormError(null);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
     const formData = new FormData(event.currentTarget);
     const password = String(formData.get('password') ?? '').trim();
 
-    if (!form.nombreCompleto.trim() || !form.email.trim()) {
-      setFormError('Completa nombre completo y correo electrónico oficial.');
+    if(!form.nombre.trim() || !form.apellidoPaterno.trim() || !form.email.trim()){
+      setFormError('Completa nombre, apellido y correo electrónico oficial.');
       return;
-    }
-
-    const { nombre, apellido } = splitNombreCompleto(form.nombreCompleto);
-    if (!nombre || !apellido) {
-      setFormError('Ingresa nombre y apellido.');
-      return;
-    }
-
-    if (!form.plantelId) {
-      setFormError('Selecciona un plantel para el docente.');
-      return;
-    }
+} 
 
     if (!editingId && !password) {
       setFormError('Define una contraseña temporal para el usuario.');
@@ -214,20 +223,40 @@ export default function DirectorioDocentes() {
       return;
     }
 
+    if(!form.carrera.trim() || !form.tituloEdu.trim()){
+      setFormError('Ingrese carrera y título educativo.');
+      return;
+    }
+    const plantelId = canChoosePlantel ? form.plantelId : activePlantelId ?? form.plantelId;
+    
+    if(plantelId == null){
+      setFormError('Selecciona un plantel.');
+      return;
+    }
+
     setLoading(true);
     try {
       const payload = {
-        nombre,
-        apellido,
+        nombre: form.nombre.trim(),
+        apellidoPaterno: form.apellidoPaterno.trim(),
+        apellidoMaterno: form.apellidoMaterno.trim(),
         email: formatearEmailInstitucional(form.email),
-        plantelId: canChoosePlantel ? (form.plantelId ?? activePlantelId) : (activePlantelId ?? form.plantelId ?? planteles[0]?.id ?? null),
+        plantelId: plantelId,
         rol: role === 'coordinador' ? 'DOCENTE' : form.rol,
+        calle: form.calle.trim(),
+        colonia: form.colonia.trim(),
+        codigoPostal: form.codigoPostal.trim(),
+        municipio: form.municipio.trim(),
+        estado: form.estado.trim(),
+        numeroTelefono: form.numeroTelefono.trim(),
+        carrera: form.carrera.trim(),
+        tituloEdu: form.tituloEdu.trim(),
       };
 
       if (editingId) {
         const response = await updatePersona(editingId, payload);
         const updated = response.data as PersonaRecord;
-        setDocentes((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
+        actualizarEnListas(updated);
         setToast('Docente actualizado correctamente.');
       } else {
         const response = await createPersona({
@@ -237,7 +266,11 @@ export default function DirectorioDocentes() {
           password,
         });
         const created = response.data as PersonaRecord;
+        if (created.rol === 'COORDINADOR') {
+          setCoordinadores((prev) => [created, ...prev]);
+        } else{
         setDocentes((prev) => [created, ...prev]);
+        }
         setToast('Docente creado correctamente.');
       }
 
@@ -249,12 +282,21 @@ export default function DirectorioDocentes() {
     }
   }
 
+  function actualizarEnListas(updated: PersonaRecord) {
+    setCoordinadores((prev) =>
+      prev.map((item) => item.id === updated.id ? updated : item)
+    );
+    setDocentes((prev) =>
+      prev.map((item) => item.id === updated.id ? updated : item)
+    );
+}
+
   async function handleDeactivate(docente: PersonaRecord) {
     setLoading(true);
     try {
       const response = await updatePersona(docente.id, { activo: false });
       const updated = response.data as PersonaRecord;
-      setDocentes((prev) => prev.map((item) => (item.id === docente.id ? updated : item)));
+      actualizarEnListas(updated);
       setConfirmDeactivate(null);
       setToast('Docente desactivado correctamente.');
     } catch {
@@ -271,9 +313,7 @@ export default function DirectorioDocentes() {
       const response = await updatePersona(docente.id, { activo: true });
       const updated = response.data as PersonaRecord;
 
-      setDocentes((prev) =>
-        prev.map((item) => (item.id === docente.id ? updated : item)),
-      );
+      actualizarEnListas(updated);
 
       setToast('Docente reactivado correctamente.');
     } catch {
@@ -285,14 +325,14 @@ export default function DirectorioDocentes() {
 
   const filteredDocentes = useMemo(() => {
     const query = search.trim().toLowerCase();
-    if (!query) return docentes;
+    if (!query) return todosDocentes;
 
-    return docentes.filter((docente) => {
+    return todosDocentes.filter((docente) => {
       const fullName = getNombreCompleto(docente).toLowerCase();
       const plantelNombre = planteles.find((item) => item.id === docente.plantelId)?.nombre.toLowerCase() ?? '';
       return fullName.includes(query) || docente.email.toLowerCase().includes(query) || plantelNombre.includes(query);
     });
-  }, [docentes, search, planteles]);
+  }, [todosDocentes, search, planteles]);
 
   return (
     <article className="dd-screen">
@@ -308,7 +348,7 @@ export default function DirectorioDocentes() {
         <span className="dd-topbar-title">Docentes</span>
       </header>
 
-      <div className="dd-body">
+      <article className="dd-body">
         <header className="dd-header">
           <article>
             <h1 className="dd-title">Catálogo de Docentes</h1>
@@ -393,12 +433,12 @@ export default function DirectorioDocentes() {
           </table>
           {filteredDocentes.length === 0 && !fetchError && <p className="dd-empty">No se encontraron docentes.</p>}
         </article>
-      </div>
+      </article>
 
       {isModalOpen && createPortal(
         <DocenteModal
           planteles={planteles}
-          docente={editingId ? docentes.find((item) => item.id === editingId) ?? null : null}
+          docente={editingId ? todosDocentes.find((item) => item.id === editingId) ?? null : null}
           loading={loading}
           form={form}
           formError={formError}
@@ -429,7 +469,7 @@ export default function DirectorioDocentes() {
               <button type="button" className="dd-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
                 Cancelar
               </button>
-              <button type="button" className="dd-confirm-button" onClick={() => void handleDeactivate(confirmDeactivate)}>
+              <button type="button" className="dd-confirm-button" disabled={loading} onClick={() => void handleDeactivate(confirmDeactivate)}>
                 Confirmar
               </button>
             </article>
@@ -450,131 +490,4 @@ export default function DirectorioDocentes() {
   );
 }
 
-interface DocenteModalProps {
-  planteles: PlantelItem[];
-  docente: PersonaRecord | null;
-  loading: boolean;
-  form: DocenteFormState;
-  formError: string | null;
-  onClose: () => void;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => Promise<void> | void;
-  onChange: (next: DocenteFormState) => void;
-  canChoosePlantel: boolean;
-  hidePlantelField: boolean;
-  hideRoleField: boolean;
-  defaultPlantelName: string;
-}
 
-function DocenteModal({ planteles, docente, loading, form, formError, onClose, onSubmit, onChange, canChoosePlantel, hidePlantelField, hideRoleField, defaultPlantelName }: DocenteModalProps) {
-  return (
-    <article className="dd-modal-overlay">
-      <article className="dd-modal" role="dialog" aria-modal="true" aria-labelledby="dd-modal-title">
-        <article className="dd-modal-header">
-          <article>
-            <h2 id="dd-modal-title" className="dd-modal-title">
-              {docente ? 'Editar docente' : 'Nuevo docente'}
-            </h2>
-            <p className="dd-modal-subtitle">Alta y edición de usuarios docentes</p>
-          </article>
-        </article>
-
-        <form className="dd-modal-form" onSubmit={onSubmit}>
-          <label className="dd-field">
-            <span className="dd-field-label">Nombre completo</span>
-            <input
-              className="dd-input"
-              type="text"
-              value={form.nombreCompleto}
-              onChange={(e) => onChange({ ...form, nombreCompleto: e.target.value })}
-              placeholder="Ej. Prof. Carlos Méndez"
-              required
-            />
-          </label>
-
-          <label className="dd-field">
-            <span className="dd-field-label">Correo institucional</span>
-            <div className="dd-email-row">
-              <input
-                className="dd-input dd-email-input"
-                type="text"
-                value={form.email}
-                onChange={(e) => onChange({ ...form, email: e.target.value })}
-                placeholder="ejemplo.nombre"
-                required
-              />
-              <span className="dd-email-domain">@chapala.edu.mx</span>
-            </div>
-          </label>
-
-          {!hidePlantelField && canChoosePlantel ? (
-            <label className="dd-field">
-              <span className="dd-field-label">Plantel</span>
-              <select
-                className="dd-input"
-                value={form.plantelId ?? ''}
-                onChange={(e) => onChange({ ...form, plantelId: Number(e.target.value) || null })}
-                required
-              >
-                <option value="">Selecciona un plantel</option>
-                {planteles.map((plantel) => (
-                  <option key={plantel.id} value={plantel.id}>
-                    {plantel.nombre}
-                  </option>
-                ))}
-              </select>
-            </label>
-          ) : !hidePlantelField ? (
-            <label className="dd-field">
-              <span className="dd-field-label">Plantel</span>
-              <input className="dd-input" type="text" value={defaultPlantelName} readOnly />
-            </label>
-          ) : null}
-
-          {!docente && !hideRoleField && (
-            <label className="dd-field">
-              <span className="dd-field-label">Rol</span>
-              <select
-                className="dd-input"
-                value={form.rol}
-                onChange={(e) => onChange({ ...form, rol: e.target.value as 'DOCENTE' | 'COORDINADOR' })}
-              >
-                <option value="DOCENTE">Docente</option>
-                <option value="COORDINADOR">Coordinador</option>
-              </select>
-            </label>
-          )}
-
-          {!docente && (
-            <label className="dd-field">
-              <span className="dd-field-label">Contraseña temporal</span>
-              <input
-                className="dd-input"
-                type="text"
-                name="password"
-                autoComplete="new-password"
-                value={form.password}
-                onChange={(e) => onChange({ ...form, password: e.target.value })}
-                placeholder="Ej. Doc#2026Segura"
-                required
-              />
-              <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--dd-texto-suave)' }}>
-                Debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.
-              </small>
-            </label>
-          )}
-
-          {formError && <p className="dd-field-hint" style={{ color: 'var(--seige-error-texto)' }}>{formError}</p>}
-
-          <article className="dd-modal-actions">
-            <button type="button" className="dd-btn-secondary" onClick={onClose}>
-              Cancelar
-            </button>
-            <button type="submit" className="dd-btn-primary" disabled={loading}>
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
-          </article>
-        </form>
-      </article>
-    </article>
-  );
-}
