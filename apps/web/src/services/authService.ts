@@ -11,7 +11,7 @@ export interface LoginResponse {
 interface LoginResponseBackend {
   token: string;
   role?: string | null;
-  personaId?: string;
+  personaId: string;
 }
 
 const ROLE_MAP: Record<string, UserRole> = {
@@ -55,16 +55,6 @@ export function decodeJwtRole(token?: string | null) {
   }
 }
 
-export function inferRoleFromUsername(username: string): UserRole | null {
-  const normalized = username.trim().toLowerCase().replace(/[-_\s]/g, '');
-
-  if (normalized === 'bootstrap') return 'admin';
-  if (normalized === 'directorgeneral') return 'directorGeneral';
-  if (normalized === 'directorplantel') return 'directorPlantel';
-  if (normalized === 'dev' || normalized === 'developer') return 'dev';
-
-  return null;
-}
 
 export async function login(username: string, password: string): Promise<LoginResponse> {
   const trimmedUsername = username.trim();
@@ -80,7 +70,7 @@ export async function login(username: string, password: string): Promise<LoginRe
     });
 
     const token = response.data.token;
-    const role = normalizeRole(response.data.role) ?? decodeJwtRole(token) ?? inferRoleFromUsername(trimmedUsername);
+    const role = normalizeRole(response.data.role) ?? decodeJwtRole(token);
 
     return {
       token,
@@ -92,9 +82,9 @@ export async function login(username: string, password: string): Promise<LoginRe
       isAxiosError(error) &&
       [400, 401, 403, 409].includes(error.response?.status ?? 0)
     ) {
-      throw new Error('Usuario o contraseña incorrectos.');
+      throw new Error('Usuario o contraseña incorrectos.', { cause: error });
     }
 
-    throw new Error('No se pudo conectar con el servidor. Intente más tarde.');
+    throw new Error('No se pudo conectar con el servidor. Intente más tarde.', { cause: error });
   }
 }

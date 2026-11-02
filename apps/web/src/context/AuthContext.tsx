@@ -26,10 +26,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => sessionStorage.getItem('token') || null);
   const [role, setRole] = useState<UserRole | null>(() => {
-    const storedRole = sessionStorage.getItem('role') as UserRole | null;
-    if (storedRole) return storedRole;
-    const currentToken = sessionStorage.getItem('token');
-    return currentToken ? (sessionStorage.getItem('username') === 'bootstrap' ? 'admin' : null) : null;
+    return sessionStorage.getItem('role') as UserRole | null;
+    
   });
   const [username, setUsername] = useState<string | null>(() => sessionStorage.getItem('username') || null);
   const [email, setEmail] = useState<string | null>(() => sessionStorage.getItem('email') || null);
@@ -46,8 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   });
   const [user, setUser] = useState<AuthUser | null>(() => {
-    const storedUser = localStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
+    try {
+      const storedUser = sessionStorage.getItem('user');
+      return storedUser ? JSON.parse(storedUser) : null;
+    } catch {
+      return null;
+    }
   });
 
   const effectiveRole: UserRole | null = role;
@@ -66,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function login(usernameInput: string, password: string) {
     const data = await loginService(usernameInput, password);
 
-    const nextRole = data.role ?? (usernameInput.toLowerCase() === 'bootstrap' ? 'admin' : null);
+    const nextRole = data.role;
 
     setToken(data.token);
     setRole(nextRole);
@@ -109,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     setUser(loggedUser);
-    localStorage.setItem('user', JSON.stringify(loggedUser));
+    sessionStorage.setItem('user', JSON.stringify(loggedUser));
 
     return data;
   }
@@ -120,14 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUsername(null);
     setEmail(null);
     setUser(null);
-    sessionStorage.removeItem('user');
-
-    localStorage.removeItem('token');
-    sessionStorage.removeItem('role');
-    sessionStorage.removeItem('username');
-    sessionStorage.removeItem('email');
-    sessionStorage.removeItem('selectedPlantel');
     setSelectedPlantelState(null);
+    
+    sessionStorage.clear();
   }
 
   return (

@@ -263,7 +263,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       <main className="groups-content">
         <article className="groups-header">
           <article>
-            <h1 className="groups-title">Catálogo de grupos</h1>
+            <h1 className="groups-title">Listado de grupos</h1>
             <p className="groups-subtitle">Ciclo Activo 2026</p>
           </article>
      </article>

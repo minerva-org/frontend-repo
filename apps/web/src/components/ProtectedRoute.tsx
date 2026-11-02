@@ -15,7 +15,11 @@ export default function ProtectedRoute({ children, allowedRoles = [] }: Protecte
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles.length > 0 && role && !allowedRoles.includes(role)) {
+  if (allowedRoles.length > 0 && !role) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (allowedRoles.length > 0 && !allowedRoles.includes(role!)) {
     return <Navigate to="/login" replace />;
   }
 
