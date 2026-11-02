@@ -66,7 +66,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Gestión Académica',
         items: [
-          { to: '/catalogo-grupos', label: 'Catálogo de Grupos', icon: 'bi-grid-3x3-gap' },
+          { to: '/catalogo-grupos', label: 'Listado de Grupos', icon: 'bi-grid-3x3-gap' },
           { to: '/catalogo-docentes', label: 'Catálogo de Docentes', icon: 'bi-people' },
           { to: '/catalogo-alumnos', label: 'Catálogo de Alumnos', icon: 'bi-people' },
           { to: '/materias', label: 'Materias y Planes (S3)', icon: 'bi-journal-bookmark' },
@@ -98,7 +98,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Gestión Académica',
         items: [
-          { to: '/catalogo-grupos', label: 'Catálogo de Grupos', icon: 'bi-grid-3x3-gap' },
+          { to: '/catalogo-grupos', label: 'Listado de Grupos', icon: 'bi-grid-3x3-gap' },
           { to: '/catalogo-docentes', label: 'Catálogo de Docentes', icon: 'bi-people' },
           { to: '/catalogo-alumnos', label: 'Catálogo de Alumnos', icon: 'bi-people' },
           { to: '/materias', label: 'Materias y Planes (S3)', icon: 'bi-journal-bookmark' },
@@ -116,7 +116,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
     navGroups: [
       {
         label: 'Listado',
-        items: [{ to: '/grupos', label: 'Catálogo de Grupos', icon: 'bi-people' }],
+        items: [{ to: '/grupos', label: 'Listado de Grupos', icon: 'bi-people' }],
       },
       {
         label: 'Diagnóstico y Analítica',

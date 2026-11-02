@@ -5,6 +5,7 @@ import ModalMateria, { type DatosMateria } from '../components/ModalMateria.tsx'
 import type { Materia } from '../types.ts';
 import { apiClient } from '../services/ApiClient.ts';
 import '../styles/Materias.css';
+import { useAuth } from '../context/AuthContext.tsx';
 
 const normalizar = (s: string) =>
   s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
@@ -21,6 +22,7 @@ export default function Materias() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<string | null>(null);
+  const {role} = useAuth();
 
   useEffect(() => {
     if (!toast) return;
@@ -223,9 +225,11 @@ export default function Materias() {
               aria-label="Buscar materias"
             />
           </article>
-          <button className="mat-btn" type="button" onClick={() => setModal({ tipo: 'nueva' })}>
-            <i className="bi bi-plus-lg"></i> Nueva materia
-          </button>
+          {role?.toLowerCase() === 'director_plantel' &&  role?.toLocaleLowerCase() === 'director_general' && (
+            <button className="mat-btn" type="button" onClick={() => setModal({ tipo: 'nueva' })}>
+              <i className="bi bi-plus-lg"></i> Nueva materia
+            </button>
+          )}
         </section>
 
         <section className="mat-card">
