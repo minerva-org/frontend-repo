@@ -8,7 +8,7 @@ interface ModalAgregarAlumnosProps {
 
 export default function ModalAgregarAlumnos({ onClose, onEnviar }: ModalAgregarAlumnosProps) {
   return createPortal(
-    <div
+    <article
       style={{
         position: 'fixed',
         inset: 0,
@@ -46,7 +46,7 @@ export default function ModalAgregarAlumnos({ onClose, onEnviar }: ModalAgregarA
           onCancel={onClose}
         />
       </article>
-    </div>,
+    </article>,
     document.body,
   );
 }
