@@ -225,7 +225,7 @@ export default function Materias() {
               aria-label="Buscar materias"
             />
           </article>
-          {role?.toLowerCase() === 'director_plantel' &&  role?.toLocaleLowerCase() === 'director_general' && (
+          {(role === 'directorPlantel' ||  role === 'directorGeneral') && (
             <button className="mat-btn" type="button" onClick={() => setModal({ tipo: 'nueva' })}>
               <i className="bi bi-plus-lg"></i> Nueva materia
             </button>
@@ -240,7 +240,7 @@ export default function Materias() {
             <p className="mat-empty">
               {busqueda
                 ? `No hay materias que coincidan con "${busqueda}".`
-                : 'Aún no hay materias. Crea la primera con "Nueva materia".'}
+                : 'Aún no hay materias.'}
             </p>
           ) : (
             <article className="mat-table-wrap">
