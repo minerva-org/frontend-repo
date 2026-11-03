@@ -5,7 +5,7 @@ import type { SubmitEvent } from 'react';
 export interface DocenteFormState {
   nombre: string;
   apellidoPaterno: string;
-  apellidoMaterno: string;
+  apellidoMaterno: string | null;
   calle: string;
   colonia: string;
   codigoPostal: string;
