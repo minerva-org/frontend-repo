@@ -4,7 +4,7 @@ export interface PersonaRecord {
   id: string;
   nombre: string;
   apellidoPaterno: string;
-  apellidoMaterno: string;
+  apellidoMaterno: string | null;
   email: string;
   rol: PersonaRol;
   activo: boolean;
@@ -23,7 +23,7 @@ export interface CreatePersonaPayload {
   id: string;
   nombre: string;
   apellidoPaterno: string;
-  apellidoMaterno: string;
+  apellidoMaterno: string | null;
   email: string;
   rol: PersonaRol;
   activo?: boolean;
@@ -44,7 +44,7 @@ export interface CreatePersonaPayload {
 export interface UpdatePersonaPayload {
   nombre?: string;
   apellidoPaterno?: string;
-  apellidoMaterno?: string;
+  apellidoMaterno?: string | null;
   email?: string;
   rol?: PersonaRol;
   activo?: boolean;

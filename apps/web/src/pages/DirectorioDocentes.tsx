@@ -171,13 +171,29 @@ export default function DirectorioDocentes() {
   function openEditModal(docente: PersonaRecord) {
     if (docente.activo === false) return;
 
+    console.log('DOCENTE SELECCIONADO:', docente);
+console.table({
+  nombre: docente.nombre,
+  apellidoPaterno: docente.apellidoPaterno,
+  apellidoMaterno: docente.apellidoMaterno,
+  email: docente.email,
+  telefono: docente.numeroTelefono,
+  calle: docente.calle,
+  colonia: docente.colonia,
+  codigoPostal: docente.codigoPostal,
+  municipio: docente.municipio,
+  estado: docente.estado,
+  carrera: docente.carrera,
+  tituloEdu: docente.tituloEdu,
+});
+
     setEditingId(docente.id);
     setForm({
       ...emptyForm,
-      nombre: docente.nombre,
-      apellidoPaterno: docente.apellidoPaterno,
-      apellidoMaterno: docente.apellidoMaterno,
-      email: getLocalPart(docente.email),
+      nombre: docente.nombre ?? '',
+      apellidoPaterno: docente.apellidoPaterno ?? '',
+      apellidoMaterno: docente.apellidoMaterno ?? '',
+      email: getLocalPart(docente.email) ?? '',
       calle: docente.calle ?? '',
       colonia: docente.colonia ?? '',
       codigoPostal: docente.codigoPostal ?? '',
@@ -239,7 +255,7 @@ export default function DirectorioDocentes() {
       const payload = {
         nombre: form.nombre.trim(),
         apellidoPaterno: form.apellidoPaterno.trim(),
-        apellidoMaterno: form.apellidoMaterno.trim(),
+        apellidoMaterno: form.apellidoMaterno?.trim() ?? null,
         email: formatearEmailInstitucional(form.email),
         plantelId: plantelId,
         rol: role === 'coordinador' ? 'DOCENTE' : form.rol,
