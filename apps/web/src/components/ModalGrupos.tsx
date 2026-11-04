@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState, type SubmitEvent } from 'react';
-import AutocompleteInput from './AutoCompleteInput.tsx';
+import { useEffect, useState, type SubmitEvent } from 'react';
 import { apiClient } from '../services/ApiClient';
+import AutocompleteInput from './AutoCompleteInput.tsx';
 import { fetchPersonas}  from '../services/personaService';
 import { useAuth } from '../context/AuthContext.tsx';
-import type { GrupoSelectablePersona, NewGroupData } from '../types/GrupoTypes.ts';
+import type { NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/ModalGrupos.css';
 
 
@@ -19,32 +19,18 @@ export default function CreateGroupModal({
   onClose,
   onCreate,
 }: CreateGroupModalProps) {
-  const { role, email, selectedPlantel } = useAuth();
-  const rolActual = normalize(role);
-
-  const esDocente = rolActual === 'docente';
-  const esCoordinador = rolActual === 'coordinador';
-  const puedeDarClase = esDocente || esCoordinador;
-
+  const { email } = useAuth();
   const [materia, setMateria] = useState<string[]>([]);
   const [claveGrupo, setClaveGrupo] = useState('');
   const [semestre, setSemestre] = useState('');
-  const [docente, setDocente] = useState<string[]>([]);
-  const [numeroEstudiantes, setNumeroEstudiantes] = useState<string[]>([]);
   const [materiasBD, setMateriasBD] = useState<string[]>([]);
-  const [docentesBD, setDocentesBD] = useState<GrupoSelectablePersona[]>([]);
-  const [alumnosBD, setAlumnosBD] = useState<GrupoSelectablePersona[]>([]);
-  const [propiaPersona, setPropiaPersona] =
-    useState<GrupoSelectablePersona | null>(null);
   const [creatorPlantelId, setCreatorPlantelId] = useState<number | null>(null);
-  const [peopleLoading, setPeopleLoading] = useState(true);
-  const [peopleError, setPeopleError] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     async function loadCreator() {
       if (!email) {
-        setPropiaPersona(null);
+        setCreatorPlantelId(null);
         return;
       }
 
@@ -55,18 +41,9 @@ export default function CreateGroupModal({
             normalize(persona.email) === normalize(email),
         );
 
-        setPropiaPersona(
-          creator
-            ? {
-                id: String(creator.id),
-                label: `${creator.nombre ?? ''} ${creator.apellido ?? ''}`.trim(),
-              }
-            : null,
-        );
 
         setCreatorPlantelId(creator?.plantelId ?? null);
       } catch {
-        setPropiaPersona(null);
         setCreatorPlantelId(null);
       }
     }
@@ -74,51 +51,7 @@ export default function CreateGroupModal({
     void loadCreator();
   }, [email]);
 
-  useEffect(() => {
-    async function loadPeople() {
-      setPeopleLoading(true);
-      setPeopleError(null);
 
-      try {
-        const response = await fetchPersonas();
-        const personas = response.data ?? [];
-
-        const docentesActivos = personas.filter(
-          (persona) =>
-            (persona.rol === 'DOCENTE' || persona.rol === 'COORDINADOR') &&
-            persona.activo !== false,
-        );
-
-        const alumnosActivos = personas.filter(
-          (persona) =>
-            persona.rol === 'ALUMNO' && persona.activo !== false,
-        );
-
-        setDocentesBD(
-          docentesActivos
-            .map((persona) => ({
-              id: String(persona.id),
-              label: `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim(),
-            })),
-        );
-
-        setAlumnosBD(
-          alumnosActivos
-            .map((persona) => ({
-              id: String(persona.id),
-              label: `${persona.nombre ?? ''} ${persona.apellido ?? ''}`.trim(),
-            })),
-        );
-      } catch (err) {
-        console.error('Error cargando personas:', err);
-        setPeopleError('No se pudo cargar la lista de personas.');
-      } finally {
-        setPeopleLoading(false);
-      }
-    }
-
-    void loadPeople();
-  }, []);
 
   useEffect(() => {
     async function loadMaterias() {
@@ -141,15 +74,6 @@ export default function CreateGroupModal({
     void loadMaterias();
   }, []);
 
-  const docenteOptions = useMemo(
-    () => docentesBD.map((item) => item.label),
-    [docentesBD],
-  );
-
-  const alumnoOptions = useMemo(
-    () => alumnosBD.map((item) => item.label),
-    [alumnosBD],
-  );
 
   function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -160,50 +84,19 @@ export default function CreateGroupModal({
       return;
     }
 
-    let docenteId: string | null = null;
-    let docenteLabel: string | null = null;
-
-    if (esDocente) {
-      if (!propiaPersona?.id) {
-        setError('No se pudo identificar al docente.');
-        return;
-      }
-
-      docenteId = propiaPersona.id;
-      docenteLabel = propiaPersona.label;
-    } else {
-      const seleccionado = docentesBD.find(
-        (item) => normalize(item.label) === normalize(docente[0]),
-      );
-
-      if (!seleccionado) {
-        setError('Selecciona un docente válido.');
-        return;
-      }
-
-      docenteId = seleccionado.id;
-      docenteLabel = seleccionado.label;
+    if (!creatorPlantelId) {
+      setError('No se pudo determinar el plantel del creador del grupo.');
+      return;
     }
 
-    const alumnosIds = numeroEstudiantes
-      .map(
-        (label) =>
-          alumnosBD.find(
-            (item) => normalize(item.label) === normalize(label),
-          )?.id ?? null,
-      )
-      .filter((id): id is string => id !== null);
+
 
     const payload: NewGroupData = {
       grupo: materia[0],
       claveGrupo: claveGrupo.trim(),
       grado: semestre.trim(),
-      docente: docenteLabel,
-      docenteId,
       materia: materia[0],
-      alumnosIds,
-      numeroEstudiantes,
-      plantelId: selectedPlantel?.id ?? creatorPlantelId ?? null,
+      plantelId: creatorPlantelId,
     };
 
 
@@ -251,30 +144,6 @@ export default function CreateGroupModal({
             />
           </label>
 
-          {(!puedeDarClase || esCoordinador) && (
-            <AutocompleteInput
-              label="Docente o coordinador"
-              placeholder="Buscar docente o coordinador..."
-              options={docenteOptions}
-              selected={docente}
-              onChange={setDocente}
-            />
-          )}
-
-          <AutocompleteInput
-            label="Alumnos"
-            placeholder={
-              peopleLoading
-                ? 'Cargando alumnos...'
-                : 'Buscar y agregar alumnos...'
-            }
-            options={alumnoOptions}
-            multiple
-            selected={numeroEstudiantes}
-            onChange={setNumeroEstudiantes}
-          />
-
-          {peopleError && <p className="create-group-error">{peopleError}</p>}
           {error && <p className="create-group-error">{error}</p>}
 
           <article className="create-group-actions">

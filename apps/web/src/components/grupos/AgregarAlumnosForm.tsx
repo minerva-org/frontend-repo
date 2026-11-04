@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, type SubmitEvent } from 'react';
 
 const REGEX_INSTITUCIONAL = /^[^\s@]+@chapala\.edu\.mx$/i;
 
@@ -55,7 +55,7 @@ export default function AgregarAlumnosForm({
     setChips((prev) => prev.filter((chip) => chip.correo !== correo));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
 
