@@ -1,12 +1,20 @@
 import { createPortal } from 'react-dom';
 import AgregarAlumnosForm from './grupos/AgregarAlumnosForm.tsx';
+import type { PersonaRecord } from '../services/personaService.ts';
 
 interface ModalAgregarAlumnosProps {
+  alumnos: PersonaRecord[];
+  alumnosSeleccionados: string[];
   onClose: () => void;
-  onEnviar: (correos: string[]) => void;
+  onEnviar: (alumnosIds: string[]) => void;
 }
 
-export default function ModalAgregarAlumnos({ onClose, onEnviar }: ModalAgregarAlumnosProps) {
+export default function ModalAgregarAlumnos({
+  alumnos,
+  alumnosSeleccionados,
+  onClose,
+  onEnviar,
+}: ModalAgregarAlumnosProps) {
   return createPortal(
     <article
       style={{
@@ -35,14 +43,13 @@ export default function ModalAgregarAlumnos({ onClose, onEnviar }: ModalAgregarA
       >
         <article style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
           <h2 style={{ margin: 0 }}>Agregar alumnos</h2>
-          <i className="bi bi-x-lg" onClick={onClose} style={{ cursor: 'pointer' }}></i>
+          <i style={{ cursor: 'pointer' }}></i>
         </article>
 
         <AgregarAlumnosForm
-          onSubmit={(correos) => {
-            onEnviar(correos);
-            onClose();
-          }}
+          alumnos={alumnos}
+          alumnosSeleccionados={alumnosSeleccionados}
+          onSubmit={onEnviar}
           onCancel={onClose}
         />
       </article>

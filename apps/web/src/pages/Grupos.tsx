@@ -463,11 +463,12 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
                 </p>
               </article>
             </header>
-
+                    
             <section className="groups-confirm-body">
               <p className="groups-confirm-text">
                 {createGroupError ? (
                   <>
+                  
                     No se pudo crear el grupo <strong>{createdGroupName}</strong>.
                     Revisa los datos e inténtalo nuevamente.
                   </>

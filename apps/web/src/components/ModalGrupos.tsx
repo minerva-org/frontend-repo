@@ -6,7 +6,6 @@ import { useAuth } from '../context/AuthContext.tsx';
 import type { NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/ModalGrupos.css';
 
-
 interface CreateGroupModalProps {
   onClose: () => void;
   onCreate: (data: NewGroupData) => Promise<void> | void;

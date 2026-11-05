@@ -1,130 +1,145 @@
-import { useState, type SubmitEvent } from 'react';
-
-const REGEX_INSTITUCIONAL = /^[^\s@]+@chapala\.edu\.mx$/i;
-
-interface EmailChip {
-  correo: string;
-  valido: boolean;
-}
+import { useMemo, useState, type FormEvent } from 'react';
+import type { PersonaRecord } from '../../types/PersonaTypes';
 
 interface AgregarAlumnosFormProps {
-  onSubmit: (correos: string[]) => void;
+  alumnos: PersonaRecord[];
+  alumnosSeleccionados: string[];
+  onSubmit: (alumnosIds: string[]) => void;
   onCancel?: () => void;
-  submitLabel?: string;
-  title?: string;
 }
 
-function extraerCorreos(texto: string): string[] {
-  return texto
-    .split(/[,@\s\n]+/)
-    .map((correo) => correo.trim())
-    .filter(Boolean);
+function nombreCompleto(alumno: PersonaRecord): string {
+  return `${alumno.nombre} ${alumno.apellidoPaterno} ${alumno.apellidoMaterno ?? ''}`.trim();
 }
+
+function normalizeText(texto: string): string {
+  return texto
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+  }
 
 export default function AgregarAlumnosForm({
+  alumnos,
+  alumnosSeleccionados,
   onSubmit,
   onCancel,
-  submitLabel = 'Enviar invitaciones',
-  title = 'Agregar alumnos',
 }: AgregarAlumnosFormProps) {
-  const [textarea, setTextarea] = useState('');
-  const [chips, setChips] = useState<EmailChip[]>([]);
+  const [busqueda, setBusqueda] = useState('');
+  const [seleccionados, setSeleccionados] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  function procesarTexto(valor: string) {
-    setTextarea(valor);
+  const alumnosFiltrados = useMemo(() => {
+    const texto = normalizeText(busqueda);
 
-    const correos = extraerCorreos(valor);
-    const vistos = new Set<string>();
-    const nuevosChips: EmailChip[] = [];
+    return alumnos.filter((alumno) => {
+      if (alumnosSeleccionados.includes(alumno.id)) return false;
+      if (seleccionados.includes(alumno.id)) return false;
 
-    for (const correo of correos) {
-      const normalizado = correo.toLowerCase();
-      if (vistos.has(normalizado)) continue;
-      vistos.add(normalizado);
-      nuevosChips.push({
-        correo,
-        valido: REGEX_INSTITUCIONAL.test(correo),
-      });
-    }
+      const nombre = normalizeText(nombreCompleto(alumno));
+      const correo = normalizeText(alumno.email);
 
-    setChips(nuevosChips);
-  }
+      return !texto || nombre.includes(texto) || correo.includes(texto);
+    });
+  }, [alumnos, alumnosSeleccionados, busqueda, seleccionados]);
 
-  function eliminarChip(correo: string) {
-    setChips((prev) => prev.filter((chip) => chip.correo !== correo));
-  }
+  const alumnosElegidos = useMemo(
+    () => alumnos.filter((alumno) => seleccionados.includes(alumno.id)),
+    [alumnos, seleccionados]
+  );
 
-  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function agregarAlumno(id: string) {
+    setSeleccionados((prev) =>
+      prev.includes(id) ? prev : [...prev, id]
+    );
+    setBusqueda('');
     setError(null);
-
-    if (chips.length === 0) {
-      setError('Agrega al menos un correo.');
-      return;
-    }
-
-    const invalidos = chips.filter((chip) => !chip.valido);
-    if (invalidos.length > 0) {
-      setError(`${invalidos.length} correo(s) no son institucionales (@chapala.edu.mx) y deben corregirse o eliminarse.`);
-      return;
-    }
-
-    onSubmit(chips.map((chip) => chip.correo));
-    setTextarea('');
-    setChips([]);
   }
 
-  const validos = chips.filter((chip) => chip.valido).length;
-  const invalidos = chips.length - validos;
+  function eliminarAlumno(id: string) {
+    setSeleccionados((prev) => prev.filter((alumnoId) => alumnoId !== id));
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (seleccionados.length === 0) {
+      setError('Selecciona al menos un alumno.');
+      return;
+    }
+
+    onSubmit(seleccionados);
+  }
 
   return (
-    <form onSubmit={handleSubmit} noValidate>
-      <label>
-        <span>{title}</span>
-        <textarea
-          placeholder="Pega o escribe los correos separados por coma, espacio o salto de línea. Ej: ana@chapala.edu.mx, carlos@chapala.edu.mx"
-          value={textarea}
-          onChange={(event) => procesarTexto(event.target.value)}
-          rows={4}
-        />
+    <form onSubmit={handleSubmit}>
+      <label htmlFor="buscar-alumno">
+        Buscar alumnos
       </label>
 
-      {chips.length > 0 && (
-        <>
-          <p>
-            {chips.length} correo{chips.length !== 1 ? 's' : ''} detectado{chips.length !== 1 ? 's' : ''}
-            {invalidos > 0 && (
-              <span> · {invalidos} inválido{invalidos !== 1 ? 's' : ''}</span>
-            )}
-          </p>
+      <input
+        id="buscar-alumno"
+        type="text"
+        placeholder="Buscar por nombre, apellidos o correo..."
+        value={busqueda}
+        onChange={(event) => setBusqueda(event.target.value)}
+        autoComplete="off"
+      />
 
-          <article>
-            {chips.map((chip) => (
-              <span
-                className={chip.valido ? '' : 'invalido'}
-                key={chip.correo}
-                title={chip.valido ? undefined : 'No es un correo institucional válido'}
+      {busqueda.trim() !== '' && (
+        <section>
+          {alumnosFiltrados.length > 0 ? (
+            alumnosFiltrados.map((alumno) => (
+              <button
+                key={alumno.id}
+                type="button"
+                onClick={() => agregarAlumno(alumno.id)}
               >
-                {!chip.valido && <i className="bi bi-exclamation-triangle-fill"></i>}
-                {chip.correo}
-                <i className="bi bi-x" onClick={() => eliminarChip(chip.correo)}></i>
+                <strong>{nombreCompleto(alumno)}</strong>
+                <span>{alumno.email}</span>
+              </button>
+            ))
+          ) : (
+            <p>No se encontraron alumnos disponibles.</p>
+          )}
+        </section>
+      )}
+
+      <section>
+        <h3>Alumnos seleccionados ({alumnosElegidos.length})</h3>
+
+        {alumnosElegidos.length > 0 ? (
+          <article>
+            {alumnosElegidos.map((alumno) => (
+              <span key={alumno.id}>
+                {nombreCompleto(alumno)}
+                <button
+                  type="button"
+                  onClick={() => eliminarAlumno(alumno.id)}
+                  aria-label={`Quitar a ${nombreCompleto(alumno)}`}
+                >
+                </button>
               </span>
             ))}
           </article>
-        </>
-      )}
+        ) : (
+          <p>Aún no has seleccionado alumnos.</p>
+        )}
+      </section>
 
-      {error && <p>{error}</p>}
+      {error && <p role="alert">{error}</p>}
 
-      <article>
+      <section>
         {onCancel && (
           <button type="button" onClick={onCancel}>
             Cancelar
           </button>
         )}
-        <button type="submit">{submitLabel}</button>
-      </article>
+
+        <button type="submit" disabled={seleccionados.length === 0}>
+          Agregar alumnos
+        </button>
+      </section>
     </form>
   );
 }
