@@ -4,48 +4,18 @@ import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
 import '../styles/QuizNuevo.css';
 
+import type {
+  QuizBackend,
+  UnidadCatalogo,
+  TemaCatalogo,
+  ConceptoCatalogo,
+  Opcion,
+  Pregunta,
+  PreguntaQuizResponse,
+  OpcionQuizResponse,
+} from '../types/QuizTypes';
+
 type TipoQuiz = 'unico' | 'acumulativo';
-
-interface UnidadCatalogo {
-  id: string;
-  nombre: string;
-  idMateria: string;
-}
-
-interface TemaCatalogo {
-  id: string;
-  nombre: string;
-  unidadId: string;
-}
-
-interface ConceptoCatalogo {
-  id: string;
-  nombre: string;
-  temaId: string;
-}
-
-interface Opcion {
-  id: string;
-  texto: string;
-  esCorrecta: boolean;
-}
-
-interface Pregunta {
-  id: string;
-  unidadId: string;
-  temaId: string;
-  conceptoId: string;
-  enunciado: string;
-  opciones: Opcion[];
-}
-
-interface QuizBackend {
-  id: string;
-  nombre: string;
-  fechaInicio: string;
-  fechaFinalizacion: string;
-  grupoId: string;
-}
 
 let contId = 0;
 function newId(prefijo: string): string {
@@ -152,7 +122,7 @@ export default function QuizNuevo() {
         setLoading(true);
         const [quizResponse, preguntasResponse] = await Promise.all([
           apiClient.get<QuizBackend>(`/api/quizzes/${quizId}`),
-          apiClient.get<{ id: string; descripcion: string; conceptoId: string }[]>(`/api/quizzes/${quizId}/preguntas`),
+          apiClient.get<PreguntaQuizResponse[]>(`/api/quizzes/${quizId}/preguntas`),
         ]);
 
         const quiz = quizResponse.data;
@@ -160,7 +130,7 @@ export default function QuizNuevo() {
 
         const preguntaMap = await Promise.all(
           questionList.map(async (pregunta) => {
-            const opcionesResponse = await apiClient.get<{ id: string; descripcion: string; esCorrecta: boolean }[]>(`/api/opciones?preguntaId=${pregunta.id}`);
+            const opcionesResponse = await apiClient.get<OpcionQuizResponse[]>(`/api/opciones?preguntaId=${pregunta.id}`);
             const opciones = (opcionesResponse.data ?? []).map((opcion) => ({
               id: opcion.id,
               texto: opcion.descripcion,
