@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ModalAgregarAlumnos from '../ModalAlumnos.tsx';
+import ModalAgregarAlumnos from '../modals/ModalAlumnos.tsx';
 import QuizCatalogCard, { getQuizCatalogState } from '../quizzes/QuizCatalogCard.tsx';
 import { apiClient } from '../../services/ApiClient';
-import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService';
-import type { PersonaRecord } from '../../types/PersonaTypes';
+import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService.ts';
+import type { PersonaRecord } from '../../types/PersonaTypes.ts';
 
 export interface GrupoDetalleBackend {
   id: string;
@@ -49,6 +49,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   const [copiado, setCopiado] = useState(false);
   const [modalAgregarAlumnos, setModalAgregarAlumnos] = useState(false);
   const [loading, setLoading] = useState(true);
+
   const [grupo, setGrupo] = useState<GrupoDetalleBackend | null>(null);
   const [docenteNombre, setDocenteNombre] = useState('—');
   const [alumnos, setAlumnos] = useState<AlumnoEntry[]>([]);
@@ -57,6 +58,10 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   const [quizError, setQuizError] = useState<string | null>(null);
   const [quizLoading, setQuizLoading] = useState(true);
   const [expandedQuizId, setExpandedQuizId] = useState<string | null>(null);
+  const [quizPorBorrar, setQuizPorBorrar] = useState<{id: string;  nombre: string;} | null>(null);
+  const [quizEliminando, setQuizEliminando] = useState(false);
+
+  const [toast, setToast] = useState<{ mensaje: string; tipo: 'exito' | 'error';} | null>(null);
   const [alumnosDisponibles, setAlumnosDisponibles] = useState<PersonaRecord[]>([]);
   const navigate = useNavigate();
 
@@ -177,8 +182,36 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   );
 
   function handleBorrarQuiz(id: string, titulo: string) {
-    if (!window.confirm(`¿Borrar "${titulo}"? Esta acción no se puede deshacer.`)) return;
-    setQuizzes((prev) => prev.filter((q) => q.id !== id));
+    setQuizPorBorrar({id, nombre: titulo});
+  }
+
+  async function confirmarBorrarQuiz() {
+    if(!quizPorBorrar || quizEliminando) return;
+
+    const { id } = quizPorBorrar;
+    try{
+      setQuizEliminando(true);
+
+      await apiClient.delete(`/api/quizzes/${id}`);
+      setQuizzes((prev) => prev.filter((q)=> q.id !== id));
+      setExpandedQuizId((current) => current === id ? null : current);
+
+      setQuizPorBorrar(null);
+      setToast({
+        mensaje: 'El quiz se elimino correctamente.',
+         tipo: 'exito'
+        });
+    } catch(error){
+      console.error('Error al eliminar el quiz:', error);
+      setToast({
+        mensaje: 'No se pudo eliminar el quiz. Intenta nuevamente.',
+        tipo: 'error'
+      });
+
+    } finally{
+      setQuizEliminando(false);
+    }
+    
   }
 
   function handleAprove(id: string) {
@@ -226,6 +259,105 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
           onClose={() => setModalAgregarAlumnos(false)}
           onEnviar={handleAgregarAlumnos}
         />
+      )}
+
+     {quizPorBorrar && (
+        <article
+          className="modal show d-block"
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gd-delete-title"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}
+        >
+          <article className="modal-dialog modal-dialog-centered">
+            <article className="modal-content border-0 shadow">
+
+              <article className="modal-body text-center p-4">
+                <article className="mb-3">
+                  <i className="bi bi-trash3 text-danger fs-1"></i>
+                </article>
+
+                <h5 className="modal-title fw-bold mb-3" id="gd-delete-title">
+                  ¿Eliminar quiz?
+                </h5>
+
+                <p className="text-secondary mb-4">
+                  ¿Estás seguro de que deseas eliminar
+                  <strong> {quizPorBorrar.nombre}</strong>?
+                  Esta acción no se puede deshacer.
+                </p>
+
+                <article className="d-flex justify-content-center gap-2">
+                  <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={() => setQuizPorBorrar(null)}
+                    disabled={quizEliminando}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={confirmarBorrarQuiz}
+                    disabled={quizEliminando}
+                  >
+                    {quizEliminando ? 'Eliminando...' : 'Eliminar'}
+                  </button>
+                </article>
+              </article>
+
+            </article>
+          </article>
+        </article>
+  )}
+
+      {toast && (
+        <article
+          className="modal show d-block"
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gd-result-title"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}
+        >
+          <article className="modal-dialog modal-dialog-centered" role="document">
+            <article className="modal-content border-0 shadow">
+              <article className="modal-body text-center p-4">
+                <article className="mb-3">
+                  <i
+                    className={`bi ${
+                      toast.tipo === 'exito'
+                        ? 'bi-check-circle-fill text-success'
+                        : 'bi-x-circle-fill text-danger'
+                    }`}
+                    style={{ fontSize: '3rem' }}
+                  ></i>
+                </article>
+
+                <h5 className="modal-title fw-bold mb-3" id="gd-result-title">
+                  {toast.tipo === 'exito'
+                    ? '¡Eliminación exitosa!'
+                    : 'No se pudo eliminar'}
+                </h5>
+
+                <p className="text-secondary mb-4">
+                  {toast.mensaje}
+                </p>
+
+                <button
+                  type="button"
+                  className="btn btn-primary px-4"
+                  onClick={() => setToast(null)}
+                >
+                  Aceptar
+                </button>
+              </article>
+            </article>
+          </article>
+        </article>
       )}
 
       <section className="gd-hero">

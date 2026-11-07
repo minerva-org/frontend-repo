@@ -6,7 +6,7 @@ import { apiClient } from '../services/ApiClient';
 import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/DirectorioDocentes.css';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
-import { DocenteModal } from '../components/ModalDocentes.tsx';
+import { DocenteModal } from '../components/modals/ModalDocentes.tsx';
 import type { DocenteFormState } from '../types/DocenteTypes.ts';
 import type { SubmitEvent } from 'react';
 

@@ -1,6 +1,6 @@
 import { createContext, useState, type ReactNode, useContext } from 'react';
 import { login as loginService, type LoginResponse } from '../services/authService.ts';
-import type { UserRole } from '../types.ts';
+import type { UserRole } from '../types/types.ts';
 
 interface SelectedPlantel {
   id: number;

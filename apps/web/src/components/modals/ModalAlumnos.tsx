@@ -1,6 +1,6 @@
 import { createPortal } from 'react-dom';
-import AgregarAlumnosForm from './grupos/AgregarAlumnosForm.tsx';
-import type { PersonaRecord } from '../services/personaService.ts';
+import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx';
+import type { PersonaRecord } from '../../services/personaService.ts';
 
 interface ModalAgregarAlumnosProps {
   alumnos: PersonaRecord[];

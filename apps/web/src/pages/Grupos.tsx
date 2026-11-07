@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import CreateGroupModal from '../components/ModalGrupos.tsx';
+import CreateGroupModal from '../components//modals/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchPersonas, type PersonaRecord } from '../services/personaService';
@@ -33,11 +33,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   const activePlantelId = urlPlantelId ?? selectedPlantel?.id ?? null;
   const [showArchived, setShowArchived] = useState(false);
 
-  console.log({
-    urlPlantelId,
-    selectedPlantel,
-    activePlantelId,
-  });
+
 
   useEffect(() => {
     if (urlPlantelId && selectedPlantel?.id !== urlPlantelId) {
