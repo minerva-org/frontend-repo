@@ -39,11 +39,6 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
     activePlantelId,
   });
 
-  const propiaPersona = useMemo(
-    () => personas.find((p) => (p.email ?? '').toLowerCase() === (email ?? '').toLowerCase()),
-    [personas, email],
-  );
-
   useEffect(() => {
     if (urlPlantelId && selectedPlantel?.id !== urlPlantelId) {
       setSelectedPlantel({ id: urlPlantelId, nombre: selectedPlantel?.nombre ?? `Plantel ${urlPlantelId}` });
@@ -97,8 +92,8 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
           const persona = personaMap.get(grupo.docenteId);
           return {
             ...grupo,
-            docenteNombre: persona ? `${persona.nombre} ${persona.apellido}`.trim() : grupo.docenteId,
-            docenteEmail: persona?.email ?? grupo.docenteId,
+            docenteNombre: persona ? `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar',
+            docenteEmail: persona?.email ?? '',
             alumnosCount: countMap.get(grupo.id) ?? 0,
           };
         }),
@@ -118,8 +113,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
 
   const normalizedRole = String(role ?? '').toLowerCase();
 
-  const relatedGroups = useMemo(() => {
-    return groups.filter((group) => {
+  const relatedGroups = groups.filter((group) => {
       if (activePlantelId != null && group.plantelId != null) {
         if (group.plantelId !== activePlantelId) return false;
       }
@@ -133,23 +127,15 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       }
 
       const esMiGrupo =
-        group.docenteEmail.toLowerCase() === (email ?? '').toLowerCase() ||
-        (!!propiaPersona && group.docenteId === propiaPersona.id);
+        Boolean(email) &&
+        (group.docenteEmail ?? '').toLowerCase() === (email ?? '').toLowerCase();
 
       if (soloMisGrupos || normalizedRole === 'docente') return esMiGrupo;
       if (normalizedRole === 'coordinador') return true;
 
       return false;
     });
-  }, [
-    groups,
-    normalizedRole,
-    email,
-    user?.id,
-    soloMisGrupos,
-    activePlantelId,
-    propiaPersona,
-  ]);
+  
 
   const visibleGroups = useMemo(
     () => relatedGroups.filter((group) => group.activo !== false),
@@ -195,59 +181,65 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   }
 
   const handleCreateGroup = async (data: NewGroupData) => {
-    setCreateGroupError(false);
-    setCreatedGroupName(null);
+  setCreateGroupError(false);
+  setCreatedGroupName(null);
 
-    const plantelId = data.plantelId ?? selectedPlantel?.id;
+  const plantelId = data.plantelId ?? selectedPlantel?.id;
 
-    if (plantelId == null) {
-      setCreateGroupError(true);
-      setCreatedGroupName(data.materia);
-      throw new Error('No hay un plantel seleccionado.');
-    }
+  if (plantelId == null) {
+    setCreateGroupError(true);
+    setCreatedGroupName(data.materia);
+    throw new Error('No hay un plantel seleccionado.');
+  }
 
-    const docente = personas.find((persona) => persona.id === data.docenteId);
-    const alumnosInactivos = data.alumnosIds.filter((alumnoId) => {
-      const alumno = personas.find((persona) => persona.id === alumnoId);
-      return alumno?.activo === false;
-    });
+  const docenteId = data.docenteId ?? null;
+  const alumnosIds = data.alumnosIds ?? [];
 
-    if (docente?.activo === false || alumnosInactivos.length > 0) {
-      setCreateGroupError(true);
-      setCreatedGroupName(data.materia);
-      throw new Error('No puedes agregar personas desactivadas al grupo.');
-    }
+  const docente = docenteId
+    ? personas.find((persona) => persona.id === docenteId)
+    : undefined;
 
-    const payload = {
-      id: crypto.randomUUID(),
-      claveGrupo: data.claveGrupo,
-      nombre: data.materia,
-      semestre: data.grado,
-      activo: true,
-      docenteId: data.docenteId,
-      plantelId,
-      alumnosIds: data.alumnosIds,
-    };
+  const alumnosInactivos = alumnosIds.filter((alumnoId) => {
+    const alumno = personas.find((persona) => persona.id === alumnoId);
+    return alumno?.activo === false;
+  });
 
-    try {
-      const response = await apiClient.post('/api/grupos', payload);
+  if (docente?.activo === false || alumnosInactivos.length > 0) {
+    setCreateGroupError(true);
+    setCreatedGroupName(data.materia);
+    throw new Error('No puedes agregar personas desactivadas al grupo.');
+  }
 
-      await loadGroups();
-      setShowModal(false);
-      setCreatedGroupName(data.materia);
-      setCreateGroupError(false);
-
-      return response.data;
-    } catch (error: any) {
-      console.error('Response data:', error?.response?.data);
-
-      setShowModal(false);
-      setCreateGroupError(true);
-      setCreatedGroupName(data.materia);
-
-      throw error;
-    }
+  const payload = {
+    id: crypto.randomUUID(),
+    claveGrupo: data.claveGrupo,
+    nombre: data.materia,
+    semestre: data.grado,
+    activo: true,
+    docenteId,
+    plantelId,
+    alumnosIds,
   };
+
+  try {
+    const response = await apiClient.post('/api/grupos', payload);
+
+    await loadGroups();
+    setShowModal(false);
+    setCreatedGroupName(data.materia);
+    setCreateGroupError(false);
+
+    return response.data;
+  } catch (error: any) {
+    console.error('Response data:', error?.response?.data);
+
+    setShowModal(false);
+    setCreateGroupError(true);
+    setCreatedGroupName(data.materia);
+
+    throw error;
+  }
+};
 
   return (
     <article className="groups-screen">
@@ -471,11 +463,12 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
                 </p>
               </article>
             </header>
-
+                    
             <section className="groups-confirm-body">
               <p className="groups-confirm-text">
                 {createGroupError ? (
                   <>
+                  
                     No se pudo crear el grupo <strong>{createdGroupName}</strong>.
                     Revisa los datos e inténtalo nuevamente.
                   </>

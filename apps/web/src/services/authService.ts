@@ -77,12 +77,18 @@ export async function login(username: string, password: string): Promise<LoginRe
       role,
       personaId: response.data.personaId,
     };
-  } catch (error) {
-    if (
-      isAxiosError(error) &&
-      [400, 401, 403, 409].includes(error.response?.status ?? 0)
-    ) {
-      throw new Error('Usuario o contraseña incorrectos.', { cause: error });
+    } catch (error) {
+    if (isAxiosError(error)) {
+      const status = error.response?.status;
+      const codigo = error.response?.data?.codigo;
+
+      if (codigo === 'CUENTA_DESHABILITADA') {
+        throw new Error('Cuenta deshabilitada. Comunícate con tu coordinador o institución.', { cause: error });
+      }
+
+      if ([400, 401, 403, 409].includes(status ?? 0)) {
+        throw new Error('Usuario o contraseña incorrectos.', {cause: error});
+      }
     }
 
     throw new Error('No se pudo conectar con el servidor. Intente más tarde.', { cause: error });

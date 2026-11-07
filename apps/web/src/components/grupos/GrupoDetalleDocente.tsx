@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import ModalAgregarAlumnos from '../ModalAlumnos.tsx';
 import QuizCatalogCard, { getQuizCatalogState } from '../quizzes/QuizCatalogCard.tsx';
 import { apiClient } from '../../services/ApiClient';
-import { fetchPersonas } from '../../services/personaService';
+import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService';
+import type { PersonaRecord } from '../../types/PersonaTypes';
 
 export interface GrupoDetalleBackend {
   id: string;
@@ -56,10 +57,13 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   const [quizError, setQuizError] = useState<string | null>(null);
   const [quizLoading, setQuizLoading] = useState(true);
   const [expandedQuizId, setExpandedQuizId] = useState<string | null>(null);
+  const [alumnosDisponibles, setAlumnosDisponibles] = useState<PersonaRecord[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     let cancelled = false;
+
+
 
     async function load() {
       try {
@@ -76,12 +80,31 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         const alumnoIds = nextGrupo.alumnosIds ?? [];
         const alumnoList = personas.filter((persona) => alumnoIds.includes(persona.id));
 
+        let disponibles: PersonaRecord[] = [];
+
+        if (nextGrupo.plantelId !== null) {
+          const alumnosResponse = await fetchPersonasByPlantelAndRol(
+            nextGrupo.plantelId,
+            'ALUMNO'
+          );
+
+          if (cancelled) return;
+
+          disponibles = (alumnosResponse.data ?? []).filter(
+            (persona) =>
+              persona.activo &&
+              !(nextGrupo.alumnosIds ?? []).includes(persona.id)
+          );
+        }
+
+        setAlumnosDisponibles(disponibles);
+
         setGrupo(nextGrupo);
-        setDocenteNombre(docente ? `${docente.nombre} ${docente.apellido}`.trim() : nextGrupo.docenteId);
+        setDocenteNombre(docente ? `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim() : nextGrupo.docenteId);
         setAlumnos(
           alumnoList.map((persona) => ({
             id: persona.id,
-            nombre: `${persona.nombre} ${persona.apellido}`.trim(),
+            nombre: `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim(),
             estado: 'normal',
           })),
         );
@@ -173,13 +196,22 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     setTimeout(() => setCopiado(false), 1500);
   }
 
-  function handleSendInvitations(correos: string[]) {
-    const nuevos = correos.map((correo, i) => ({
-      id: `invitado-${Date.now()}-${i}`,
-      nombre: correo,
-      estado: 'pendiente' as const,
-    }));
-    setAlumnos((prev) => [...nuevos, ...prev]);
+  function handleAgregarAlumnos(alumnosIds: string[]) {
+    const nuevos = alumnosDisponibles
+      .filter((persona) => alumnosIds.includes(persona.id))
+      .map((persona) => ({
+        id: persona.id,
+        nombre: `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim(),
+        estado: 'normal' as const,
+      }));
+
+    setAlumnos((prev) => [...prev, ...nuevos]);
+
+    setAlumnosDisponibles((prev) =>
+      prev.filter((persona) => !alumnosIds.includes(persona.id))
+    );
+
+    setModalAgregarAlumnos(false);
   }
 
   if (loading) return <p className="gd-empty">Cargando grupo...</p>;
@@ -189,11 +221,10 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     <>
       {modalAgregarAlumnos && (
         <ModalAgregarAlumnos
+        alumnos={alumnosDisponibles}
+        alumnosSeleccionados={alumnos.map((a) => a.id)}
           onClose={() => setModalAgregarAlumnos(false)}
-          onEnviar={(correos) => {
-            handleSendInvitations(correos);
-            setModalAgregarAlumnos(false);
-          }}
+          onEnviar={handleAgregarAlumnos}
         />
       )}
 
