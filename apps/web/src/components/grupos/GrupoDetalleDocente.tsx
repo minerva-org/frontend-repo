@@ -63,13 +63,28 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
   const [toast, setToast] = useState<{ mensaje: string; tipo: 'exito' | 'error';} | null>(null);
   const [alumnosDisponibles, setAlumnosDisponibles] = useState<PersonaRecord[]>([]);
+
+  const [segundosRestantes, setSegundosRestantes] = useState(10);
   const navigate = useNavigate();
 
+  useEffect(()=>{
+    if(!quizPorBorrar) return;
+
+    const timer = window.setInterval(() => {
+      setSegundosRestantes((actual) => {
+        if (actual <= 1){
+          window.clearInterval(timer);
+          return 0;
+        }
+        return actual -1;
+      });
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [quizPorBorrar]);
+
   useEffect(() => {
+
     let cancelled = false;
-
-
-
     async function load() {
       try {
         const [grupoResponse, personasResponse] = await Promise.all([
@@ -182,11 +197,12 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   );
 
   function handleBorrarQuiz(id: string, titulo: string) {
+    setSegundosRestantes(10);
     setQuizPorBorrar({id, nombre: titulo});
   }
 
   async function confirmarBorrarQuiz() {
-    if(!quizPorBorrar || quizEliminando) return;
+    if(!quizPorBorrar || quizEliminando || segundosRestantes > 0) return;
 
     const { id } = quizPorBorrar;
     try{
@@ -302,9 +318,11 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                     type="button"
                     className="btn btn-danger"
                     onClick={confirmarBorrarQuiz}
-                    disabled={quizEliminando}
+                    disabled={quizEliminando || segundosRestantes > 0}
                   >
-                    {quizEliminando ? 'Eliminando...' : 'Eliminar'}
+                    {quizEliminando ? 'Eliminando...' : 
+                    segundosRestantes > 0 ? `Eliminar (${segundosRestantes})`
+                    : 'Eliminar'}
                   </button>
                 </article>
               </article>
