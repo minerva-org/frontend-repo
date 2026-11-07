@@ -1,5 +1,5 @@
 import { isAxiosError } from 'axios';
-import type { UserRole } from '../types.ts';
+import type { UserRole } from '../types/types.ts';
 import { apiClient } from './ApiClient';
 
 export interface LoginResponse {

@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import ModalMateria, { type DatosMateria } from '../components/ModalMateria.tsx';
-import type { Materia } from '../types.ts';
+import ModalMateria, { type DatosMateria } from '../components/modals/ModalMateria.tsx';
+import type { Materia } from '../types/types.ts';
 import { apiClient } from '../services/ApiClient.ts';
 import '../styles/Materias.css';
 import { useAuth } from '../context/AuthContext.tsx';

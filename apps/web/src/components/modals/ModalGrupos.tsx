@@ -1,10 +1,10 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
-import { apiClient } from '../services/ApiClient';
-import AutocompleteInput from './AutoCompleteInput.tsx';
-import { fetchPersonas}  from '../services/personaService';
-import { useAuth } from '../context/AuthContext.tsx';
-import type { NewGroupData } from '../types/GrupoTypes.ts';
-import '../styles/ModalGrupos.css';
+import { apiClient } from '../../services/ApiClient';
+import AutocompleteInput from '.././AutoCompleteInput.tsx';
+import { fetchPersonas}  from '../../services/personaService';
+import { useAuth } from '../../context/AuthContext.tsx';
+import type { NewGroupData } from '../../types/GrupoTypes.ts';
+import '../../styles/ModalGrupos.css';
 
 interface CreateGroupModalProps {
   onClose: () => void;

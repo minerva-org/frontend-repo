@@ -1,6 +1,6 @@
 import { useState, type SubmitEvent } from 'react';
-import type { Materia } from '../types.ts';
-import '../styles/ModalMateria.css';
+import type { Materia } from '../../types/types.ts';
+import '../../styles/ModalMateria.css';
 
 export interface ConceptoForm {
   id: string;
@@ -62,54 +62,6 @@ function crearUnidadVacia(): UnidadForm {
   return { id: crypto.randomUUID(), nombre: '', temas: [crearTemaVacio()] };
 }
 
-function crearDatosDummyGeografia(): UnidadForm[] {
-  return [
-    {
-      id: crypto.randomUUID(),
-      nombre: 'Geografía física',
-      temas: [
-        {
-          id: crypto.randomUUID(),
-          nombre: 'Relieve y clima',
-          conceptos: [
-            { id: crypto.randomUUID(), nombre: 'Montañas' },
-            { id: crypto.randomUUID(), nombre: 'Climas del planeta' },
-          ],
-        },
-        {
-          id: crypto.randomUUID(),
-          nombre: 'Hidrografía',
-          conceptos: [
-            { id: crypto.randomUUID(), nombre: 'Ríos y lagos' },
-            { id: crypto.randomUUID(), nombre: 'Cuencas hidrográficas' },
-          ],
-        },
-      ],
-    },
-    {
-      id: crypto.randomUUID(),
-      nombre: 'Geografía humana',
-      temas: [
-        {
-          id: crypto.randomUUID(),
-          nombre: 'Población y ciudades',
-          conceptos: [
-            { id: crypto.randomUUID(), nombre: 'Crecimiento urbano' },
-            { id: crypto.randomUUID(), nombre: 'Distribución poblacional' },
-          ],
-        },
-        {
-          id: crypto.randomUUID(),
-          nombre: 'Recursos y desarrollo',
-          conceptos: [
-            { id: crypto.randomUUID(), nombre: 'Recursos naturales' },
-            { id: crypto.randomUUID(), nombre: 'Desarrollo regional' },
-          ],
-        },
-      ],
-    },
-  ];
-}
 
 function crearDatosDesdeMateria(materia: Materia | null | undefined, esEdicion: boolean): UnidadForm[] {
   if (!materia?.unidades?.length) {

@@ -1,4 +1,4 @@
-import type { SidebarConfig } from './sidebarTypes.ts';
+import type { SidebarConfig } from '../types/sidebarTypes.ts';
 
 export const sidebarConfigByRole: Record<string, SidebarConfig> = {
   admin: {

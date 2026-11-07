@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import type { FormEvent } from 'react';
+import type { SubmitEvent } from 'react';
 
 export interface DirectorFormState {
   nombreCompleto: string;
@@ -24,7 +24,7 @@ interface DirectorPlantelModalProps {
   isValidating?: boolean;
   planteles: PlantelItem[];
   onClose: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
   onChange: (next: DirectorFormState) => void;
 }
 

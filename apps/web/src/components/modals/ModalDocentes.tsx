@@ -1,4 +1,4 @@
-import type {DocenteModalProps} from '../types/DocenteTypes';
+import type {DocenteModalProps} from '../../types/DocenteTypes';
 
 export function DocenteModal({ planteles, docente, loading, form, formError, onClose, onSubmit, onChange, canChoosePlantel, hidePlantelField, hideRoleField, defaultPlantelName }: DocenteModalProps) {
   return (

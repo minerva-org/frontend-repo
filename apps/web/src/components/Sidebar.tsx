@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import type { SidebarConfig, SidebarNavItem } from '../services/sidebarTypes.ts';
+import type { SidebarConfig, SidebarNavItem } from '../types/sidebarTypes.ts';
 import { apiClient } from '../services/ApiClient';
 import '../styles/Sidebar.css';
 import logo from '../assets/logo.webp';

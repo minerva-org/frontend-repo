@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import DirectorPlantelModal, { type DirectorFormState, isStrongPassword } from '../components/directores/DirectorPlantelModal.tsx';
+import DirectorPlantelModal, { type DirectorFormState, isStrongPassword } from '../components/modals/DirectorPlantelModal.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
 import { buildPersonaUsername, createPersona, updatePersona } from '../services/personaService';
