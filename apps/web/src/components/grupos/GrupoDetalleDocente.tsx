@@ -5,6 +5,7 @@ import { apiClient } from '../../services/ApiClient';
 import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService.ts';
 import type { PersonaRecord } from '../../types/PersonaTypes.ts';
 import type { GrupoDetalleBackend, AlumnoEntry, QuizCatalogBackend } from '../../types/GrupoTypes.ts';
+import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx'
 
 
 
@@ -291,22 +292,65 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     setTimeout(() => setCopiado(false), 1500);
   }
 
-  function handleAgregarAlumnos(alumnosIds: string[]) {
-    const nuevos = alumnosDisponibles
-      .filter((persona) => alumnosIds.includes(persona.id))
-      .map((persona) => ({
-        id: persona.id,
-        nombre: `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim(),
-        estado: 'normal' as const,
-      }));
+  async function handleAgregarAlumnos(alumnosIds: string[]) {
+    if (!grupo || alumnosIds.length === 0) return;
 
-    setAlumnos((prev) => [...prev, ...nuevos]);
+    const agregados: string[] = [];
 
-    setAlumnosDisponibles((prev) =>
-      prev.filter((persona) => !alumnosIds.includes(persona.id))
-    );
+    try {
+      for (const alumnoId of alumnosIds) {
+        await apiClient.post(
+          `/api/grupos/${grupo.id}/alumnos/${alumnoId}`
+        );
 
-    setModalAgregarAlumnos(false);
+        agregados.push(alumnoId);
+      }
+
+      const nuevos = alumnosDisponibles
+        .filter((persona) => agregados.includes(persona.id))
+        .map((persona) => ({
+          id: persona.id,
+          nombre: `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim(),
+          estado: 'normal' as const,
+        }));
+
+      setAlumnos((prev) => [...prev, ...nuevos]);
+
+      setAlumnosDisponibles((prev) =>
+        prev.filter((persona) => !agregados.includes(persona.id))
+      );
+
+      setModalAgregarAlumnos(false);
+
+      setToast({
+        mensaje: 'Los alumnos se agregaron correctamente al grupo.',
+        tipo: 'exito',
+      });
+
+    } catch (error) {
+      console.error('Error al agregar alumnos:', error);
+
+      const nuevos = alumnosDisponibles
+        .filter((persona) => agregados.includes(persona.id))
+        .map((persona) => ({
+          id: persona.id,
+          nombre: `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim(),
+          estado: 'normal' as const,
+        }));
+
+      setAlumnos((prev) => [...prev, ...nuevos]);
+
+      setAlumnosDisponibles((prev) =>
+        prev.filter((persona) => agregados.includes(persona.id) === false)
+      );
+
+      setToast({
+        mensaje: agregados.length > 0
+          ? `Se guardaron ${agregados.length} alumnos, pero algunos no pudieron agregarse.`
+          : 'No se pudieron agregar los alumnos. Intenta nuevamente.',
+        tipo: 'error',
+      });
+    }
   }
 
   if (loading) return <p className="gd-empty">Cargando grupo...</p>;
@@ -491,6 +535,15 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
             </article>
           </article>
         </article>
+      )}
+
+      {modalAgregarAlumnos && (
+        <AgregarAlumnosForm
+          alumnos={alumnosDisponibles}
+          alumnosSeleccionados={alumnos.map((alumno) => alumno.id)}
+          onCancel={() => setModalAgregarAlumnos(false)}
+          onSubmit={handleAgregarAlumnos}
+        />
       )}
 
       <section className="gd-hero">
