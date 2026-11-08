@@ -1,59 +1,317 @@
-import { createPortal } from 'react-dom';
-import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx';
-import type { PersonaRecord } from '../../services/personaService.ts';
+import type { SubmitEvent } from 'react';
+import type { PersonaRecord } from '../../services/personaService';
+import type { PlantelItem } from '../../types/PlantelTypes';
+import type { AlumnoFormState } from '../../types/AlumnoTypes';
 
-interface ModalAgregarAlumnosProps {
-  alumnos: PersonaRecord[];
-  alumnosSeleccionados: string[];
+interface ModalAlumnosProps {
+  alumno: PersonaRecord | null;
+  planteles: PlantelItem[];
+  form: AlumnoFormState;
+  formError: string | null;
+  loading: boolean;
   onClose: () => void;
-  onEnviar: (alumnosIds: string[]) => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => Promise<void> | void;
+  onChange: (next: AlumnoFormState) => void;
+  canChoosePlantel: boolean;
+  hidePlantelField: boolean;
+  defaultPlantelName: string;
 }
 
-export default function ModalAgregarAlumnos({
-  alumnos,
-  alumnosSeleccionados,
+export function ModalAlumnos({
+  alumno,
+  planteles,
+  form,
+  formError,
+  loading,
   onClose,
-  onEnviar,
-}: ModalAgregarAlumnosProps) {
-  return createPortal(
+  onSubmit,
+  onChange,
+  canChoosePlantel,
+  hidePlantelField,
+  defaultPlantelName,
+}: ModalAlumnosProps) {
+  return (
     <article
-      style={{
-        position: 'fixed',
-        inset: 0,
-        background: 'rgba(15, 23, 42, 0.55)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 2000,
-        padding: '1rem',
-      }}
-      onClick={onClose}
+      className="modal show d-block"
+      tabIndex={-1}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ca-modal-title"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}
     >
-      <article
-        style={{
-          width: 'min(700px, 100%)',
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          background: '#fff',
-          borderRadius: '18px',
-          boxShadow: '0 20px 50px rgba(15, 23, 42, 0.22)',
-          padding: '1.5rem',
-        }}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <article style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0 }}>Agregar alumnos</h2>
-          <i style={{ cursor: 'pointer' }}></i>
-        </article>
+      <article className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <article className="modal-content border-0 shadow">
+          <article
+            className="modal-header text-white"
+            style={{
+              background: 'linear-gradient(135deg, var(--ar-profundo), var(--ar-azul))',
+              borderBottom: 'none',
+            }}
+          >
+            <article>
+              <h2
+                className="modal-title fs-5 fw-bold text-white"
+                id="ca-modal-title"
+              >
+                {alumno ? 'Editar alumno' : 'Nuevo alumno'}
+              </h2>
 
-        <AgregarAlumnosForm
-          alumnos={alumnos}
-          alumnosSeleccionados={alumnosSeleccionados}
-          onSubmit={onEnviar}
-          onCancel={onClose}
-        />
+              <p className="small mb-0" style={{ color: 'var(--ar-neblina)' }}>
+                Alta y edición de alumnos
+              </p>
+            </article>
+
+          </article>
+
+          <form onSubmit={onSubmit}>
+            <article className="modal-body">
+              <article className="row g-3">
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Nombre(s)</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.nombre ?? ''}
+                    onChange={(e) => onChange({ ...form, nombre: e.target.value })}
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Apellido paterno</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.apellidoPaterno ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, apellidoPaterno: e.target.value })
+                    }
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Apellido materno</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.apellidoMaterno ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, apellidoMaterno: e.target.value })
+                    }
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Correo institucional
+                  </label>
+
+                  <article className="input-group">
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={form.email ?? ''}
+                      onChange={(e) => onChange({ ...form, email: e.target.value })}
+                    />
+
+                    <span className="input-group-text">
+                      @alumnos.chapala.edu.mx
+                    </span>
+                  </article>
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Teléfono</label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    value={form.numeroTelefono ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, numeroTelefono: e.target.value })
+                    }
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Calle</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.calle ?? ''}
+                    onChange={(e) => onChange({ ...form, calle: e.target.value })}
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Colonia</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.colonia ?? ''}
+                    onChange={(e) => onChange({ ...form, colonia: e.target.value })}
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Código postal</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.codigoPostal ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, codigoPostal: e.target.value })
+                    }
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Municipio</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.municipio ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, municipio: e.target.value })
+                    }
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Estado</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.estado ?? ''}
+                    onChange={(e) => onChange({ ...form, estado: e.target.value })}
+                  />
+                </article>
+
+                {!hidePlantelField && (
+                  <article className="col-md-6">
+                    <label className="form-label fw-semibold">Plantel</label>
+
+                    {canChoosePlantel ? (
+                      <select
+                        className="form-select"
+                        value={form.plantelId ?? ''}
+                        onChange={(e) =>
+                          onChange({
+                            ...form,
+                            plantelId: e.target.value
+                              ? Number(e.target.value)
+                              : null,
+                          })
+                        }
+                      >
+                        <option value="">Selecciona un plantel</option>
+
+                        {planteles.map((plantel) => (
+                          <option key={plantel.id} value={plantel.id}>
+                            {plantel.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={defaultPlantelName ?? ''}
+                        disabled
+                      />
+                    )}
+                  </article>
+                )}
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Nombre del tutor</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.nombreTutor ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, nombreTutor: e.target.value })
+                    }
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Teléfono del tutor
+                  </label>
+                  <input
+                    type="tel"
+                    className="form-control"
+                    value={form.numeroTutor ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, numeroTutor: e.target.value })
+                    }
+                  />
+                </article>
+
+                {!alumno && (
+                  <>
+                    <article className="col-12">
+                      <label className="form-label fw-semibold">
+                        Contraseña temporal
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        className="form-control"
+                        value={form.password ?? ''}
+                        onChange={(e) =>
+                          onChange({ ...form, password: e.target.value })
+                        }
+                      />
+                      <article className="form-text">
+                        Debe contener al menos 8 caracteres, mayúsculas,
+                        minúsculas, números y caracteres especiales.
+                      </article>
+                    </article>
+                  </>
+                )}
+
+                {formError && (
+                  <article className="col-12">
+                    <article className="alert alert-danger mb-0" role="alert">
+                      {formError}
+                    </article>
+                  </article>
+                )}
+              </article>
+            </article>
+
+            <article className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={onClose}
+                disabled={loading}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <span
+                      className="spinner-border spinner-border-sm me-2"
+                      aria-hidden="true"
+                    />
+                    Guardando...
+                  </>
+                ) : (
+                  'Guardar'
+                )}
+              </button>
+            </article>
+          </form>
+        </article>
       </article>
-    </article>,
-    document.body,
+    </article>
   );
 }

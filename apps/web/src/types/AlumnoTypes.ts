@@ -1,8 +1,19 @@
 export interface AlumnoFormState {
-  nombreCompleto: string;
+  nombre: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
   email: string;
+  numeroTelefono: string;
+  calle: string;
+  colonia: string;
+  codigoPostal: string;
+  municipio: string;
+  estado: string;
   plantelId: number | null;
   password: string;
+  nombreTutor: string;
+  numeroTutor: string;
+  fechaIngreso: string;
 }
 
 export interface QuizAlumno {

@@ -15,8 +15,11 @@ export interface PersonaRecord {
   municipio: string;
   estado: string;
   numeroTelefono: string;
-  carrera: string;
-  tituloEdu: string;
+  carrera?: string;
+  tituloEdu?: string;
+  nombreTutor?: string | null;
+  numeroTutor?: string | null;
+  fechaIngreso?: string | null;
 }
 
 export interface CreatePersonaPayload {
@@ -36,8 +39,11 @@ export interface CreatePersonaPayload {
   municipio: string;
   estado: string;
   numeroTelefono: string;
-  carrera: string;
-  tituloEdu: string;
+  carrera?: string;
+  tituloEdu?: string;
+  nombreTutor?: string;
+  numeroTutor?: string;
+  fechaIngreso?: string | null;
 
 }
 
@@ -58,4 +64,7 @@ export interface UpdatePersonaPayload {
   password?: string;
   carrera?: string;
   tituloEdu?: string;
+  nombreTutor?:string;
+  numeroTutor?: string;
+  fechaIngreso?: string | null;
 }
