@@ -13,6 +13,7 @@ import type {
   Pregunta,
   PreguntaQuizResponse,
   OpcionQuizResponse,
+  QuizXPreguntaResponse
 } from '../types/QuizTypes';
 
 type TipoQuiz = 'unico' | 'acumulativo';
@@ -65,6 +66,9 @@ export default function QuizNuevo() {
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [quizCargado, setQuizCargado] = useState(false);
+  const [preguntasEliminadas, setPreguntasEliminadas] = useState<{preguntaId:string; quizXPreguntaId?:string}[]>([]);
+  const [opcionesOriginales, setOpcionesOriginales] = useState<Record<string, Opcion[]>>({});
 
   const temasDeUnidad = useMemo(
     () => (unidadId: string) => temas.filter((tema) => tema.unidadId === unidadId),
@@ -108,6 +112,7 @@ export default function QuizNuevo() {
         setError('No se pudo cargar el catálogo de unidades, temas y conceptos. Intenta recargar la página.');
       } finally {
         setLoading(false);
+        setQuizCargado(true);
       }
     }
 
@@ -115,19 +120,20 @@ export default function QuizNuevo() {
   }, [esEdicion]);
 
   useEffect(() => {
-    if (!esEdicion || !quizId) return;
+    if (!esEdicion || !quizId || !quizCargado) return;
 
     async function cargarQuizExistente() {
       try {
         setLoading(true);
-        const [quizResponse, preguntasResponse] = await Promise.all([
+        const [quizResponse, preguntasResponse, relacionesResponse] = await Promise.all([
           apiClient.get<QuizBackend>(`/api/quizzes/${quizId}`),
           apiClient.get<PreguntaQuizResponse[]>(`/api/quizzes/${quizId}/preguntas`),
+          apiClient.get<QuizXPreguntaResponse[]>('/api/quiz-x-pregunta'), 
         ]);
 
         const quiz = quizResponse.data;
         const questionList = preguntasResponse.data ?? [];
-
+        const relaciones = (relacionesResponse.data ?? []).filter((relacion) => relacion.quizId ===quizId);
         const preguntaMap = await Promise.all(
           questionList.map(async (pregunta) => {
             const opcionesResponse = await apiClient.get<OpcionQuizResponse[]>(`/api/opciones?preguntaId=${pregunta.id}`);
@@ -140,9 +146,15 @@ export default function QuizNuevo() {
             const concepto = conceptos.find((item) => item.id === pregunta.conceptoId);
             const tema = concepto ? temas.find((item) => item.id === concepto.temaId) : undefined;
             const unidad = tema ? unidades.find((item) => item.id === tema.unidadId) : undefined;
+            const relacion = relaciones.find((item) => 
+            item.preguntaId ===pregunta.id);
+            if(!relacion){
+              throw new Error(`No se encontró la relacion del quiz para la pregunta ${pregunta.id}`,);
+            }
 
             return {
               id: pregunta.id,
+              quizXPreguntaId:relacion.id,
               unidadId: unidad?.id ?? '',
               temaId: tema?.id ?? '',
               conceptoId: pregunta.conceptoId,
@@ -151,6 +163,13 @@ export default function QuizNuevo() {
             } satisfies Pregunta;
           }),
         );
+
+        setOpcionesOriginales(Object.fromEntries(preguntaMap.map((pregunta) => [
+          pregunta.id,
+          pregunta.opciones.map((opcion) => ({...opcion})),
+        ])
+      )
+    );
 
         const fechaInicio = quiz.fechaInicio ? new Date(quiz.fechaInicio) : null;
         const fechaFinalizacion = quiz.fechaFinalizacion ? new Date(quiz.fechaFinalizacion) : null;
@@ -175,7 +194,7 @@ export default function QuizNuevo() {
     }
 
     void cargarQuizExistente();
-  }, [esEdicion, quizId, conceptos, temas, unidades]);
+  }, [esEdicion, quizId, conceptos, temas, unidades,quizCargado]);
 
   function handleCambiarTipo(nuevoTipo: TipoQuiz) {
     setTipo(nuevoTipo);
@@ -217,7 +236,30 @@ export default function QuizNuevo() {
   }
 
   function deleteQuestion(id: string) {
-    setPreguntas((prev) => (prev.length <= 1 ? prev : prev.filter((pregunta) => pregunta.id !== id)));
+      if(preguntas.length <= 1) return;
+
+      const preguntaEliminada = preguntas.find((pregunta) => pregunta.id ===id);
+
+      if (!preguntaEliminada) return;
+
+      if(!preguntaEliminada.id.startsWith('preg-')){
+        setPreguntasEliminadas((eliminadas) => {
+          if (eliminadas.some((item) => item.preguntaId === preguntaEliminada.id)) {
+            return eliminadas;
+          }
+
+          return [
+            ...eliminadas,
+            {
+              preguntaId: preguntaEliminada.id,
+              quizXPreguntaId: preguntaEliminada.quizXPreguntaId,
+            },
+          ];
+        });
+          
+      }
+      setPreguntas((prev) =>
+      prev.filter((pregunta) => pregunta.id !== id));
   }
 
   function updateOption(preguntaId: string, opcionId: string, texto: string) {
@@ -250,6 +292,54 @@ export default function QuizNuevo() {
       },
     ));
   }
+  
+  async function guardarOpciones(idOriginalPregunta: string, preguntaIdBackend: string, opcionesActuales: Opcion[], esPreguntaNueva: boolean) {
+    if (esPreguntaNueva) {
+      for (const opcion of opcionesActuales) {
+        await apiClient.post('/api/opciones', {
+          id: crypto.randomUUID(),
+          descripcion: opcion.texto.trim(),
+          esCorrecta: opcion.esCorrecta,
+          preguntaId: preguntaIdBackend,
+        });
+      }
+
+      return;
+    }
+
+    const originales = opcionesOriginales[idOriginalPregunta] ?? [];
+
+    const idsActuales = new Set(
+      opcionesActuales
+        .filter((opcion) => !opcion.id.startsWith('op-'))
+        .map((opcion) => opcion.id),
+    );
+
+    const eliminadas = originales.filter(
+      (opcion) => !idsActuales.has(opcion.id),
+    );
+
+    for (const opcion of eliminadas) {
+      await apiClient.delete(`/api/opciones/${opcion.id}`);
+    }
+
+    for (const opcion of opcionesActuales) {
+      if (opcion.id.startsWith('op-')) {
+        await apiClient.post('/api/opciones', {
+          id: crypto.randomUUID(),
+          descripcion: opcion.texto.trim(),
+          esCorrecta: opcion.esCorrecta,
+          preguntaId: preguntaIdBackend,
+        });
+      } else {
+        await apiClient.patch(`/api/opciones/${opcion.id}`, {
+          descripcion: opcion.texto.trim(),
+          esCorrecta: opcion.esCorrecta,
+          preguntaId: preguntaIdBackend,
+        });
+      }
+    }
+  }
 
   function validate(): string | null {
     if (!titulo.trim()) return 'El quiz necesita un título.';
@@ -276,8 +366,8 @@ export default function QuizNuevo() {
       if (pregunta.opciones.some((opcion) => !opcion.texto.trim())) {
         return `Todas las opciones de la pregunta ${i + 1} deben tener texto.`;
       }
-      if (!pregunta.opciones.some((opcion) => opcion.esCorrecta)) {
-        return `Marca la respuesta correcta de la pregunta ${i + 1}.`;
+      if (pregunta.opciones.filter((opcion) => opcion.esCorrecta).length !== 1) {
+        return `La pregunta ${i + 1} solo puede tener una respuesta correcta.`;
       }
     }
 
@@ -285,72 +375,118 @@ export default function QuizNuevo() {
   }
 
   async function handleSubmit() {
-    const mensaje = validate();
-    if (mensaje) {
-      setError(mensaje);
-      return;
-    }
+      const mensaje = validate();
 
-    if (!code) {
-      setError('No se pudo localizar el grupo asociado al quiz.');
-      return;
-    }
-
-    try {
-      setError(null);
-      const inicio = combinarFechaHora(fechaApertura, horaApertura);
-      const fin = combinarFechaHora(fechaCierre, horaCierre);
-
-      if (!inicio || !fin) {
-        setError('Las fechas del quiz son inválidas.');
+      if (mensaje) {
+        setError(mensaje);
         return;
       }
 
-      const payloadQuiz = {
-        id: esEdicion && quizId ? quizId : crypto.randomUUID(),
-        nombre: titulo.trim(),
-        fechaInicio: inicio.toISOString(),
-        fechaFinalizacion: fin.toISOString(),
-        grupoId: code,
-      };
-
-      const quizResponse = esEdicion && quizId
-        ? await apiClient.patch(`/api/quizzes/${quizId}`, payloadQuiz)
-        : await apiClient.post('/api/quizzes', payloadQuiz);
-
-      const createdQuizId = (quizResponse.data as { id?: string }).id ?? quizId ?? payloadQuiz.id;
-
-      for (const pregunta of preguntas) {
-        const createdPreguntaResponse = await apiClient.post('/api/preguntas', {
-          id: pregunta.id.startsWith('preg-') || pregunta.id.startsWith('preg-mock-') ? crypto.randomUUID() : pregunta.id,
-          descripcion: pregunta.enunciado.trim(),
-          conceptoId: pregunta.conceptoId,
-        });
-
-        const createdPreguntaId = (createdPreguntaResponse.data as { id?: string }).id;
-        if (!createdPreguntaId) continue;
-
-        await apiClient.post('/api/quiz-x-pregunta', {
-          id: crypto.randomUUID(),
-          quizId: createdQuizId,
-          preguntaId: createdPreguntaId,
-        });
-
-        for (const opcion of pregunta.opciones) {
-          await apiClient.post('/api/opciones', {
-            id: crypto.randomUUID(),
-            descripcion: opcion.texto.trim(),
-            esCorrecta: opcion.esCorrecta,
-            preguntaId: createdPreguntaId,
-          });
-        }
+      if (!code) {
+        setError('No se pudo localizar el grupo asociado al quiz.');
+        return;
       }
 
-      navigate(`/grupos/${code}`);
-    } catch (requestError) {
-      console.error('Error saving quiz', requestError);
-      setError('Ocurrió un error al guardar el quiz. Intenta nuevamente más tarde.');
-    }
+      try {
+        setError(null);
+
+        const inicio = combinarFechaHora(fechaApertura, horaApertura);
+        const fin = combinarFechaHora(fechaCierre, horaCierre);
+
+        if (!inicio || !fin) {
+          setError('Las fechas del quiz son inválidas.');
+          return;
+        }
+
+        const payloadQuiz = {
+          id: esEdicion && quizId ? quizId : crypto.randomUUID(),
+          nombre: titulo.trim(),
+          fechaInicio: inicio.toISOString(),
+          fechaFinalizacion: fin.toISOString(),
+          grupoId: code,
+        };
+
+        const quizResponse = esEdicion && quizId
+          ? await apiClient.patch(`/api/quizzes/${quizId}`, payloadQuiz)
+          : await apiClient.post('/api/quizzes', payloadQuiz);
+
+        const createdQuizId =
+          (quizResponse.data as { id?: string }).id ?? quizId ?? payloadQuiz.id;
+
+        if (!esEdicion) {
+          for (const pregunta of preguntas) {
+            const preguntaId = crypto.randomUUID();
+
+            await apiClient.post('/api/preguntas', {
+              id: preguntaId,
+              descripcion: pregunta.enunciado.trim(),
+              conceptoId: pregunta.conceptoId,
+            });
+
+            await apiClient.post('/api/quiz-x-pregunta', {
+              id: crypto.randomUUID(),
+              quizId: createdQuizId,
+              preguntaId,
+            });
+
+            await guardarOpciones(
+              pregunta.id,
+              preguntaId,
+              pregunta.opciones,
+              true,
+            );
+          }
+        } else {
+            for (const pregunta of preguntas) {
+              const esPreguntaNueva = pregunta.id.startsWith('preg-');
+
+              let preguntaId = pregunta.id;
+
+              if (esPreguntaNueva) {
+                preguntaId = crypto.randomUUID();
+
+                await apiClient.post('/api/preguntas', {
+                  id: preguntaId,
+                  descripcion: pregunta.enunciado.trim(),
+                  conceptoId: pregunta.conceptoId,
+                });
+
+                await apiClient.post('/api/quiz-x-pregunta', {
+                  id: crypto.randomUUID(),
+                  quizId: createdQuizId,
+                  preguntaId,
+                });
+              } else {
+                await apiClient.patch(`/api/preguntas/${pregunta.id}`, {
+                  descripcion: pregunta.enunciado.trim(),
+                  conceptoId: pregunta.conceptoId,
+                });
+              }
+
+              await guardarOpciones(
+                pregunta.id,
+                preguntaId,
+                pregunta.opciones,
+                esPreguntaNueva,
+              );
+            }
+
+            for (const preguntaEliminada of preguntasEliminadas) {
+              if (preguntaEliminada.quizXPreguntaId) {
+                await apiClient.delete(`/api/quiz-x-pregunta/${preguntaEliminada.quizXPreguntaId}`);
+              }
+
+              await apiClient.delete(`/api/preguntas/${preguntaEliminada.preguntaId}`);
+            }
+        }
+        
+
+        navigate(`/grupos/${code}`);
+
+      } catch (requestError) {
+        console.error('Error saving quiz:', requestError);
+        setError('Ocurrió un error al guardar el quiz. Intenta nuevamente más tarde.');
+      }
   }
 
   if (!code) {

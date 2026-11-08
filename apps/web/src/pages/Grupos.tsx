@@ -200,7 +200,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
     return alumno?.activo === false;
   });
 
-  if (docente?.activo === false || alumnosInactivos.length > 0) {
+  if (!docente || !docente?.activo || alumnosInactivos.length > 0) {
     setCreateGroupError(true);
     setCreatedGroupName(data.materia);
     throw new Error('No puedes agregar personas desactivadas al grupo.');

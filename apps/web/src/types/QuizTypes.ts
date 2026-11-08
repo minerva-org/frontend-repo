@@ -68,6 +68,7 @@ export interface Opcion {
 
 export interface Pregunta {
   id: string;
+  quizXPreguntaId?: string;
   unidadId: string;
   temaId: string;
   conceptoId: string;
@@ -85,4 +86,10 @@ export interface OpcionQuizResponse {
   id: string;
   descripcion: string;
   esCorrecta: boolean;
+}
+
+export interface QuizXPreguntaResponse {
+  id: string;
+  quizId: string;
+  preguntaId: string;
 }
