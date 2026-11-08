@@ -7,31 +7,30 @@ import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updat
 import '../styles/CatalogoAlumnos.css';
 import type { AlumnoFormState } from '../types/AlumnoTypes.ts';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
+import { ModalAlumnos } from '../components/modals/ModalAlumnos.tsx';
 
 const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 
 const emptyForm: AlumnoFormState = {
-  nombreCompleto: '',
+  nombre: '',
+  apellidoPaterno: '',
+  apellidoMaterno: '',
   email: '',
+  numeroTelefono: '',
+  calle: '',
+  colonia: '',
+  codigoPostal: '',
+  municipio: '',
+  estado: '',
   plantelId: null,
   password: '',
+  nombreTutor: '',
+  numeroTutor: '',
+  fechaIngreso: '',
 };
 
 function isStrongPassword(password: string) {
   return SAFE_PASSWORD_REGEX.test(password.trim());
-}
-
-function splitNombreCompleto(nombreCompleto: string) {
-  const limpio = nombreCompleto.trim().replace(/\s+/g, ' ');
-  if (!limpio) return { nombre: '', apellido: '' };
-
-  const partes = limpio.split(' ');
-  if (partes.length === 1) return { nombre: partes[0], apellido: '-' };
-
-  return {
-    nombre: partes[0],
-    apellido: partes.slice(1).join(' '),
-  };
 }
 
 function formatearEmailInstitucional(localPart: string, rol: 'ALUMNO' | 'DOCENTE' | 'COORDINADOR' | 'DIRECTOR_PLANTEL') {
@@ -46,7 +45,11 @@ function getLocalPart(email: string) {
 }
 
 function getNombreCompleto(alumno: PersonaRecord) {
-  return `${alumno.nombre} ${alumno.apellido}`.trim();
+  return [alumno.nombre, alumno.apellidoPaterno, alumno.apellidoMaterno,].filter(Boolean).join(' ') ;
+}
+
+function getFechaInput(fecha?: string | null) {
+  return fecha ? fecha.slice(0, 10) : '';
 }
 
 export default function CatalogoAlumnos() {
@@ -142,47 +145,66 @@ export default function CatalogoAlumnos() {
     return () => window.clearTimeout(id);
   }, [toast]);
 
-  function openCreateModal() {
-    setEditingId(null);
-    setForm({
-      ...emptyForm,
-      plantelId: canChoosePlantel ? (planteles[0]?.id ?? null) : (activePlantelId ?? planteles[0]?.id ?? null),
-      password: '',
-    });
-    setFormError(null);
-    setIsModalOpen(true);
-  }
+function openCreateModal() {
+  setEditingId(null);
+  setForm({
+    ...emptyForm,
+    plantelId: canChoosePlantel
+      ? (selectedPlantel?.id ??planteles[0]?.id ?? null)
+      : (activePlantelId ?? planteles[0]?.id ?? null),
+  });
+  setFormError(null);
+  setIsModalOpen(true);
+}
 
-  function openEditModal(alumno: PersonaRecord) {
+function openEditModal(alumno: PersonaRecord) {
     if (alumno.activo === false) return;
 
     setEditingId(alumno.id);
+
     setForm({
-      nombreCompleto: getNombreCompleto(alumno),
+      nombre: alumno.nombre ?? '',
+      apellidoPaterno: alumno.apellidoPaterno ?? '',
+      apellidoMaterno: alumno.apellidoMaterno ?? '',
       email: getLocalPart(alumno.email),
+      numeroTelefono: alumno.numeroTelefono ?? '',
+      calle: alumno.calle ?? '',
+      colonia: alumno.colonia ?? '',
+      codigoPostal: alumno.codigoPostal ?? '',
+      municipio: alumno.municipio ?? '',
+      estado: alumno.estado ?? '',
       plantelId: canChoosePlantel
         ? (alumno.plantelId ?? planteles[0]?.id ?? null)
-        : (selectedPlantel?.id ?? alumno.plantelId ?? planteles[0]?.id ?? null),
+        : (alumno.plantelId ??activePlantelId ?? planteles[0]?.id ?? null),
       password: '',
+      nombreTutor: alumno.nombreTutor ?? '',
+      numeroTutor: alumno.numeroTutor ?? '',
+      fechaIngreso: getFechaInput(alumno.fechaIngreso),
     });
+
     setFormError(null);
     setIsModalOpen(true);
   }
 
-  function closeModal() {
-    setIsModalOpen(false);
-    setEditingId(null);
-    setFormError(null);
-  }
+    function closeModal() {
+      setIsModalOpen(false);
+      setEditingId(null);
+      setFormError(null);
+    }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
+
     const formData = new FormData(event.currentTarget);
     const password = String(formData.get('password') ?? '').trim();
 
-    if (!form.nombreCompleto.trim() || !form.email.trim()) {
-      setFormError('Completa nombre completo y correo institucional.');
+    if (
+      !form.nombre.trim() ||
+      !form.apellidoPaterno.trim() ||
+      !form.email.trim()
+    ) {
+      setFormError('Completa nombre, apellido paterno y correo institucional.');
       return;
     }
 
@@ -192,35 +214,52 @@ export default function CatalogoAlumnos() {
     }
 
     if (!editingId && !isStrongPassword(password)) {
-      setFormError('La contraseña debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.');
+      setFormError(
+        'La contraseña debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.',
+      );
       return;
     }
 
-    const { nombre, apellido } = splitNombreCompleto(form.nombreCompleto);
-    if (!nombre || !apellido) {
-      setFormError('Ingresa nombre y apellido.');
-      return;
-    }
+    const plantelId = canChoosePlantel
+      ? form.plantelId
+      : (activePlantelId ?? form.plantelId);
 
-    if (!form.plantelId) {
+    if (!plantelId) {
       setFormError('Selecciona un plantel para el alumno.');
       return;
     }
 
     setLoading(true);
+
     try {
       const payload = {
-        nombre,
-        apellido,
+        nombre: form.nombre.trim(),
+        apellidoPaterno: form.apellidoPaterno.trim(),
+        apellidoMaterno: form.apellidoMaterno.trim() || null,
         email: formatearEmailInstitucional(form.email, 'ALUMNO'),
-        plantelId: canChoosePlantel ? (form.plantelId ?? activePlantelId) : (activePlantelId ?? form.plantelId ?? planteles[0]?.id ?? null),
+        numeroTelefono: form.numeroTelefono.trim(),
+        calle: form.calle.trim(),
+        colonia: form.colonia.trim(),
+        codigoPostal: form.codigoPostal.trim(),
+        municipio: form.municipio.trim(),
+        estado: form.estado.trim(),
+        plantelId,
         rol: 'ALUMNO' as const,
+        nombreTutor: form.nombreTutor.trim(),
+        numeroTutor: form.numeroTutor.trim(),
+        fechaIngreso: form.fechaIngreso
+          ? new Date(`${form.fechaIngreso}T00:00:00`).toISOString()
+          : null,
       };
 
       if (editingId) {
         const response = await updatePersona(editingId, payload);
         const updated = response.data as PersonaRecord;
-        setAlumnos((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
+
+        setAlumnos((prev) =>
+          prev.map((item) => (item.id === editingId ? updated : item)),
+        );
+
         setToast('Alumno actualizado correctamente.');
       } else {
         const response = await createPersona({
@@ -229,6 +268,7 @@ export default function CatalogoAlumnos() {
           activo: true,
           password,
         });
+
         const created = response.data as PersonaRecord;
         setAlumnos((prev) => [created, ...prev]);
         setToast('Alumno creado correctamente.');
@@ -236,7 +276,9 @@ export default function CatalogoAlumnos() {
 
       closeModal();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'No se pudo guardar el alumno.');
+      setFormError(
+        err instanceof Error ? err.message : 'No se pudo guardar el alumno.',
+      );
     } finally {
       setLoading(false);
     }
@@ -302,7 +344,7 @@ export default function CatalogoAlumnos() {
         <span className="ca-topbar-title">Alumnos</span>
       </header>
 
-      <div className="ca-body">
+      <article className="ca-body">
         <header className="ca-header">
           <article>
             <h1 className="ca-title">Catálogo de Alumnos</h1>
@@ -387,11 +429,15 @@ export default function CatalogoAlumnos() {
           </table>
           {filteredAlumnos.length === 0 && !fetchError && <p className="ca-empty">No se encontraron alumnos.</p>}
         </article>
-      </div>
+      </article>
 
       {isModalOpen && createPortal(
-        <AlumnoModal
-          alumno={editingId ? alumnos.find((item) => item.id === editingId) ?? null : null}
+        <ModalAlumnos
+          alumno={
+            editingId
+              ? alumnos.find((item) => item.id === editingId) ?? null
+              : null
+          }
           planteles={planteles}
           form={form}
           formError={formError}
@@ -400,14 +446,18 @@ export default function CatalogoAlumnos() {
           onSubmit={handleSubmit}
           onChange={setForm}
           canChoosePlantel={canChoosePlantel}
-          hidePlantelField={role === 'coordinador' || role === 'directorPlantel'}
-          defaultPlantelName={selectedPlantel?.nombre ?? planteles[0]?.nombre ?? 'Plantel'}
+          hidePlantelField={
+            role === 'coordinador' || role === 'directorPlantel'
+          }
+          defaultPlantelName={
+            planteles.find((item) => item.id === activePlantelId)?.nombre ?? 'Plantel'
+          }
         />,
         document.body,
       )}
 
       {confirmDeactivate && createPortal(
-        <div className="ca-confirm-backdrop" role="presentation" onClick={() => setConfirmDeactivate(null)}>
+        <article className="ca-confirm-backdrop" role="presentation" onClick={() => setConfirmDeactivate(null)}>
           <article className="ca-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="ca-deactivate-title" onClick={(event) => event.stopPropagation()}>
             <header className="ca-confirm-header">
               <article>
@@ -427,7 +477,7 @@ export default function CatalogoAlumnos() {
               </button>
             </article>
           </article>
-        </div>,
+        </article>,
         document.body,
       )}
 
@@ -457,46 +507,182 @@ interface AlumnoModalProps {
   defaultPlantelName: string;
 }
 
-function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onSubmit, onChange, canChoosePlantel, hidePlantelField, defaultPlantelName }: AlumnoModalProps) {
+function AlumnoModal({
+  alumno,
+  planteles,
+  form,
+  formError,
+  loading,
+  onClose,
+  onSubmit,
+  onChange,
+  canChoosePlantel,
+  hidePlantelField,
+  defaultPlantelName,
+}: AlumnoModalProps) {
   return (
     <article className="ca-modal-overlay">
-      <article className="ca-modal" role="dialog" aria-modal="true" aria-labelledby="ca-modal-title">
+      <article
+        className="ca-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ca-modal-title"
+      >
         <article className="ca-modal-header">
           <article>
             <h2 id="ca-modal-title" className="ca-modal-title">
               {alumno ? 'Editar alumno' : 'Nuevo alumno'}
             </h2>
-            <p className="ca-modal-subtitle">Alta y edición de usuarios alumnos</p>
+            <p className="ca-modal-subtitle">
+              Datos personales y escolares del alumno
+            </p>
           </article>
         </article>
 
         <form className="ca-modal-form" onSubmit={onSubmit}>
+          <h3>Datos personales</h3>
+
           <label className="ca-field">
-            <span className="ca-field-label">Nombre completo</span>
+            <span className="ca-field-label">Nombre(s)</span>
             <input
               className="ca-input"
               type="text"
-              value={form.nombreCompleto}
-              onChange={(e) => onChange({ ...form, nombreCompleto: e.target.value })}
-              placeholder="Ej. Carlos Díaz Ramírez"
+              value={form.nombre}
+              onChange={(e) =>
+                onChange({ ...form, nombre: e.target.value })
+              }
+              placeholder="Ej. Carlos"
               required
             />
           </label>
 
           <label className="ca-field">
+            <span className="ca-field-label">Apellido paterno</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.apellidoPaterno}
+              onChange={(e) =>
+                onChange({ ...form, apellidoPaterno: e.target.value })
+              }
+              placeholder="Ej. Díaz"
+              required
+            />
+          </label>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Apellido materno</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.apellidoMaterno}
+              onChange={(e) =>
+                onChange({ ...form, apellidoMaterno: e.target.value })
+              }
+              placeholder="Ej. Ramírez"
+            />
+          </label>
+
+          <label className="ca-field">
             <span className="ca-field-label">Correo institucional</span>
-            <div className="ca-email-row">
+            <article className="ca-email-row">
               <input
                 className="ca-input ca-email-input"
                 type="text"
                 value={form.email}
-                onChange={(e) => onChange({ ...form, email: e.target.value })}
+                onChange={(e) =>
+                  onChange({ ...form, email: e.target.value })
+                }
                 placeholder="ejemplo.alumno"
                 required
               />
-              <span className="ca-email-domain">@alumnos.chapala.edu.mx</span>
-            </div>
+              <span className="ca-email-domain">
+                @alumnos.chapala.edu.mx
+              </span>
+            </article>
           </label>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Número de teléfono</span>
+            <input
+              className="ca-input"
+              type="tel"
+              value={form.numeroTelefono}
+              onChange={(e) =>
+                onChange({ ...form, numeroTelefono: e.target.value })
+              }
+              placeholder="Ej. 3312345678"
+            />
+          </label>
+
+          <h3>Domicilio</h3>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Calle</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.calle}
+              onChange={(e) =>
+                onChange({ ...form, calle: e.target.value })
+              }
+              placeholder="Nombre de la calle y número"
+            />
+          </label>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Colonia</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.colonia}
+              onChange={(e) =>
+                onChange({ ...form, colonia: e.target.value })
+              }
+              placeholder="Colonia"
+            />
+          </label>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Código postal</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.codigoPostal}
+              onChange={(e) =>
+                onChange({ ...form, codigoPostal: e.target.value })
+              }
+              placeholder="Código postal"
+            />
+          </label>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Municipio</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.municipio}
+              onChange={(e) =>
+                onChange({ ...form, municipio: e.target.value })
+              }
+              placeholder="Municipio"
+            />
+          </label>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Estado</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.estado}
+              onChange={(e) =>
+                onChange({ ...form, estado: e.target.value })
+              }
+              placeholder="Estado"
+            />
+          </label>
+
+          <h3>Datos escolares</h3>
 
           {!hidePlantelField && canChoosePlantel ? (
             <label className="ca-field">
@@ -504,7 +690,12 @@ function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onS
               <select
                 className="ca-input"
                 value={form.plantelId ?? ''}
-                onChange={(e) => onChange({ ...form, plantelId: Number(e.target.value) || null })}
+                onChange={(e) =>
+                  onChange({
+                    ...form,
+                    plantelId: Number(e.target.value) || null,
+                  })
+                }
                 required
               >
                 <option value="">Selecciona un plantel</option>
@@ -518,36 +709,110 @@ function AlumnoModal({ alumno, planteles, form, formError, loading, onClose, onS
           ) : !hidePlantelField ? (
             <label className="ca-field">
               <span className="ca-field-label">Plantel</span>
-              <input className="ca-input" type="text" value={defaultPlantelName} readOnly />
-            </label>
-          ) : null}
-
-          {!alumno && (
-            <label className="ca-field">
-              <span className="ca-field-label">Contraseña temporal</span>
               <input
                 className="ca-input"
                 type="text"
-                name="password"
-                autoComplete="new-password"
-                value={form.password}
-                onChange={(e) => onChange({ ...form, password: e.target.value })}
-                placeholder="Ej. Alu#2026Segura"
-                required
+                value={defaultPlantelName}
+                readOnly
               />
-              <small style={{ display: 'block', marginTop: '0.35rem', color: 'var(--ca-texto-suave)' }}>
-                Debe incluir mayúsculas, minúsculas, números y un símbolo; mínimo 8 caracteres.
-              </small>
             </label>
+          ) : null}
+
+          <label className="ca-field">
+            <span className="ca-field-label">Fecha de ingreso</span>
+            <input
+              className="ca-input"
+              type="date"
+              value={form.fechaIngreso}
+              onChange={(e) =>
+                onChange({ ...form, fechaIngreso: e.target.value })
+              }
+            />
+          </label>
+
+          <h3>Datos del tutor</h3>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Nombre del tutor</span>
+            <input
+              className="ca-input"
+              type="text"
+              value={form.nombreTutor}
+              onChange={(e) =>
+                onChange({ ...form, nombreTutor: e.target.value })
+              }
+              placeholder="Nombre completo del tutor"
+            />
+          </label>
+
+          <label className="ca-field">
+            <span className="ca-field-label">Número de teléfono del tutor</span>
+            <input
+              className="ca-input"
+              type="tel"
+              value={form.numeroTutor}
+              onChange={(e) =>
+                onChange({ ...form, numeroTutor: e.target.value })
+              }
+              placeholder="Teléfono del tutor"
+            />
+          </label>
+
+          {!alumno && (
+            <>
+              <h3>Acceso</h3>
+
+              <label className="ca-field">
+                <span className="ca-field-label">Contraseña temporal</span>
+                <input
+                  className="ca-input"
+                  type="password"
+                  name="password"
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={(e) =>
+                    onChange({ ...form, password: e.target.value })
+                  }
+                  placeholder="Contraseña temporal"
+                  required
+                />
+                <small
+                  style={{
+                    display: 'block',
+                    marginTop: '0.35rem',
+                    color: 'var(--ca-texto-suave)',
+                  }}
+                >
+                  Debe incluir mayúsculas, minúsculas, números y un símbolo;
+                  mínimo 8 caracteres.
+                </small>
+              </label>
+            </>
           )}
 
-          {formError && <p className="ca-field-hint" style={{ color: 'var(--seige-error-texto)' }}>{formError}</p>}
+          {formError && (
+            <p
+              className="ca-field-hint"
+              style={{ color: 'var(--seige-error-texto)' }}
+            >
+              {formError}
+            </p>
+          )}
 
           <article className="ca-modal-actions">
-            <button type="button" className="ca-btn-secondary" onClick={onClose}>
+            <button
+              type="button"
+              className="ca-btn-secondary"
+              onClick={onClose}
+            >
               Cancelar
             </button>
-            <button type="submit" className="ca-btn-primary" disabled={loading}>
+
+            <button
+              type="submit"
+              className="ca-btn-primary"
+              disabled={loading}
+            >
               {loading ? 'Guardando...' : 'Guardar'}
             </button>
           </article>

@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import ModalAgregarAlumnos from '../modals/ModalAlumnos.tsx';
 import QuizCatalogCard, { getQuizCatalogState } from '../quizzes/QuizCatalogCard.tsx';
 import { apiClient } from '../../services/ApiClient';
 import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService.ts';
@@ -315,14 +314,6 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
   return (
     <>
-      {modalAgregarAlumnos && (
-        <ModalAgregarAlumnos
-        alumnos={alumnosDisponibles}
-        alumnosSeleccionados={alumnos.map((a) => a.id)}
-          onClose={() => setModalAgregarAlumnos(false)}
-          onEnviar={handleAgregarAlumnos}
-        />
-      )}
       {modalAsignarDocente && (
         <article
           className="modal show d-block"

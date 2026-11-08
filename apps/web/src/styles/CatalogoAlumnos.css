@@ -357,7 +357,7 @@
 }
 .ca-modal {
   width: 100%;
-  max-width: 26rem;
+  max-width: 48rem;
   max-height: 90dvh;
   overflow-y: auto;
   background: var(--seige-superficie);
