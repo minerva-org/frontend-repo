@@ -14,7 +14,7 @@ export interface GrupoBackend {
   nombre: string;
   semestre: string;
   activo?: boolean;
-  docenteId: string;
+  docenteId: string | null;
   plantelId: number | null;
   alumnosIds?: string[];
 }
@@ -40,4 +40,20 @@ export interface NewGroupData {
   alumnosIds: string[];
   numeroEstudiantes: string[];
   plantelId: number | null;
+}
+
+export interface AlumnoEntry {
+  id: string;
+  nombre: string;
+  estado: 'pendiente' | 'normal';
+  calificacion?: number;
+}
+
+export interface QuizCatalogBackend {
+  id: string;
+  nombre: string;
+  fechaCreacion?: string | null;
+  fechaInicio?: string | null;
+  fechaFinalizacion?: string | null;
+  grupoId?: string | null;
 }

@@ -5,32 +5,9 @@ import QuizCatalogCard, { getQuizCatalogState } from '../quizzes/QuizCatalogCard
 import { apiClient } from '../../services/ApiClient';
 import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService.ts';
 import type { PersonaRecord } from '../../types/PersonaTypes.ts';
+import type { GrupoDetalleBackend, AlumnoEntry, QuizCatalogBackend } from '../../types/GrupoTypes.ts';
 
-export interface GrupoDetalleBackend {
-  id: string;
-  claveGrupo: string;
-  nombre: string;
-  semestre: string;
-  docenteId: string;
-  plantelId: number | null;
-  alumnosIds?: string[];
-}
 
-interface AlumnoEntry {
-  id: string;
-  nombre: string;
-  estado: 'pendiente' | 'normal';
-  calificacion?: number;
-}
-
-interface QuizCatalogBackend {
-  id: string;
-  nombre: string;
-  fechaCreacion?: string | null;
-  fechaInicio?: string | null;
-  fechaFinalizacion?: string | null;
-  grupoId?: string | null;
-}
 
 function toDateValue(value?: string | null): number {
   if (!value) return 0;
@@ -66,6 +43,10 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
   const [segundosRestantes, setSegundosRestantes] = useState(10);
   const navigate = useNavigate();
+  const [docentesDisponibles, setDocentesDisponibles] = useState<PersonaRecord[]>([]);
+  const [modalAsignarDocente, setModalAsignarDocente] = useState(false);
+  const [docenteSeleccionado, setDocenteSeleccionado] = useState('');
+  const [asignandoDocente, setAsignandoDocente] = useState(false);
 
   useEffect(()=>{
     if(!quizPorBorrar) return;
@@ -102,6 +83,23 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
         let disponibles: PersonaRecord[] = [];
 
+        let docentes: PersonaRecord[] = [];
+
+        if (nextGrupo.plantelId !== null && !nextGrupo.docenteId) {
+          const docentesResponse = await fetchPersonasByPlantelAndRol(
+            nextGrupo.plantelId,
+            'DOCENTE'
+          );
+
+          docentes = (docentesResponse.data ?? []).filter(
+            (persona) => persona.activo
+          );
+        }
+
+        if (cancelled) return;
+
+        setDocentesDisponibles(docentes);
+
         if (nextGrupo.plantelId !== null) {
           const alumnosResponse = await fetchPersonasByPlantelAndRol(
             nextGrupo.plantelId,
@@ -120,7 +118,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         setAlumnosDisponibles(disponibles);
 
         setGrupo(nextGrupo);
-        setDocenteNombre(docente ? `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim() : nextGrupo.docenteId);
+        setDocenteNombre( nextGrupo.docenteId && docente ? `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar');
         setAlumnos(
           alumnoList.map((persona) => ({
             id: persona.id,
@@ -181,6 +179,55 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     void loadQuizzes();
     return () => { cancelled = true; };
   }, [code]);
+
+   async function handleAsignarDocente() {
+      if (!grupo || !docenteSeleccionado || asignandoDocente) return;
+
+      const docente = docentesDisponibles.find(
+        (persona) => persona.id === docenteSeleccionado
+      );
+
+      if (!docente || !docente.activo) return;
+
+      try {
+        setAsignandoDocente(true);
+
+        await apiClient.patch(`/api/grupos/${grupo.id}`, {
+          docenteId: docente.id,
+        });
+
+        setGrupo((prev) =>
+          prev
+            ? { ...prev, docenteId: docente.id }
+            : prev
+        );
+
+        setDocenteNombre(
+          `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim()
+        );
+
+        setDocentesDisponibles((prev) =>
+          prev.filter((persona) => persona.id !== docente.id)
+        );
+
+        setModalAsignarDocente(false);
+        setDocenteSeleccionado('');
+
+        setToast({
+          mensaje: 'El docente se asignó correctamente al grupo.',
+          tipo: 'exito',
+        });
+      } catch (error) {
+        console.error('Error al asignar docente:', error);
+
+        setToast({
+          mensaje: 'No se pudo asignar el docente. Intenta nuevamente.',
+          tipo: 'error',
+        });
+      } finally {
+        setAsignandoDocente(false);
+      }
+    }
 
   const quizCatalog = useMemo(() => {
     return [...quizzes].sort(sortQuizCatalogDesc).map((quiz) => ({ ...quiz, estado: getQuizCatalogState(quiz) }));
@@ -276,6 +323,83 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
           onEnviar={handleAgregarAlumnos}
         />
       )}
+      {modalAsignarDocente && (
+        <article
+          className="modal show d-block"
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}
+        >
+          <article className="modal-dialog modal-dialog-centered">
+            <article className="modal-content border-0 shadow">
+
+              <article className="modal-header">
+                <h5 className="modal-title fw-bold">
+                  Asignar docente
+                </h5>
+
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setModalAsignarDocente(false)}
+                  disabled={asignandoDocente}
+                />
+              </article>
+
+              <article className="modal-body">
+                <label className="form-label fw-semibold">
+                  Selecciona un docente
+                </label>
+
+                <select
+                  className="form-select"
+                  value={docenteSeleccionado}
+                  onChange={(event) =>
+                    setDocenteSeleccionado(event.target.value)
+                  }
+                >
+                  <option value="">Selecciona un docente</option>
+
+            {docentesDisponibles.map((docente) => (
+              <option key={docente.id} value={docente.id}>
+                {docente.nombre} {docente.apellidoPaterno}{' '}
+                {docente.apellidoMaterno ?? ''}
+              </option>
+            ))}
+          </select>
+
+          {docentesDisponibles.length === 0 && (
+            <p className="text-secondary mt-2 mb-0">
+              No hay docentes activos disponibles en este plantel.
+            </p>
+          )}
+        </article>
+
+        <article className="modal-footer">
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={() => setModalAsignarDocente(false)}
+            disabled={asignandoDocente}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleAsignarDocente}
+            disabled={!docenteSeleccionado || asignandoDocente}
+          >
+            {asignandoDocente ? 'Asignando...' : 'Asignar docente'}
+          </button>
+        </article>
+
+      </article>
+    </article>
+  </article>
+)}
 
      {quizPorBorrar && (
         <article
@@ -357,8 +481,8 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
                 <h5 className="modal-title fw-bold mb-3" id="gd-result-title">
                   {toast.tipo === 'exito'
-                    ? '¡Eliminación exitosa!'
-                    : 'No se pudo eliminar'}
+                    ? '¡Operacion exitosa!'
+                    : 'No se pudo realizar la operacion'}
                 </h5>
 
                 <p className="text-secondary mb-4">
@@ -389,7 +513,28 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
       <section className="gd-info">
         <article className="gd-meta">
           <span className="gd-meta-item"><strong className="gd-meta-label">Grado:</strong> {grupo.nombre}</span>
-          <span className="gd-meta-item"><strong className="gd-meta-label">Docente:</strong> {docenteNombre}</span>
+          <span className="gd-meta-item">
+            <strong className="gd-meta-label">Docente:</strong>
+
+            {grupo.docenteId ? (
+              docenteNombre
+            ) : (
+              <>
+                <span className="fw-semibold">
+                  Pendiente por asignar
+                </span>
+
+                <button
+                  type="button"
+                  className="gd-btn"
+                  onClick={() => setModalAsignarDocente(true)}
+                  disabled={docentesDisponibles.length === 0}
+                >
+                  <i className="bi bi-person-plus"></i> Agregar docente
+                </button>
+              </>
+            )}
+          </span>
           <span className="gd-meta-item">
             <strong className="gd-meta-label">Clave:</strong>
             <span className="gd-code">

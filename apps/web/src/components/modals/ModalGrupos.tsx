@@ -1,7 +1,7 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 import { apiClient } from '../../services/ApiClient';
 import AutocompleteInput from '.././AutoCompleteInput.tsx';
-import { fetchPersonas}  from '../../services/personaService';
+import { fetchPersonas,type PersonaRecord}  from '../../services/personaService';
 import { useAuth } from '../../context/AuthContext.tsx';
 import type { NewGroupData } from '../../types/GrupoTypes.ts';
 import '../../styles/ModalGrupos.css';
@@ -18,12 +18,14 @@ export default function CreateGroupModal({
   onClose,
   onCreate,
 }: CreateGroupModalProps) {
-  const { email } = useAuth();
+  const { email, selectedPlantel } = useAuth();
   const [materia, setMateria] = useState<string[]>([]);
   const [claveGrupo, setClaveGrupo] = useState('');
   const [semestre, setSemestre] = useState('');
   const [materiasBD, setMateriasBD] = useState<string[]>([]);
   const [creatorPlantelId, setCreatorPlantelId] = useState<number | null>(null);
+  const [docentes, setDocentes] = useState<PersonaRecord[]>([]);
+  const [docenteId, setDocenteId] = useState(''); 
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -35,20 +37,33 @@ export default function CreateGroupModal({
 
       try {
         const response = await fetchPersonas();
-        const creator = (response.data ?? []).find(
-          (persona) =>
-            normalize(persona.email) === normalize(email),
+        const personas = response.data ?? [];
+
+        const creator = personas.find(
+          (persona) => normalize(persona.email) === normalize(email),
         );
 
+        const plantelId = selectedPlantel?.id ?? creator?.plantelId ?? null;
 
-        setCreatorPlantelId(creator?.plantelId ?? null);
+        setCreatorPlantelId(plantelId);
+
+        const docentesDisponibles = personas.filter(
+          (persona) =>
+            persona.rol === 'DOCENTE' &&
+            persona.activo === true &&
+            persona.plantelId === plantelId,
+        );
+
+        setDocentes(docentesDisponibles);
       } catch {
         setCreatorPlantelId(null);
+        setDocentes([]);
+        setError('No se pudieron cargar los docentes');
       }
     }
 
     void loadCreator();
-  }, [email]);
+  }, [email, selectedPlantel?.id],);
 
 
 
@@ -88,13 +103,31 @@ export default function CreateGroupModal({
       return;
     }
 
+    if (!docenteId) {
+      setError('Selecciona un docente para el grupo.');
+      return;
+    }
 
+
+
+    const docenteSeleccionado = docentes.find(
+      (docente) => docente.id === docenteId,
+    );
+
+    if (!docenteSeleccionado){
+      setError('El docente seleccionado no es válido.')
+      return;
+    }
 
     const payload: NewGroupData = {
       grupo: materia[0],
       claveGrupo: claveGrupo.trim(),
       grado: semestre.trim(),
+      docente: `${docenteSeleccionado.nombre} ${docenteSeleccionado.apellidoPaterno}`,
+      docenteId,
       materia: materia[0],
+      alumnosIds: [],
+      numeroEstudiantes: [],
       plantelId: creatorPlantelId,
     };
 
@@ -141,6 +174,29 @@ export default function CreateGroupModal({
               onChange={(event) => setSemestre(event.target.value)}
               placeholder="Ej. 1er semestre"
             />
+          </label>
+
+            <label className="create-group-field">
+            <span className="create-group-label">Docente asignado</span>
+            <select
+              className="create-group-input"
+              value={docenteId}
+              onChange={(event) => setDocenteId(event.target.value)}
+              required
+            >
+              <option value="">Selecciona un docente</option>
+
+              {docentes.map((docente) => (
+                <option key={docente.id} value={docente.id}>
+                  {docente.nombre} {docente.apellidoPaterno}{' '}
+                  {docente.apellidoMaterno ?? ''}
+                </option>
+              ))}
+            </select>
+
+            {docentes.length === 0 && (
+              <small>No hay docentes activos disponibles en este plantel.</small>
+            )}
           </label>
 
           {error && <p className="create-group-error">{error}</p>}
