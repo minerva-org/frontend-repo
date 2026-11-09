@@ -91,11 +91,13 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const [unidades, setUnidades] = useState<UnidadForm[]>(() => crearDatosDesdeMateria(materia, esEdicion));
   const [error, setError] = useState('');
 
-  const prefijoDerivado = derivarPrefijo(nombre);
-  const prefijoFinal = `${prefijoDerivado}${numero}`;
+  const [prefijo, setPrefijo] = useState(materia?.prefijo?.replace(/\d$/, '') || derivarPrefijo(materia?.nombre ?? ''));
+  const [prefijoModificado, setPrefijoModificado] = useState(false);
+  const prefijoFinal = `${prefijo}${numero}`;
 
   const validate = (): string => {
     if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
+    if (!prefijo.trim()) return 'El prefijo de la materia es obligatorio.';
     if (esEdicion) return '';
 
     const unidadesValidas = unidades.filter((unidad) => unidad.nombre.trim() && unidad.temas.some((tema) => tema.nombre.trim() && tema.conceptos.some((concepto) => concepto.nombre.trim())));
@@ -198,7 +200,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
     onGuardar({
       id: id.trim(),
       nombre: nombre.trim(),
-      prefijo: prefijoFinal,
+      prefijo:prefijoFinal,
       planEstudioId: '',
       unidades: unidades
         .filter((unidad) => unidad.nombre.trim())
@@ -248,9 +250,14 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
               className="mm-input"
               type="text"
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              placeholder="Ej. Matemáticas 3"
-              autoFocus
+              onChange={(e) => {
+                const nuevoNombre = e.target.value;
+                setNombre(nuevoNombre);
+                if (!prefijoModificado){
+                  setPrefijo(derivarPrefijo(nuevoNombre));
+                }
+              }}
+
             />
           </article>
 
@@ -260,8 +267,13 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
               <input
                 className="mm-input"
                 type="text"
-                value={prefijoDerivado}
-                readOnly
+                value={prefijo}
+                onChange={(e ) =>{
+                  const valor = e.target.value.replace(/[^a-zA-Z]/g,'').slice(0,4).toUpperCase();
+                  setPrefijo(valor);
+                  setPrefijoModificado(true);
+                }}
+                placeholder='Ej.MATE'
                 aria-label="Prefijo derivado de la materia"
               />
               <input
@@ -272,9 +284,11 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                 step={1}
                 value={numero}
                 onChange={(e) => {
-                  const next = Number(e.target.value);
-                  if (!Number.isFinite(next)) return;
-                  setNumero(Math.min(9, Math.max(1, next)));
+                  const valor = e.target.value;
+                  if (valor === '') return;
+                  const next = Number(valor);
+                  if (!Number.isInteger(next) || next < 1 || next > 9)  return;
+                  setNumero(next);
                 }}
                 aria-label="Número del prefijo"
                 style={{ maxWidth: '90px' }}
