@@ -176,10 +176,30 @@ export default function QuizNuevo() {
 
         setTitulo(quiz.nombre ?? '');
         setTipo(questionList.length > 1 ? 'acumulativo' : 'unico');
-        setFechaApertura(fechaInicio ? fechaInicio.toISOString().slice(0, 10) : '');
-        setHoraApertura(fechaInicio ? fechaInicio.toISOString().slice(11, 16) : '');
-        setFechaCierre(fechaFinalizacion ? fechaFinalizacion.toISOString().slice(0, 10) : '');
-        setHoraCierre(fechaFinalizacion ? fechaFinalizacion.toISOString().slice(11, 16) : '');
+
+        setFechaApertura(
+          fechaInicio && !Number.isNaN(fechaInicio.getTime())
+            ? `${fechaInicio.getFullYear()}-${String(fechaInicio.getMonth() + 1).padStart(2, '0')}-${String(fechaInicio.getDate()).padStart(2, '0')}`
+            : ''
+        );
+
+        setHoraApertura(
+          fechaInicio && !Number.isNaN(fechaInicio.getTime())
+            ? `${String(fechaInicio.getHours()).padStart(2, '0')}:${String(fechaInicio.getMinutes()).padStart(2, '0')}`
+            : ''
+        );
+
+        setFechaCierre(
+          fechaFinalizacion && !Number.isNaN(fechaFinalizacion.getTime())
+            ? `${fechaFinalizacion.getFullYear()}-${String(fechaFinalizacion.getMonth() + 1).padStart(2, '0')}-${String(fechaFinalizacion.getDate()).padStart(2, '0')}`
+            : ''
+        );
+
+        setHoraCierre(
+          fechaFinalizacion && !Number.isNaN(fechaFinalizacion.getTime())
+            ? `${String(fechaFinalizacion.getHours()).padStart(2, '0')}:${String(fechaFinalizacion.getMinutes()).padStart(2, '0')}`
+            : ''
+        );
         setPreguntas(preguntaMap.length > 0 ? preguntaMap : [emptyPregunta()]);
         if (preguntaMap[0]) {
           setUnidadUnicaId(preguntaMap[0].unidadId);

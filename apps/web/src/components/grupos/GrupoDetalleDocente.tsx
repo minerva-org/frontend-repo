@@ -5,9 +5,8 @@ import { apiClient } from '../../services/ApiClient';
 import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService.ts';
 import type { PersonaRecord } from '../../types/PersonaTypes.ts';
 import type { GrupoDetalleBackend, AlumnoEntry, QuizCatalogBackend } from '../../types/GrupoTypes.ts';
-import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx'
-
-
+import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx';
+import { useAuth } from '../../context/AuthContext.tsx';
 
 function toDateValue(value?: string | null): number {
   if (!value) return 0;
@@ -22,6 +21,10 @@ function sortQuizCatalogDesc(a: QuizCatalogBackend, b: QuizCatalogBackend): numb
 }
 
 export default function GrupoDetalleDocente({ code }: { code: string }) {
+  const { role } = useAuth();
+
+  const PuedeManejar = role !== 'directorGeneral' && role !== 'directorPlantel';
+
   const [tab, setTab] = useState<'general' | 'settings'>('general');
   const [copiado, setCopiado] = useState(false);
   const [modalAgregarAlumnos, setModalAgregarAlumnos] = useState(false);
@@ -35,7 +38,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   const [quizError, setQuizError] = useState<string | null>(null);
   const [quizLoading, setQuizLoading] = useState(true);
   const [expandedQuizId, setExpandedQuizId] = useState<string | null>(null);
-  const [quizPorBorrar, setQuizPorBorrar] = useState<{id: string;  nombre: string;} | null>(null);
+  const [quizPorBorrar, setQuizPorBorrar] = useState<{id: string; nombre: string;} | null>(null);
   const [quizEliminando, setQuizEliminando] = useState(false);
 
   const [toast, setToast] = useState<{ mensaje: string; tipo: 'exito' | 'error';} | null>(null);
@@ -180,54 +183,54 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     return () => { cancelled = true; };
   }, [code]);
 
-   async function handleAsignarDocente() {
-      if (!grupo || !docenteSeleccionado || asignandoDocente) return;
+  async function handleAsignarDocente() {
+    if (!grupo || !docenteSeleccionado || asignandoDocente) return;
 
-      const docente = docentesDisponibles.find(
-        (persona) => persona.id === docenteSeleccionado
+    const docente = docentesDisponibles.find(
+      (persona) => persona.id === docenteSeleccionado
+    );
+
+    if (!docente || !docente.activo) return;
+
+    try {
+      setAsignandoDocente(true);
+
+      await apiClient.patch(`/api/grupos/${grupo.id}`, {
+        docenteId: docente.id,
+      });
+
+      setGrupo((prev) =>
+        prev
+          ? { ...prev, docenteId: docente.id }
+          : prev
       );
 
-      if (!docente || !docente.activo) return;
+      setDocenteNombre(
+        `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim()
+      );
 
-      try {
-        setAsignandoDocente(true);
+      setDocentesDisponibles((prev) =>
+        prev.filter((persona) => persona.id !== docente.id)
+      );
 
-        await apiClient.patch(`/api/grupos/${grupo.id}`, {
-          docenteId: docente.id,
-        });
+      setModalAsignarDocente(false);
+      setDocenteSeleccionado('');
 
-        setGrupo((prev) =>
-          prev
-            ? { ...prev, docenteId: docente.id }
-            : prev
-        );
+      setToast({
+        mensaje: 'El docente se asignó correctamente al grupo.',
+        tipo: 'exito',
+      });
+    } catch (error) {
+      console.error('Error al asignar docente:', error);
 
-        setDocenteNombre(
-          `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim()
-        );
-
-        setDocentesDisponibles((prev) =>
-          prev.filter((persona) => persona.id !== docente.id)
-        );
-
-        setModalAsignarDocente(false);
-        setDocenteSeleccionado('');
-
-        setToast({
-          mensaje: 'El docente se asignó correctamente al grupo.',
-          tipo: 'exito',
-        });
-      } catch (error) {
-        console.error('Error al asignar docente:', error);
-
-        setToast({
-          mensaje: 'No se pudo asignar el docente. Intenta nuevamente.',
-          tipo: 'error',
-        });
-      } finally {
-        setAsignandoDocente(false);
-      }
+      setToast({
+        mensaje: 'No se pudo asignar el docente. Intenta nuevamente.',
+        tipo: 'error',
+      });
+    } finally {
+      setAsignandoDocente(false);
     }
+  }
 
   const quizCatalog = useMemo(() => {
     return [...quizzes].sort(sortQuizCatalogDesc).map((quiz) => ({ ...quiz, estado: getQuizCatalogState(quiz) }));
@@ -262,8 +265,8 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
       setQuizPorBorrar(null);
       setToast({
         mensaje: 'El quiz se elimino correctamente.',
-         tipo: 'exito'
-        });
+        tipo: 'exito'
+      });
     } catch(error){
       console.error('Error al eliminar el quiz:', error);
       setToast({
@@ -274,7 +277,6 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     } finally{
       setQuizEliminando(false);
     }
-    
   }
 
   function handleAprove(id: string) {
@@ -396,47 +398,47 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                 >
                   <option value="">Selecciona un docente</option>
 
-            {docentesDisponibles.map((docente) => (
-              <option key={docente.id} value={docente.id}>
-                {docente.nombre} {docente.apellidoPaterno}{' '}
-                {docente.apellidoMaterno ?? ''}
-              </option>
-            ))}
-          </select>
+                  {docentesDisponibles.map((docente) => (
+                    <option key={docente.id} value={docente.id}>
+                      {docente.nombre} {docente.apellidoPaterno}{' '}
+                      {docente.apellidoMaterno ?? ''}
+                    </option>
+                  ))}
+                </select>
 
-          {docentesDisponibles.length === 0 && (
-            <p className="text-secondary mt-2 mb-0">
-              No hay docentes activos disponibles en este plantel.
-            </p>
-          )}
+                {docentesDisponibles.length === 0 && (
+                  <p className="text-secondary mt-2 mb-0">
+                    No hay docentes activos disponibles en este plantel.
+                  </p>
+                )}
+              </article>
+
+              <article className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary"
+                  onClick={() => setModalAsignarDocente(false)}
+                  disabled={asignandoDocente}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleAsignarDocente}
+                  disabled={!docenteSeleccionado || asignandoDocente}
+                >
+                  {asignandoDocente ? 'Asignando...' : 'Asignar docente'}
+                </button>
+              </article>
+
+            </article>
+          </article>
         </article>
+      )}
 
-        <article className="modal-footer">
-          <button
-            type="button"
-            className="btn btn-outline-secondary"
-            onClick={() => setModalAsignarDocente(false)}
-            disabled={asignandoDocente}
-          >
-            Cancelar
-          </button>
-
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleAsignarDocente}
-            disabled={!docenteSeleccionado || asignandoDocente}
-          >
-            {asignandoDocente ? 'Asignando...' : 'Asignar docente'}
-          </button>
-        </article>
-
-      </article>
-    </article>
-  </article>
-)}
-
-     {quizPorBorrar && (
+      {quizPorBorrar && (
         <article
           className="modal show d-block"
           tabIndex={-1}
@@ -479,7 +481,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                     onClick={confirmarBorrarQuiz}
                     disabled={quizEliminando || segundosRestantes > 0}
                   >
-                    {quizEliminando ? 'Eliminando...' : 
+                    {quizEliminando ? 'Eliminando...' :
                     segundosRestantes > 0 ? `Eliminar (${segundosRestantes})`
                     : 'Eliminar'}
                   </button>
@@ -489,7 +491,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
             </article>
           </article>
         </article>
-  )}
+      )}
 
       {toast && (
         <article
@@ -611,9 +613,12 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
           <section className="gd-card">
             <article className="gd-card-header">
               <span className="gd-card-title"><i className="bi bi-journal-text"></i> Gestión de Quizzes</span>
-              <button className="gd-btn gd-btn-primary" onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}>
-                <i className="bi bi-plus-lg"></i> Nuevo Quiz
-              </button>
+
+              {PuedeManejar && (
+                <button className="gd-btn gd-btn-primary" onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}>
+                  <i className="bi bi-plus-lg"></i> Nuevo Quiz
+                </button>
+              )}
             </article>
 
             <article className="gd-quiz-tabs">
@@ -651,6 +656,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                     onToggleExpand={(quizId) => setExpandedQuizId((current) => current === quizId ? null : quizId)}
                     onEdit={(quizId) => navigate(`/grupos/${code}/quizzes/${quizId}/editar`)}
                     onDelete={handleBorrarQuiz}
+                    PuedeManejar={PuedeManejar}
                   />
                 ))}
               </article>

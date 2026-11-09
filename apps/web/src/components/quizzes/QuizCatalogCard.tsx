@@ -10,6 +10,7 @@ interface QuizCatalogCardProps {
   onToggleExpand: (quizId: string) => void;
   onEdit: (quizId: string) => void;
   onDelete: (quizId: string, nombre: string) => void;
+  PuedeManejar: boolean;
 }
 
 function parseDate(value?: string | null): Date | null {
@@ -95,7 +96,7 @@ async function fetchQuizQuestions(quizId: string): Promise<QuizPreguntaPreview[]
   return [];
 }
 
-export default function QuizCatalogCard({ quiz, expanded, onToggleExpand, onEdit, onDelete }: QuizCatalogCardProps) {
+export default function QuizCatalogCard({ quiz, expanded, onToggleExpand, onEdit, onDelete, PuedeManejar}: QuizCatalogCardProps) {
   const [preguntas, setPreguntas] = useState<QuizPreguntaPreview[]>([]);
   const [loadingPreguntas, setLoadingPreguntas] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -183,14 +184,16 @@ export default function QuizCatalogCard({ quiz, expanded, onToggleExpand, onEdit
         </article>
       )}
 
-      <article className="gd-quiz-actions">
-        <button className="gd-btn" type="button" onClick={() => onEdit(quiz.id)}>
-          <i className="bi bi-pencil"></i> Editar
-        </button>
-        <button className="gd-btn gd-btn-danger" type="button" onClick={() => onDelete(quiz.id, quiz.nombre)}>
-          <i className="bi bi-trash"></i> Borrar
-        </button>
-      </article>
+      {PuedeManejar && (
+        <article className="gd-quiz-actions">
+          <button className="gd-btn" type="button" onClick={() => onEdit(quiz.id)}>
+            <i className="bi bi-pencil"></i> Editar
+          </button>
+          <button className="gd-btn gd-btn-danger" type="button" onClick={() => onDelete(quiz.id, quiz.nombre)}>
+            <i className="bi bi-trash"></i> Borrar
+          </button>
+        </article>
+      )}
     </article>
   );
 }
