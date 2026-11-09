@@ -254,7 +254,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                 const nuevoNombre = e.target.value;
                 setNombre(nuevoNombre);
                 if (!prefijoModificado){
-                  setPrefijo(derivarPrefijo(nuevoNombre));
+                  setPrefijo(nuevoNombre.trim() ? derivarPrefijo(nuevoNombre) : '');
                 }
               }}
 
@@ -268,10 +268,15 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                 className="mm-input"
                 type="text"
                 value={prefijo}
-                onChange={(e ) =>{
+                onChange={(e) => {
                   const valor = e.target.value.replace(/[^a-zA-Z]/g,'').slice(0,4).toUpperCase();
+                  if(valor === ''){
+                    setPrefijoModificado(false);
+                    setPrefijo('');
+                    return;
+                  }
                   setPrefijo(valor);
-                  setPrefijoModificado(true);
+                  setPrefijoModificado(valor !== derivarPrefijo(nombre));
                 }}
                 placeholder='Ej.MATE'
                 aria-label="Prefijo derivado de la materia"
