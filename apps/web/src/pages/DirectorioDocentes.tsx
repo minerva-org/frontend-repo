@@ -221,10 +221,26 @@ console.table({
     const formData = new FormData(event.currentTarget);
     const password = String(formData.get('password') ?? '').trim();
 
-    if(!form.nombre.trim() || !form.apellidoPaterno.trim() || !form.email.trim()){
+    if(!form.nombre.trim() || !form.apellidoPaterno.trim() || !form.apellidoMaterno?.trim() || !form.email.trim()){
       setFormError('Completa nombre, apellido y correo electrónico oficial.');
       return;
 } 
+
+    if (!form.calle.trim() || !form.colonia.trim() || !form.municipio.trim() || (!editingId && ( !form.estado.trim() 
+        || !form.numeroTelefono.trim() || !form.codigoPostal.trim()))) {
+      setFormError('Completa los campos de domicilio y contacto.');
+      return;
+    }
+
+    if (form.numeroTelefono.trim() && !/^[0-9]{10}$/.test(form.numeroTelefono.trim())) {
+      setFormError('El teléfono debe contener exactamente 10 dígitos.');
+      return;
+    }
+
+    if (form.codigoPostal.trim() && !/^[0-9]{5}$/.test(form.codigoPostal.trim())) {
+      setFormError('El código postal debe contener exactamente 5 dígitos.');
+      return;
+    }
 
     if (!editingId && !password) {
       setFormError('Define una contraseña temporal para el usuario.');
