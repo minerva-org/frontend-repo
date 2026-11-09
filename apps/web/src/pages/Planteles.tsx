@@ -3,33 +3,47 @@ import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchInstituciones } from '../services/institucionService';
+import { PlantelModal }from '../components/modals/ModalPlantel.tsx'
 import '../styles/CatalogoPlanteles.css';
+
 
 interface Plantel {
   id: number;
   nombre: string;
-  direccion: string;
-  institucionId?: number;
+  calle: string;
+  colonia: string;
+  municipio: string;
+  estado: string;
+  codigoPostal: string;
+  institucionId: number;
   activo: boolean;
 }
 
 interface PlantelForm {
   nombre: string;
-  direccion: string;
+  calle: string;
+  colonia: string;
+  municipio: string;
+  estado: string;
+  codigoPostal: string;
   institucionId: number | null;
 }
+
+const emptyForm: PlantelForm = {
+  nombre: '',
+  calle: '',
+  colonia: '',
+  municipio: '',
+  estado: '',
+  codigoPostal: '',
+  institucionId: null,
+};
 
 interface DirectorGeneralInstitucionRef {
   institucionId?: number | null;
   institucion?: { id?: number | null } | null;
   universidadId?: number | null;
 }
-
-const emptyForm: PlantelForm = {
-  nombre: '',
-  direccion: '',
-  institucionId: null,
-};
 
 const FALLBACK_INSTITUCION_ID = 1;
 
@@ -64,15 +78,19 @@ export default function Planteles() {
   async function loadInstituciones() {
     try {
       const response = await fetchInstituciones();
-      const activas = (response.data ?? []).filter((item) => item.id > 0);
+
+      console.log('Respuesta completa:', response);
+      console.log('Instituciones recibidas:', response.data);
+
+      const activas = (response.data ?? []).filter(
+        (item) => item.id > 0
+      );
+
+      console.log('Instituciones para el combobox:', activas);
+
       setInstituciones(activas);
-      const fallbackInstitucionId = activas[0]?.id ?? null;
-      const resolvedDefault = defaultInstitucionId ?? fallbackInstitucionId;
-      setForm((prev) => ({
-        ...prev,
-        institucionId: prev.institucionId ?? resolvedDefault,
-      }));
-    } catch {
+    } catch (error) {
+      console.error('Error al cargar instituciones:', error);
       setInstituciones([]);
     }
   }
@@ -130,7 +148,11 @@ export default function Planteles() {
     setEditingId(plantel.id);
     setForm({
       nombre: plantel.nombre,
-      direccion: plantel.direccion,
+      calle: plantel.calle,
+      colonia: plantel.colonia,
+      municipio: plantel.municipio,
+      estado: plantel.estado,
+      codigoPostal: plantel.codigoPostal,
       institucionId: plantel.institucionId ?? defaultInstitucionId ?? instituciones[0]?.id ?? null,
     });
     setFormError(null);
@@ -147,41 +169,77 @@ export default function Planteles() {
     event.preventDefault();
     setFormError(null);
 
-    if (!form.nombre.trim() || !form.direccion.trim()) {
-      setFormError('Completa nombre y dirección del plantel.');
+    if (
+      !form.nombre.trim() ||
+      !form.calle.trim() ||
+      !form.colonia.trim() ||
+      !form.municipio.trim() ||
+      !form.estado.trim() ||
+      !form.codigoPostal.trim()
+    ) {
+      setFormError('Completa todos los campos del plantel.');
       return;
     }
 
-    const resolvedInstitucionId = form.institucionId
-      ?? defaultInstitucionId
-      ?? instituciones[0]?.id
-      ?? FALLBACK_INSTITUCION_ID;
+    if (!/^[0-9]{5}$/.test(form.codigoPostal.trim())) {
+      setFormError('El código postal debe contener exactamente 5 dígitos.');
+      return;
+    }
+
+    const resolvedInstitucionId =
+      form.institucionId ??
+      defaultInstitucionId ??
+      instituciones[0]?.id ??
+      FALLBACK_INSTITUCION_ID;
+
+    if (!resolvedInstitucionId) {
+      setFormError('Selecciona una institución.');
+      return;
+    }
+
+    const payload = {
+      nombre: form.nombre.trim(),
+      calle: form.calle.trim(),
+      colonia: form.colonia.trim(),
+      municipio: form.municipio.trim(),
+      estado: form.estado.trim(),
+      codigoPostal: form.codigoPostal.trim(),
+      institucionId: resolvedInstitucionId,
+    };
 
     setLoading(true);
+
     try {
-      if (editingId) {
-        const response = await apiClient.patch<Plantel>(`/api/planteles/${editingId}`, {
-          nombre: form.nombre.trim(),
-          direccion: form.direccion.trim(),
-        });
-        const updated = response.data;
-        setPlanteles((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
+      if (editingId !== null) {
+        const response = await apiClient.patch<Plantel>(
+          `/api/planteles/${editingId}`,
+          payload,
+        );
+
+        setPlanteles((prev) =>
+          prev.map((item) =>
+            item.id === editingId ? response.data : item,
+          ),
+        );
+
         setToast('Plantel actualizado correctamente.');
       } else {
-        const response = await apiClient.post<Plantel>('/api/planteles', {
-          nombre: form.nombre.trim(),
-          direccion: form.direccion.trim(),
-          institucionId: resolvedInstitucionId,
-          activo: true,
-        });
-        const created = response.data;
-        setPlanteles((prev) => [created, ...prev]);
+        const response = await apiClient.post<Plantel>(
+          '/api/planteles',
+          { ...payload, activo: true },
+        );
+
+        setPlanteles((prev) => [response.data, ...prev]);
         setToast('Plantel creado correctamente.');
       }
 
       closeModal();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'No se pudo guardar el plantel.');
+      setFormError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo guardar el plantel.',
+      );
     } finally {
       setLoading(false);
     }
@@ -189,12 +247,20 @@ export default function Planteles() {
 
   async function handleDeactivate(plantel: Plantel) {
     setLoading(true);
+
     try {
-      const response = await apiClient.patch<Plantel>(`/api/planteles/${plantel.id}`, {
-        activo: false,
-      });
-      const updated = response.data;
-      setPlanteles((prev) => prev.map((item) => (item.id === plantel.id ? updated : item)));
+      await apiClient.patch(
+        `/api/planteles/${plantel.id}/soft-delete`,
+      );
+
+      setPlanteles((prev) =>
+        prev.map((item) =>
+          item.id === plantel.id
+            ? { ...item, activo: false }
+            : item,
+        ),
+      );
+
       setConfirmDeactivate(null);
       setToast('Plantel desactivado correctamente.');
     } catch {
@@ -204,12 +270,52 @@ export default function Planteles() {
     }
   }
 
+  async function handleActivate(plantel: Plantel) {
+    setLoading(true);
+
+    try {
+      await apiClient.patch(
+        `/api/planteles/${plantel.id}`,
+        {
+          nombre: plantel.nombre,
+          calle: plantel.calle,
+          colonia: plantel.colonia,
+          municipio: plantel.municipio,
+          estado: plantel.estado,
+          codigoPostal: plantel.codigoPostal,
+          institucionId: plantel.institucionId,
+          activo: true,
+        },
+      );
+
+      setPlanteles((prev) =>
+        prev.map((item) =>
+          item.id === plantel.id
+            ? { ...item, activo: true }
+            : item,
+        ),
+      );
+
+      setToast('Plantel reactivado correctamente.');
+    } catch {
+      setToast('No se pudo reactivar el plantel.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const filteredPlanteles = useMemo(() => {
     const query = search.trim().toLowerCase();
+
     if (!query) return planteles;
-    return planteles.filter((plantel) =>
-      plantel.nombre.toLowerCase().includes(query) || plantel.direccion.toLowerCase().includes(query),
-    );
+
+    return planteles.filter((plantel) => {
+      const direccion = [plantel.calle, plantel.colonia, plantel.municipio, plantel.estado,plantel.codigoPostal,].join(' ');
+      return (
+        plantel.nombre.toLowerCase().includes(query) ||
+        direccion.toLowerCase().includes(query)
+      );
+    });
   }, [planteles, search]);
 
   return (
@@ -270,23 +376,23 @@ export default function Planteles() {
                 {filteredPlanteles.map((plantel) => (
                   <tr key={plantel.id} className={plantel.activo ? '' : 'pl-row-inactivo'}>
                     <td className="pl-td-nombre">{plantel.nombre}</td>
-                    <td className="pl-td-suave">{plantel.direccion}</td>
+                    <td className="pl-td-suave">{[plantel.calle, plantel.colonia, plantel.municipio, plantel.estado, plantel.codigoPostal,].filter(Boolean).join(', ')}</td>
                     <td>
                       <span className={`pl-estado ${plantel.activo ? 'pl-estado-activo' : 'pl-estado-inactivo'}`}>
                         {plantel.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
                     <td className="pl-acciones">
-                      <button className="pl-btn pl-btn-neutral" type="button" onClick={() => openEditModal(plantel)}>
+                      <button className="pl-btn pl-btn-neutral" type="button" disabled={!plantel.activo ||loading} onClick={() => openEditModal(plantel)}>
                         Editar
                       </button>
                       <button
                         className={`pl-btn ${plantel.activo ? 'pl-btn-danger' : 'pl-btn-success'}`}
                         type="button"
-                        disabled={!plantel.activo || loading}
-                        onClick={() => setConfirmDeactivate(plantel)}
+                        disabled={loading}
+                        onClick={() => plantel.activo ? setConfirmDeactivate(plantel) :void handleActivate(plantel)}
                       >
-                        Desactivar
+                        {plantel.activo ? 'Desactivar' :'Reactivar'}
                       </button>
                     </td>
                   </tr>
@@ -298,46 +404,16 @@ export default function Planteles() {
       </article>
 
       {isModalOpen && createPortal(
-        <article className="pl-modal-overlay">
-          <article className="pl-modal">
-            <header className="pl-modal-header">
-              <article>
-                <h2 className="pl-modal-title">{editingId ? 'Editar Plantel' : 'Nuevo Plantel'}</h2>
-                <p className="pl-modal-subtitle">Preparatoria Chapala Gutiérrez</p>
-              </article>
-            </header>
-            <form onSubmit={handleSubmit} className="pl-modal-form">
-              <label className="pl-field">
-                <span className="pl-field-label">Nombre completo del plantel</span>
-                <input
-                  className="pl-input"
-                  value={form.nombre}
-                  onChange={(e) => setForm((prev) => ({ ...prev, nombre: e.target.value }))}
-                />
-              </label>
-
-              <label className="pl-field">
-                <span className="pl-field-label">Dirección</span>
-                <input
-                  className="pl-input"
-                  value={form.direccion}
-                  onChange={(e) => setForm((prev) => ({ ...prev, direccion: e.target.value }))}
-                />
-              </label>
-
-              {formError && <p className="pl-empty" style={{ padding: 0, textAlign: 'left', color: 'var(--seige-error-texto)' }}>{formError}</p>}
-
-              <footer className="pl-modal-actions">
-                <button type="button" onClick={closeModal} className="pl-btn-secondary">
-                  Cancelar
-                </button>
-                <button type="submit" disabled={loading} className="pl-btn-primary">
-                  {loading ? 'Guardando...' : 'Guardar'}
-                </button>
-              </footer>
-            </form>
-          </article>
-        </article>,
+        <PlantelModal
+          plantel={editingId !== null ? form : null}
+          instituciones={instituciones}
+          loading={loading}
+          form={form}
+          formError={formError}
+          onClose={closeModal}
+          onSubmit={handleSubmit}
+          onChange={setForm}
+        />,
         document.body,
       )}
 
