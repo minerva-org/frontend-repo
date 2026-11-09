@@ -313,9 +313,19 @@ export default function QuizNuevo() {
     ));
   }
   
-  async function guardarOpciones(idOriginalPregunta: string, preguntaIdBackend: string, opcionesActuales: Opcion[], esPreguntaNueva: boolean) {
+  async function guardarOpciones(
+    idOriginalPregunta: string,
+    preguntaIdBackend: string,
+    opcionesActuales: Opcion[],
+    esPreguntaNueva: boolean
+  ) {
+    const opcionesOrdenadas = [
+      ...opcionesActuales.filter((opcion) => !opcion.esCorrecta),
+      ...opcionesActuales.filter((opcion) => opcion.esCorrecta),
+    ];
+
     if (esPreguntaNueva) {
-      for (const opcion of opcionesActuales) {
+      for (const opcion of opcionesOrdenadas) {
         await apiClient.post('/api/opciones', {
           id: crypto.randomUUID(),
           descripcion: opcion.texto.trim(),
@@ -343,7 +353,7 @@ export default function QuizNuevo() {
       await apiClient.delete(`/api/opciones/${opcion.id}`);
     }
 
-    for (const opcion of opcionesActuales) {
+    for (const opcion of opcionesOrdenadas) {
       if (opcion.id.startsWith('op-')) {
         await apiClient.post('/api/opciones', {
           id: crypto.randomUUID(),
