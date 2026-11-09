@@ -115,7 +115,7 @@ export function ModalAlumnos({
                     />
 
                     <span className="input-group-text">
-                      @alumnos.chapala.edu.mx
+                      @chapala.edu.mx
                     </span>
                   </article>
                 </article>

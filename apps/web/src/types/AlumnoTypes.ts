@@ -60,19 +60,14 @@ export interface GrupoAlumno {
 }
 
 export interface GrupoAlumnoBackend {
-  id?: string | number;
-  code?: string;
-  claveGrupo?: string;
-  materia?: string;
-  materiaNombre?: string;
-  grupo?: string;
-  grado?: string;
-  nombre?: string;
-  docente?: string;
-  docenteNombre?: string;
-  activos?: number;
-  proximos?: number;
-  pasados?: number;
+  id: string;
+  claveGrupo: string;
+  nombre: string;
+  semestre: string;
+  activo: boolean;
+  docenteId: string | null;
+  plantelId: number | null;
+  alumnosIds: string[];
 }
 
 export interface MisQuizCardProps {

@@ -33,11 +33,10 @@ function isStrongPassword(password: string) {
   return SAFE_PASSWORD_REGEX.test(password.trim());
 }
 
-function formatearEmailInstitucional(localPart: string, rol: 'ALUMNO' | 'DOCENTE' | 'COORDINADOR' | 'DIRECTOR_PLANTEL') {
+function formatearEmailInstitucional(localPart: string) {
   const limpio = localPart.trim().replace(/@.*$/, '').replace(/\s+/g, '');
   if (!limpio) return '';
-  const dominio = rol === 'ALUMNO' ? 'alumnos.chapala.edu.mx' : 'chapala.edu.mx';
-  return `${limpio}@${dominio}`;
+  return `${limpio}@chapala.edu.mx`;
 }
 
 function getLocalPart(email: string) {
@@ -236,7 +235,7 @@ function openEditModal(alumno: PersonaRecord) {
         nombre: form.nombre.trim(),
         apellidoPaterno: form.apellidoPaterno.trim(),
         apellidoMaterno: form.apellidoMaterno.trim() || null,
-        email: formatearEmailInstitucional(form.email, 'ALUMNO'),
+        email: formatearEmailInstitucional(form.email),
         numeroTelefono: form.numeroTelefono.trim(),
         calle: form.calle.trim(),
         colonia: form.colonia.trim(),
@@ -597,7 +596,7 @@ function AlumnoModal({
                 required
               />
               <span className="ca-email-domain">
-                @alumnos.chapala.edu.mx
+                @chapala.edu.mx
               </span>
             </article>
           </label>
