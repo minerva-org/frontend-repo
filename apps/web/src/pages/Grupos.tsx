@@ -214,6 +214,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
     activo: true,
     docenteId,
     plantelId,
+    materiaId: data.materiaId,
     alumnosIds,
   };
 

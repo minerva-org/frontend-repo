@@ -37,6 +37,7 @@ export interface NewGroupData {
   docente: string | null;
   docenteId: string | null;
   materia: string;
+  materiaId: string;
   alumnosIds: string[];
   numeroEstudiantes: string[];
   plantelId: number | null;

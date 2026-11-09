@@ -11,6 +11,11 @@ interface CreateGroupModalProps {
   onCreate: (data: NewGroupData) => Promise<void> | void;
 }
 
+interface MateriaBackend {
+  id: string;
+  nombre: string;
+}
+
 const normalize = (value: unknown) =>
   String(value ?? '').trim().toLowerCase();
 
@@ -22,7 +27,7 @@ export default function CreateGroupModal({
   const [materia, setMateria] = useState<string[]>([]);
   const [claveGrupo, setClaveGrupo] = useState('');
   const [semestre, setSemestre] = useState('');
-  const [materiasBD, setMateriasBD] = useState<string[]>([]);
+  const [materiasBD, setMateriasBD] = useState<MateriaBackend[]>([]);
   const [creatorPlantelId, setCreatorPlantelId] = useState<number | null>(null);
   const [docentes, setDocentes] = useState<PersonaRecord[]>([]);
   const [docenteId, setDocenteId] = useState(''); 
@@ -70,15 +75,11 @@ export default function CreateGroupModal({
   useEffect(() => {
     async function loadMaterias() {
       try {
-        const response = await apiClient.get<Array<{ nombre: string }>>(
+        const response = await apiClient.get<MateriaBackend[]>(
           '/api/materias',
         );
 
-        setMateriasBD(
-          (response.data ?? [])
-            .map((item) => item.nombre)
-            .filter(Boolean),
-        );
+        setMateriasBD(response.data ?? []);
       } catch {
         setMateriasBD([]);
         setError('No se pudieron cargar las materias.');
@@ -95,6 +96,15 @@ export default function CreateGroupModal({
 
     if (!materia[0] || !claveGrupo.trim() || !semestre.trim()) {
       setError('Captura materia, clave del grupo y semestre.');
+      return;
+    }
+
+    const materiaSeleccionada = materiasBD.find(
+      (item) => item.nombre === materia[0],
+    );
+
+    if (!materiaSeleccionada) {
+      setError('Selecciona una materia válida.');
       return;
     }
 
@@ -126,6 +136,7 @@ export default function CreateGroupModal({
       docente: `${docenteSeleccionado.nombre} ${docenteSeleccionado.apellidoPaterno}`,
       docenteId,
       materia: materia[0],
+      materiaId: materiaSeleccionada.id,
       alumnosIds: [],
       numeroEstudiantes: [],
       plantelId: creatorPlantelId,
@@ -151,7 +162,7 @@ export default function CreateGroupModal({
           <AutocompleteInput
             label="Materia"
             placeholder="Buscar materia..."
-            options={materiasBD}
+            options={materiasBD.map((item) => item.nombre)}
             selected={materia}
             onChange={setMateria}
           />

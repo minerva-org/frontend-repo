@@ -93,3 +93,36 @@ export interface QuizXPreguntaResponse {
   quizId: string;
   preguntaId: string;
 }
+
+export interface OpcionAlumno {
+  id: string;
+  descripcion: string;
+}
+
+export interface PreguntaAlumno {
+  id: string;
+  descripcion: string;
+  numero: number;
+  total: number;
+  opciones: OpcionAlumno[];
+}
+
+export interface IntentoResponse {
+  intentoId: string;
+  quizId: string;
+  fechaFinalizacion: string;
+  finalizado: boolean;
+  preguntaActual: PreguntaAlumno | null;
+}
+
+export interface ResultadoIntento {
+  correctas: number;
+  enBlanco: number;
+  total: number;
+}
+
+export interface RespuestaRequest {
+  preguntaId: string;
+  opcionId: string | null;
+  cambiosPantalla: number;
+}

@@ -4,6 +4,8 @@ import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
+import MisGrupoCard from '../components/alumno/MisGrupoCard';
+import type { GrupoAlumnoBackend } from '../types/AlumnoTypes';
 
 interface QuizAlumno {
   id: string;
@@ -51,22 +53,36 @@ export default function AlumnoInicio() {
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
   const { user } = useAuth();
-
-  const nombreAlumno =
-    `${user?.nombre ?? ''} ${user?.apellido ?? ''}`.trim() ||
-    user?.email ||
-    'Alumno';
-
+  const nombreAlumno = `${user?.nombre ?? ''} ${user?.apellido ?? ''}`.trim() || user?.email || 'Alumno';
   const [ahora, setAhora] = useState(() => Date.now());
   const [quizzes, setQuizzes] = useState<QuizAlumno[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [grupos, setGrupos] = useState<GrupoAlumnoBackend[]>([]);
+  const [gruposLoading, setGruposLoading] = useState(true);
 
   useEffect(() => {
     const id = setInterval(() => setAhora(Date.now()), MIN);
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    async function cargarGrupos() {
+      try {
+        const response = await apiClient.get<GrupoAlumnoBackend[]>(
+          '/api/grupos/mis-grupos'
+        );
+
+        setGrupos(response.data ?? []);
+      } catch (error) {
+        console.error('Error al cargar los grupos del alumno:', error);
+      } finally {
+        setGruposLoading(false);
+      }
+    }
+
+    void cargarGrupos();
+  }, []);
   useEffect(() => {
     async function cargarQuizzes() {
       try {
