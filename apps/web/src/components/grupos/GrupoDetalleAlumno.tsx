@@ -200,29 +200,16 @@ export default function GrupoDetalleAlumno({
   return (
     <>
       <section className="gd-hero">
-        <span className="gd-hero-id">
-          {grupo.claveGrupo}
-        </span>
 
         <article className="gd-hero-row">
           <h1 className="gd-hero-title">
             {grupo.nombre}
           </h1>
-
-          <span className="gd-hero-cycle">
-            {grupo.semestre}
-          </span>
         </article>
       </section>
 
       <section className="gd-info">
         <article className="gd-meta">
-          <span className="gd-meta-item">
-            <strong className="gd-meta-label">
-              Clave:
-            </strong>{' '}
-            {grupo.claveGrupo}
-          </span>
 
           <span className="gd-meta-item">
             <strong className="gd-meta-label">
