@@ -199,7 +199,9 @@ export default function CatalogoAlumnos() {
     if (alumno.activo === false) return;
 
     setEditingId(alumno.id);
-
+    console.log('Alumno seleccionado:', alumno);
+    console.log('Nombre tutor:', alumno.nombreTutor);
+    console.log('Teléfono tutor:', alumno.numeroTutor);
     setForm({
       nombre: alumno.nombre ?? '',
       apellidoPaterno: alumno.apellidoPaterno ?? '',

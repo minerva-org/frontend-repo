@@ -25,7 +25,7 @@ export default function GroupActionsMenu<T extends GroupActionsMenuGroup>({
   archived = false,
 }: GroupActionsMenuProps<T>) {
   return (
-    <div className="groups-action-menu">
+    <article className="groups-action-menu">
       <button
         className="groups-link-button groups-menu-toggle"
         type="button"
@@ -40,20 +40,13 @@ export default function GroupActionsMenu<T extends GroupActionsMenuGroup>({
       </button>
 
       {isOpen && (
-        <div
+        <article
           className="groups-menu-panel"
           role="menu"
           aria-label={`Acciones para ${group.nombre}`}
           onClick={(event) => event.stopPropagation()}
         >
-          <GroupMenuActionButton
-            label="Ver"
-            icon="bi-eye"
-            onClick={() => {
-              onToggle(null);
-              onView(group.id);
-            }}
-          />
+          
 
           {archived ? (
             <GroupMenuActionButton
@@ -65,6 +58,15 @@ export default function GroupActionsMenu<T extends GroupActionsMenuGroup>({
               }}
             />
           ) : (
+            <>
+            <GroupMenuActionButton
+            label="Ver"
+            icon="bi-eye"
+            onClick={() => {
+              onToggle(null);
+              onView(group.id);
+            }}
+          />
             <GroupMenuActionButton
               label="Archivar"
               icon="bi-archive"
@@ -74,9 +76,10 @@ export default function GroupActionsMenu<T extends GroupActionsMenuGroup>({
                 onArchive?.(group);
               }}
             />
+            </>
           )}
-        </div>
+        </article>
       )}
-    </div>
+    </article>
   );
 }
