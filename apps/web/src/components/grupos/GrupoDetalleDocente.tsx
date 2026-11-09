@@ -549,7 +549,6 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
       )}
 
       <section className="gd-hero">
-        <span className="gd-hero-id">ID: {grupo.id}</span>
         <article className="gd-hero-row">
           <h1 className="gd-hero-title">{grupo.nombre}</h1>
           <span className="gd-hero-cycle">Ciclo: {grupo.semestre}</span>
@@ -558,7 +557,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
       <section className="gd-info">
         <article className="gd-meta">
-          <span className="gd-meta-item"><strong className="gd-meta-label">Grado:</strong> {grupo.nombre}</span>
+          <span className="gd-meta-item"><strong className="gd-meta-label">Grupo:</strong> {grupo.nombre}</span>
           <span className="gd-meta-item">
             <strong className="gd-meta-label">Docente:</strong>
 
