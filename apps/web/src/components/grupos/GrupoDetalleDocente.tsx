@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuizCatalogCard, { getQuizCatalogState } from '../quizzes/QuizCatalogCard.tsx';
 import { apiClient } from '../../services/ApiClient';
@@ -7,6 +7,7 @@ import type { PersonaRecord } from '../../types/PersonaTypes.ts';
 import type { GrupoDetalleBackend, AlumnoEntry, QuizCatalogBackend } from '../../types/GrupoTypes.ts';
 import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
+import Toast, {type ToastData} from '../common/Toast';
 
 function toDateValue(value?: string | null): number {
   if (!value) return 0;
@@ -41,8 +42,9 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   const [quizPorBorrar, setQuizPorBorrar] = useState<{id: string; nombre: string;} | null>(null);
   const [quizEliminando, setQuizEliminando] = useState(false);
 
-  const [toast, setToast] = useState<{ mensaje: string; tipo: 'exito' | 'error';} | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
   const [alumnosDisponibles, setAlumnosDisponibles] = useState<PersonaRecord[]>([]);
+  const cerrarToast = useCallback(() => { setToast(null);}, []);
 
   const [segundosRestantes, setSegundosRestantes] = useState(10);
   const navigate = useNavigate();
@@ -50,6 +52,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   const [modalAsignarDocente, setModalAsignarDocente] = useState(false);
   const [docenteSeleccionado, setDocenteSeleccionado] = useState('');
   const [asignandoDocente, setAsignandoDocente] = useState(false);
+  
 
   useEffect(()=>{
     if(!quizPorBorrar) return;
@@ -493,51 +496,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         </article>
       )}
 
-      {toast && (
-        <article
-          className="modal show d-block"
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="gd-result-title"
-          style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}
-        >
-          <article className="modal-dialog modal-dialog-centered" role="document">
-            <article className="modal-content border-0 shadow">
-              <article className="modal-body text-center p-4">
-                <article className="mb-3">
-                  <i
-                    className={`bi ${
-                      toast.tipo === 'exito'
-                        ? 'bi-check-circle-fill text-success'
-                        : 'bi-x-circle-fill text-danger'
-                    }`}
-                    style={{ fontSize: '3rem' }}
-                  ></i>
-                </article>
-
-                <h5 className="modal-title fw-bold mb-3" id="gd-result-title">
-                  {toast.tipo === 'exito'
-                    ? '¡Operacion exitosa!'
-                    : 'No se pudo realizar la operacion'}
-                </h5>
-
-                <p className="text-secondary mb-4">
-                  {toast.mensaje}
-                </p>
-
-                <button
-                  type="button"
-                  className="btn btn-primary px-4"
-                  onClick={() => setToast(null)}
-                >
-                  Aceptar
-                </button>
-              </article>
-            </article>
-          </article>
-        </article>
-      )}
+      <Toast toast={toast} onCerrar={cerrarToast} />
 
       {modalAgregarAlumnos && (
         <AgregarAlumnosForm

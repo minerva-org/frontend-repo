@@ -69,7 +69,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
           { to: '/catalogo-grupos', label: 'Listado de Grupos', icon: 'bi-grid-3x3-gap' },
           { to: '/catalogo-docentes', label: 'Catálogo de Docentes', icon: 'bi-people' },
           { to: '/catalogo-alumnos', label: 'Catálogo de Alumnos', icon: 'bi-people' },
-          { to: '/materias', label: 'Materias y Planes (S3)', icon: 'bi-journal-bookmark' },
+          { to: '/materias', label: 'Materias y Planes', icon: 'bi-journal-bookmark' },
         ],
       },
       {
@@ -101,7 +101,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
           { to: '/catalogo-grupos', label: 'Listado de Grupos', icon: 'bi-grid-3x3-gap' },
           { to: '/catalogo-docentes', label: 'Catálogo de Docentes', icon: 'bi-people' },
           { to: '/catalogo-alumnos', label: 'Catálogo de Alumnos', icon: 'bi-people' },
-          { to: '/materias', label: 'Materias y Planes (S3)', icon: 'bi-journal-bookmark' },
+          { to: '/materias', label: 'Materias y Planes', icon: 'bi-journal-bookmark' },
         ],
       },
       {
