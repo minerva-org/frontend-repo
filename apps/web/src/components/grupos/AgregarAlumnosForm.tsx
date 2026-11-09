@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type SubmitEvent } from 'react';
 import type { PersonaRecord } from '../../types/PersonaTypes';
 
 interface AgregarAlumnosFormProps {
@@ -60,7 +60,7 @@ export default function AgregarAlumnosForm({
     setSeleccionados((prev) => prev.filter((alumnoId) => alumnoId !== id));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (seleccionados.length === 0) {

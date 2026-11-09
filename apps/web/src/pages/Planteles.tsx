@@ -165,7 +165,7 @@ export default function Planteles() {
     setFormError(null);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
 

@@ -34,13 +34,6 @@ export function DocenteModal({
             </p>
           </article>
 
-          <button
-            type="button"
-            className="btn-close btn-close-white"
-            aria-label="Cerrar"
-            onClick={onClose}
-            disabled={loading}
-          />
         </article>
 
           <form id="form-docente" onSubmit={onSubmit}>
