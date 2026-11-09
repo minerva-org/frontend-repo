@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/ApiClient';
@@ -39,7 +38,6 @@ export default function QuizResolve() {
     const [envioAutomatico, setEnvioAutomatico] = useState(false);
     const finalizacionIniciada = useRef(false);
 
-
     useEffect(() => {
         let cancelado = false;
 
@@ -71,6 +69,7 @@ export default function QuizResolve() {
                 setIntentoId(intento.intentoId);
 
                 setPreguntaActual(intento.preguntaActual);
+
                 if (intento.preguntaActual) {
                     setPreguntasVisitadas([intento.preguntaActual]);
                     setIndiceActual(0);
@@ -79,6 +78,7 @@ export default function QuizResolve() {
                         [intento.preguntaActual.id]: ''
                     });
                 }
+
                 setTiempoRestante(
                     Math.max(
                         0,
@@ -171,10 +171,6 @@ export default function QuizResolve() {
             return;
         }
 
-        const fechaFinal = preguntaActual
-            ? null
-            : null;
-
         const actualizarTiempo = () => {
             const limite = quiz?.fechaFinalizacion;
 
@@ -201,7 +197,6 @@ export default function QuizResolve() {
         return () => clearInterval(temporizador);
     }, [estado, intentoId, preguntaActual, quiz, finalizarIntento]);
 
-    // 4. Formatear tiempo
     const tiempoFormateado = useMemo(() => {
         const hora = Math.floor(tiempoRestante / 3600);
         const minuto = Math.floor((tiempoRestante % 3600) / 60);
@@ -218,7 +213,6 @@ export default function QuizResolve() {
     function regresarPregunta() {
         if (indiceActual <= 0 || enviando) return;
 
-        // Conservamos la selección de la pregunta actual.
         const respuestasActualizadas = {
             ...respuestasLocales,
             [preguntaActual!.id]: opcionSeleccionada
@@ -226,42 +220,40 @@ export default function QuizResolve() {
 
         setRespuestasLocales(respuestasActualizadas);
 
-        // Recuperamos la pregunta anterior.
         const anterior = preguntasVisitadas[indiceActual - 1];
 
         setIndiceActual(indiceActual - 1);
         setPreguntaActual(anterior);
 
-        // Recuperamos su opción seleccionada.
         setOpcionSeleccionada(
             respuestasActualizadas[anterior.id] ?? ''
         );
-}
+    }
 
     async function guardarRespuesta() {
         if (!quizId || !intentoId || !preguntaActual || enviando) {
             return;
         }
 
-    const respuestasActualizadas = {
-        ...respuestasLocales,
-        [preguntaActual.id]: opcionSeleccionada
-    };
+        const respuestasActualizadas = {
+            ...respuestasLocales,
+            [preguntaActual.id]: opcionSeleccionada
+        };
 
-    setRespuestasLocales(respuestasActualizadas);
+        setRespuestasLocales(respuestasActualizadas);
 
-    if (indiceActual < preguntasVisitadas.length - 1) {
-        const siguiente = preguntasVisitadas[indiceActual + 1];
+        if (indiceActual < preguntasVisitadas.length - 1) {
+            const siguiente = preguntasVisitadas[indiceActual + 1];
 
-        setIndiceActual(indiceActual + 1);
-        setPreguntaActual(siguiente);
+            setIndiceActual(indiceActual + 1);
+            setPreguntaActual(siguiente);
 
-        setOpcionSeleccionada(
-            respuestasActualizadas[siguiente.id] ?? ''
-        );
+            setOpcionSeleccionada(
+                respuestasActualizadas[siguiente.id] ?? ''
+            );
 
-        return;
-    }
+            return;
+        }
 
         setEnviando(true);
         setError('');
@@ -279,6 +271,7 @@ export default function QuizResolve() {
             const intento = response.data;
 
             setPreguntasRespondidas(preguntaActual.numero);
+
             if (intento.preguntaActual) {
                 setPreguntasVisitadas(prev => [
                     ...prev,
@@ -287,6 +280,7 @@ export default function QuizResolve() {
 
                 setIndiceActual(prev => prev + 1);
                 setPreguntaActual(intento.preguntaActual);
+
                 setOpcionSeleccionada(
                     respuestasActualizadas[intento.preguntaActual.id] ?? ''
                 );
@@ -357,192 +351,343 @@ export default function QuizResolve() {
         }
     }
 
+    // Pantalla de carga
     if (cargando) {
         return (
-            <article>
-                <main>
-                    <p>Cargando quiz...</p>
+            <article className="qr-screen">
+                <main className="qr-message container">
+                    <article className="qr-message-card text-center">
+                        <article className="spinner-border qr-spinner" role="status">
+                            <span className="visually-hidden">Cargando...</span>
+                        </article>
+                        <p className="mb-0 mt-3">Cargando quiz...</p>
+                    </article>
                 </main>
             </article>
         );
     }
 
+    // Error al cargar el quiz
     if (error && !quiz) {
         return (
-            <article>
-                <main>
-                    <p>{error}</p>
-                    <button onClick={() => navigate(`/grupos/${code}`)}>
-                        Volver al grupo
-                    </button>
+            <article className="qr-screen">
+                <main className="qr-message container">
+                    <article className="qr-message-card text-center">
+                        <i className="bi bi-exclamation-circle qr-message-icon"></i>
+                        <p>{error}</p>
+
+                        <button
+                            className="btn btn-primary qr-btn-primary"
+                            onClick={() => navigate(`/grupos/${code}`)}
+                        >
+                            Volver al grupo
+                        </button>
+                    </article>
                 </main>
             </article>
         );
     }
 
+    // Quiz no encontrado
     if (!quiz) {
         return (
-            <article>
-                <main>
-                    <p>Quiz no encontrado</p>
-                    <button onClick={() => navigate(`/grupos/${code}`)}>
-                        Volver al grupo
-                    </button>
+            <article className="qr-screen">
+                <main className="qr-message container">
+                    <article className="qr-message-card text-center">
+                        <i className="bi bi-search qr-message-icon"></i>
+                        <p>Quiz no encontrado</p>
+
+                        <button
+                            className="btn btn-primary qr-btn-primary"
+                            onClick={() => navigate(`/grupos/${code}`)}
+                        >
+                            Volver al grupo
+                        </button>
+                    </article>
                 </main>
             </article>
         );
     }
 
+    // Resultado del intento
     if (estado === 'confirmado') {
         return (
-            <article>
-                <main>
-                    <i className="bi bi-check-circle-fill"></i>
+            <article className="qr-screen">
+                <main className="qr-result container">
+                    <section className="qr-result-card text-center">
+                        <i className="bi bi-check-circle-fill qr-result-icon"></i>
 
-                    <h1>
-                        {envioAutomatico
-                            ? 'Tiempo agotado. Quiz finalizado'
-                            : 'Quiz enviado'}
-                    </h1>
+                        <h1 className="qr-result-title">
+                            {envioAutomatico
+                                ? 'Tiempo agotado. Quiz finalizado'
+                                : 'Quiz enviado'}
+                        </h1>
 
-                    {resultado && (
-                        <>
-                            <p>Respuestas correctas: {resultado.correctas}</p>
-                            <p>Respuestas en blanco: {resultado.enBlanco}</p>
-                            <p>Total de preguntas: {resultado.total}</p>
-                        </>
-                    )}
+                        <p className="qr-result-subtitle">
+                            Tu intento ha sido registrado correctamente.
+                        </p>
+
+                        {resultado && (
+                            <section className="qr-result-stats">
+                                <article className="qr-stat">
+                                    <span className="qr-stat-value">
+                                        {resultado.correctas}
+                                    </span>
+                                    <span className="qr-stat-label">
+                                        Respuestas correctas
+                                    </span>
+                                </article>
+
+                                <article className="qr-stat">
+                                    <span className="qr-stat-value">
+                                        {resultado.enBlanco}
+                                    </span>
+                                    <span className="qr-stat-label">
+                                        Respuestas en blanco
+                                    </span>
+                                </article>
+
+                                <article className="qr-stat">
+                                    <span className="qr-stat-value">
+                                        {resultado.total}
+                                    </span>
+                                    <span className="qr-stat-label">
+                                        Total de preguntas
+                                    </span>
+                                </article>
+                            </section>
+                        )}
+
+                        <button
+                            className="btn btn-primary qr-btn-primary qr-result-button"
+                            onClick={() => navigate(`/grupos/${code}`)}
+                        >
+                            Volver al grupo
+                        </button>
+                    </section>
                 </main>
-
-                <button onClick={() => navigate(`/grupos/${code}`)}>
-                    Volver al grupo
-                </button>
             </article>
         );
     }
 
     const totalPreguntas = preguntaActual?.total ?? 0;
+
     const esUltimaPregunta =
         preguntaActual !== null &&
         preguntaActual.numero === preguntaActual.total;
 
-    return (
-        <article>
-            <header>
-                <span>{quiz.nombre}</span>
+    const progreso = totalPreguntas > 0 && preguntaActual
+        ? (preguntaActual.numero / totalPreguntas) * 100
+        : 0;
 
-                <span>
-                    <i className="bi bi-clock"></i>
-                    {tiempoFormateado}
-                </span>
+    return (
+        <article className="qr-screen">
+            <header className="qr-topbar">
+                <article className="qr-topbar-content container-fluid">
+                    <article className="qr-quiz-heading">
+                        <span className="qr-quiz-label">Evaluación</span>
+                        <h1 className="qr-quiz-title">{quiz.nombre}</h1>
+                    </article>
+
+                    <article className="qr-timer">
+                        <i className="bi bi-clock"></i>
+                        <article>
+                            <span className="qr-timer-label">Tiempo restante</span>
+                            <strong className="qr-timer-value">
+                                {tiempoFormateado}
+                            </strong>
+                        </article>
+                    </article>
+                </article>
             </header>
 
-            {error && (
-                <p role="alert">{error}</p>
-            )}
+            <main className="qr-content container">
+                {error && (
+                    <article className="alert alert-danger qr-alert" role="alert">
+                        <i className="bi bi-exclamation-triangle-fill"></i>
+                        {error}
+                    </article>
+                )}
 
-            {preguntaActual ? (
-                <>
-                    <button disabled>
-                        Pregunta {preguntaActual.numero} de {totalPreguntas}
-                    </button>
+                {preguntaActual ? (
+                    <>
+                        <section className="qr-progress-section">
+                            <article className="qr-progress-heading">
+                                <span className="qr-progress-label">
+                                    Progreso del cuestionario
+                                </span>
 
-                    <main>
-                        <article>
-                            <p>{preguntaActual.descripcion}</p>
-
-                            <article>
-                                {preguntaActual.opciones.map((opcion) => (
-                                    <label
-                                        key={opcion.id}
-                                        className={
-                                            opcionSeleccionada === opcion.id
-                                                ? 'seleccionada'
-                                                : ''
-                                        }
-                                    >
-                                        <input
-                                            type="radio"
-                                            name={`pregunta-${preguntaActual.id}`}
-                                            checked={
-                                                opcionSeleccionada === opcion.id
-                                            }
-                                            onChange={() =>
-                                                setOpcionSeleccionada(opcion.id)
-                                            }
-                                            disabled={enviando}
-                                        />
-
-                                        {opcion.descripcion}
-                                    </label>
-                                ))}
+                                <strong className="qr-progress-count">
+                                    Pregunta {preguntaActual.numero} de {totalPreguntas}
+                                </strong>
                             </article>
+
+                            <article
+                                className="progress qr-progress"
+                                role="progressbar"
+                                aria-label="Progreso del cuestionario"
+                                aria-valuenow={progreso}
+                                aria-valuemin={0}
+                                aria-valuemax={100}
+                            >
+                                <article
+                                    className="progress-bar qr-progress-bar"
+                                    style={{ width: `${progreso}%` }}
+                                />
+                            </article>
+                        </section>
+
+                        <article className="qr-question-card">
+                            <article className="qr-question-header">
+                                <span className="qr-question-number">
+                                    <i className="bi bi-question-circle"></i>
+                                    Pregunta {preguntaActual.numero}
+                                </span>
+
+                                <span className="qr-question-total">
+                                    {totalPreguntas} preguntas
+                                </span>
+                            </article>
+
+                            <main className="qr-question-body">
+                                <p className="qr-question-text">
+                                    {preguntaActual.descripcion}
+                                </p>
+
+                                <section className="qr-options">
+                                    <p className="qr-options-heading">
+                                        Selecciona una respuesta:
+                                    </p>
+
+                                    {preguntaActual.opciones.map((opcion, index) => (
+                                        <label
+                                            key={opcion.id}
+                                            className={`qr-option ${
+                                                opcionSeleccionada === opcion.id
+                                                    ? 'qr-option-selected'
+                                                    : ''
+                                            }`}
+                                        >
+                                            <input
+                                                className="form-check-input qr-radio"
+                                                type="radio"
+                                                name={`pregunta-${preguntaActual.id}`}
+                                                checked={
+                                                    opcionSeleccionada === opcion.id
+                                                }
+                                                onChange={() =>
+                                                    setOpcionSeleccionada(opcion.id)
+                                                }
+                                                disabled={enviando}
+                                            />
+
+                                            <span className="qr-option-letter">
+                                                {String.fromCharCode(65 + index)}
+                                            </span>
+
+                                            <span className="qr-option-text">
+                                                {opcion.descripcion}
+                                            </span>
+
+                                            {opcionSeleccionada === opcion.id && (
+                                                <i className="bi bi-check-circle-fill qr-option-check"></i>
+                                            )}
+                                        </label>
+                                    ))}
+                                </section>
+                            </main>
                         </article>
 
-                        <article>
+                        <section className="qr-navigation">
                             <button
+                                className="btn btn-outline-secondary qr-btn-secondary"
                                 onClick={regresarPregunta}
                                 disabled={indiceActual === 0 || enviando}
                             >
+                                <i className="bi bi-arrow-left"></i>
                                 Anterior
                             </button>
 
                             {esUltimaPregunta ? (
                                 <button
+                                    className="btn btn-primary qr-btn-primary"
                                     onClick={() => setMostrarConfirmacion(true)}
                                     disabled={enviando}
                                 >
                                     Finalizar
+                                    <i className="bi bi-check-lg"></i>
                                 </button>
                             ) : (
                                 <button
+                                    className="btn btn-primary qr-btn-primary"
                                     onClick={guardarRespuesta}
                                     disabled={enviando}
                                 >
                                     {enviando ? 'Guardando...' : 'Siguiente'}
+                                    <i className="bi bi-arrow-right"></i>
                                 </button>
                             )}
-                        </article>
-                    </main>
-                </>
-            ) : (
-                <main>
-                    <p>Ya no hay preguntas pendientes.</p>
+                        </section>
+                    </>
+                ) : (
+                    <main className="qr-empty-card text-center">
+                        <i className="bi bi-clipboard-check qr-empty-icon"></i>
+                        <h2>¡Has terminado las preguntas!</h2>
+                        <p>Ya no hay preguntas pendientes.</p>
 
-                    <button
-                        onClick={() => setMostrarConfirmacion(true)}
-                        disabled={enviando}
-                    >
-                        Finalizar intento
-                    </button>
-                </main>
-            )}
+                        <button
+                            className="btn btn-primary qr-btn-primary"
+                            onClick={() => setMostrarConfirmacion(true)}
+                            disabled={enviando}
+                        >
+                            Finalizar intento
+                        </button>
+                    </main>
+                )}
+            </main>
 
             {mostrarConfirmacion && (
-                <article>
-                    <article>
-                        <h2>¿Deseas enviar tus respuestas?</h2>
+                <article
+                    className="qr-modal-overlay"
+                    role="presentation"
+                >
+                    <article
+                        className="qr-modal"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="qr-modal-title"
+                    >
+                        <header className="qr-modal-header">
+                            <i className="bi bi-send qr-modal-icon"></i>
+                            <h2 id="qr-modal-title" className="qr-modal-title">
+                                ¿Deseas enviar tus respuestas?
+                            </h2>
+                        </header>
 
-                        <p>
-                            Una vez finalizado el intento no podrás modificar
-                            tus respuestas.
-                        </p>
+                        <main className="qr-modal-body">
+                            <p>
+                                Una vez finalizado el intento no podrás modificar
+                                tus respuestas.
+                            </p>
 
-                        <article>
-                            <button
-                                onClick={() => setMostrarConfirmacion(false)}
-                                disabled={enviando}
-                            >
-                                Seguir contestando
-                            </button>
+                            <article className="qr-modal-actions">
+                                <button
+                                    className="btn btn-outline-secondary qr-btn-secondary"
+                                    onClick={() => setMostrarConfirmacion(false)}
+                                    disabled={enviando}
+                                >
+                                    Seguir contestando
+                                </button>
 
-                            <button
-                                onClick={confirmarEnvio}
-                                disabled={enviando}
-                            >
-                                {enviando ? 'Enviando...' : 'Enviar'}
-                            </button>
-                        </article>
+                                <button
+                                    className="btn btn-primary qr-btn-primary"
+                                    onClick={confirmarEnvio}
+                                    disabled={enviando}
+                                >
+                                    {enviando ? 'Enviando...' : 'Enviar'}
+                                </button>
+                            </article>
+                        </main>
                     </article>
                 </article>
             )}
