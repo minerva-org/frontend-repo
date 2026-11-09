@@ -4,8 +4,7 @@ import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
-import MisGrupoCard from '../components/alumno/MisGrupoCard';
-import type { GrupoAlumnoBackend } from '../types/AlumnoTypes';
+import type { GrupoAlumnoBackend, QuizAlumnoBackend} from '../types/AlumnoTypes';
 
 interface QuizAlumno {
   id: string;
@@ -58,8 +57,6 @@ export default function AlumnoInicio() {
   const [quizzes, setQuizzes] = useState<QuizAlumno[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [grupos, setGrupos] = useState<GrupoAlumnoBackend[]>([]);
-  const [gruposLoading, setGruposLoading] = useState(true);
 
   useEffect(() => {
     const id = setInterval(() => setAhora(Date.now()), MIN);
@@ -67,58 +64,66 @@ export default function AlumnoInicio() {
   }, []);
 
   useEffect(() => {
-    async function cargarGrupos() {
-      try {
-        const response = await apiClient.get<GrupoAlumnoBackend[]>(
-          '/api/grupos/mis-grupos'
+  async function cargarDatos() {
+    try {
+
+      const gruposResponse = await apiClient.get<GrupoAlumnoBackend[]>(
+        '/api/grupos/mis-grupos'
+      );
+
+      const misGrupos = gruposResponse.data ?? [];
+
+      const gruposIds = new Set(
+        misGrupos.map((grupo) => String(grupo.id))
+      );
+
+      const quizzesResponse = await apiClient.get<QuizAlumnoBackend[]>(
+        '/api/quizzes'
+      );
+
+      const quizzesFiltrados = (quizzesResponse.data ?? []).filter(
+        (quiz) =>
+          quiz.grupoId != null &&
+          gruposIds.has(String(quiz.grupoId))
+      );
+
+      const datos: QuizAlumno[] = quizzesFiltrados.map((quiz) => {
+        const grupo = misGrupos.find(
+          (g) => g.id === String(quiz.grupoId)
         );
 
-        setGrupos(response.data ?? []);
-      } catch (error) {
-        console.error('Error al cargar los grupos del alumno:', error);
-      } finally {
-        setGruposLoading(false);
-      }
-    }
-
-    void cargarGrupos();
-  }, []);
-  useEffect(() => {
-    async function cargarQuizzes() {
-      try {
-        const response = await apiClient.get<
-          Array<{
-            id: string;
-            nombre: string;
-            fechaInicio: string | null;
-            fechaFinalizacion: string | null;
-            grupoId: string | null;
-          }>
-        >('/api/quizzes');
-
-        const datos: QuizAlumno[] = (response.data ?? []).map((quiz) => ({
-          id: quiz.id,
-          titulo: quiz.nombre,
-          grupoCode: quiz.grupoId ?? '',
-          grupoNombre: `Grupo ${quiz.grupoId ?? '-'}`,
-          preguntas: 0,
-          segundosPorPregunta: 0,
-          abre: quiz.fechaInicio ? Date.parse(quiz.fechaInicio) : Date.now(),
+        return {
+          id: String(quiz.id ?? ''),
+          titulo: quiz.nombre ?? quiz.titulo ?? 'Quiz sin título',
+          grupoCode: grupo?.claveGrupo ?? '',
+          grupoNombre: grupo?.nombre ?? grupo?.claveGrupo ?? 'Grupo',
+          preguntas: quiz.totalPreguntas ?? quiz.preguntas ?? 0,
+          segundosPorPregunta:
+            quiz.duracionSegundos ?? quiz.segundosPorPregunta ?? 0,
+          abre: quiz.fechaInicio
+            ? Date.parse(String(quiz.fechaInicio))
+            : quiz.abre
+              ? Number(quiz.abre)
+              : Date.now(),
           cierra: quiz.fechaFinalizacion
-            ? Date.parse(quiz.fechaFinalizacion)
-            : Date.now(),
-        }));
+            ? Date.parse(String(quiz.fechaFinalizacion))
+            : quiz.cierra
+              ? Number(quiz.cierra)
+              : Date.now(),
+        };
+              });
 
-        setQuizzes(datos);
-      } catch {
-        setError('No se pudieron cargar los quizzes.');
-      } finally {
-        setLoading(false);
-      }
+      setQuizzes(datos);
+    } catch (error) {
+      console.error('Error al cargar los datos del alumno:', error);
+      setError('No se pudieron cargar los grupos o quizzes.');
+    } finally {
+      setLoading(false);
     }
+  }
 
-    void cargarQuizzes();
-  }, []);
+  void cargarDatos();
+}, []);
 
   const vigentes = quizzes.filter((q) => q.cierra > ahora).map((q) => ({
     ...q,
