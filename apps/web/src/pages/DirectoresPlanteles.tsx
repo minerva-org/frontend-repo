@@ -1,31 +1,51 @@
-import { useEffect, useMemo, useState } from 'react';
+
+import { useEffect, useMemo, useState, type SubmitEvent } from 'react';
 import { createPortal } from 'react-dom';
-import DirectorPlantelModal, { type DirectorFormState, isStrongPassword } from '../components/modals/DirectorPlantelModal.tsx';
+import DirectorPlantelModal, {
+  type DirectorFormState,
+  isStrongPassword,
+} from '../components/modals/DirectorPlantelModal.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
-import { buildPersonaUsername, createPersona, updatePersona } from '../services/personaService';
+import { createPersona, updatePersona } from '../services/personaService';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
 import '../styles/CatalogoDirectoresPlantel.css';
 
 interface DirectorPersona {
   id: string;
   nombre: string;
-  apellido: string;
+  apellidoPaterno: string;
+  apellidoMaterno: string;
   email: string;
-  rol: 'DIRECTOR_PLANTEL' | 'ADMIN' | 'COORDINADOR' | 'DOCENTE' | 'ALUMNO';
+  rol: 'DIRECTOR_PLANTEL';
   activo: boolean;
   plantelId: number;
+  numeroTelefono?: string;
+  calle?: string;
+  colonia?: string;
+  municipio?: string;
+  estado?: string;
+  codigoPostal?: string;
 }
 
-const emptyForm: DirectorFormState = {
-  nombreCompleto: '',
+const initialForm: DirectorFormState = {
+  nombre: '',
+  apellidoPaterno: '',
+  apellidoMaterno: '',
   email: '',
+  numeroTelefono: '',
+  calle: '',
+  colonia: '',
+  municipio: '',
+  estado: '',
+  codigoPostal: '',
   plantelId: 0,
   password: '',
 };
 
 export default function DirectoresPlanteles() {
   const { toggleSidebar } = useSidebar();
+
   const [directores, setDirectores] = useState<DirectorPersona[]>([]);
   const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
   const [search, setSearch] = useState('');
@@ -34,32 +54,43 @@ export default function DirectoresPlanteles() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<DirectorFormState>(emptyForm);
+  const [form, setForm] = useState<DirectorFormState>(initialForm);
   const [formError, setFormError] = useState<string | null>(null);
-  const [hasError, setHasError] = useState(false);
   const [isValidating, setIsValidating] = useState(false);
 
-  const [confirmDeactivate, setConfirmDeactivate] = useState<DirectorPersona | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] =
+    useState<DirectorPersona | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   async function loadDirectores() {
     try {
-      const response = await apiClient.get<DirectorPersona[]>('/api/personas?rol=DIRECTOR_PLANTEL');
+      const response = await apiClient.get<DirectorPersona[]>(
+        '/api/personas?rol=DIRECTOR_PLANTEL',
+      );
       setDirectores(response.data ?? []);
       setFetchError(null);
     } catch {
       setDirectores([]);
-      setFetchError('No se pudieron cargar los directores de plantel. Intenta recargar la página.');
+      setFetchError(
+        'No se pudieron cargar los directores de plantel. Intenta recargar la página.',
+      );
     }
   }
 
   async function loadPlanteles() {
     try {
       const response = await apiClient.get<PlantelItem[]>('/api/planteles');
-      const activos = (response.data ?? []).filter((item) => item.activo !== false);
+      const activos = (response.data ?? []).filter(
+        (item) => item.activo !== false,
+      );
+
       setPlanteles(activos);
+
       if (activos.length > 0) {
-        setForm((prev) => ({ ...prev, plantelId: prev.plantelId || activos[0].id }));
+        setForm((prev) => ({
+          ...prev,
+          plantelId: prev.plantelId || activos[0].id,
+        }));
       }
     } catch {
       setPlanteles([]);
@@ -73,27 +104,18 @@ export default function DirectoresPlanteles() {
 
   useEffect(() => {
     if (!toast) return;
+
     const id = window.setTimeout(() => setToast(null), 2600);
     return () => window.clearTimeout(id);
   }, [toast]);
 
-  function splitNombreCompleto(nombreCompleto: string) {
-    const limpio = nombreCompleto.trim().replace(/\s+/g, ' ');
-    if (!limpio) return { nombre: '', apellido: '' };
-
-    const partes = limpio.split(' ');
-    if (partes.length === 1) return { nombre: partes[0], apellido: '-' };
-
-    return {
-      nombre: partes[0],
-      apellido: partes.slice(1).join(' '),
-    };
-  }
-
   function formatearEmailInstitucional(localPart: string) {
-    const limpio = localPart.trim().replace(/@.*$/, '').replace(/\s+/g, '');
-    if (!limpio) return '';
-    return `${limpio}@chapala.edu.mx`;
+    const limpio = localPart
+      .trim()
+      .replace(/@.*$/, '')
+      .replace(/\s+/g, '');
+
+    return limpio ? `${limpio}@chapala.edu.mx` : '';
   }
 
   function getLocalPart(email: string) {
@@ -101,7 +123,13 @@ export default function DirectoresPlanteles() {
   }
 
   function getNombreCompleto(director: DirectorPersona) {
-    return `${director.nombre} ${director.apellido}`.trim();
+    return [
+      director.nombre,
+      director.apellidoPaterno,
+      director.apellidoMaterno,
+    ]
+      .filter(Boolean)
+      .join(' ');
   }
 
   function getPlantelNombre(plantelId: number) {
@@ -109,20 +137,26 @@ export default function DirectoresPlanteles() {
     return found?.nombre ?? `Plantel ${plantelId}`;
   }
 
+  function existeDirectorActivoEnPlantel(
+  plantelId: number,
+  excluirDirectorId?: string,
+) {
+  return directores.some((director) =>
+      director.activo &&
+      director.plantelId === plantelId &&
+      director.id !== excluirDirectorId,
+  );}
+
   function handleFormChange(next: DirectorFormState) {
     setForm(next);
-    if (hasError || formError) {
-      setHasError(false);
-      setFormError(null);
-    }
+    setFormError(null);
   }
 
   function openCreateModal() {
     setEditingId(null);
     setForm({
-      ...emptyForm,
+      ...initialForm,
       plantelId: planteles[0]?.id ?? 0,
-      password: '',
     });
     setFormError(null);
     setIsModalOpen(true);
@@ -130,12 +164,22 @@ export default function DirectoresPlanteles() {
 
   function openEditModal(director: DirectorPersona) {
     setEditingId(director.id);
+
     setForm({
-      nombreCompleto: getNombreCompleto(director),
+      nombre: director.nombre ?? '',
+      apellidoPaterno: director.apellidoPaterno ?? '',
+      apellidoMaterno: director.apellidoMaterno ?? '',
       email: getLocalPart(director.email),
+      numeroTelefono: director.numeroTelefono ?? '',
+      calle: director.calle ?? '',
+      colonia: director.colonia ?? '',
+      municipio: director.municipio ?? '',
+      estado: director.estado ?? '',
+      codigoPostal: director.codigoPostal ?? '',
       plantelId: director.plantelId,
       password: '',
     });
+
     setFormError(null);
     setIsModalOpen(true);
   }
@@ -144,94 +188,105 @@ export default function DirectoresPlanteles() {
     setIsModalOpen(false);
     setEditingId(null);
     setFormError(null);
-    setHasError(false);
     setIsValidating(false);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setIsValidating(true);
-    const formData = new FormData(event.currentTarget);
-    const password = String(formData.get('password') ?? '').trim();
+    setFormError(null);
 
-    if (!form.nombreCompleto.trim() || !form.email.trim()) {
-      const message = 'Completa nombre completo y correo electrónico oficial.';
-      setFormError(message);
-      setHasError(true);
+    if (
+      !form.nombre.trim() ||
+      !form.apellidoPaterno.trim() ||
+      !form.apellidoMaterno.trim() ||
+      !form.email.trim()
+    ) {
+      setFormError('Completa nombre, apellidos y correo electrónico oficial.');
+      setIsValidating(false);
+      return;
+    }
+
+    if (!form.numeroTelefono.trim() || !form.calle.trim() ||
+        !form.colonia.trim() || !form.municipio.trim() ||
+        !form.estado.trim() || !form.codigoPostal.trim()) {
+      setFormError('Completa todos los datos de contacto y domicilio.');
       setIsValidating(false);
       return;
     }
 
     if (!editingId) {
-      if (!password) {
-        const message = 'Define una contraseña temporal para el director.';
-        setFormError(message);
-        setHasError(true);
+      if (!form.password.trim()) {
+        setFormError('Define una contraseña temporal para el director.');
         setIsValidating(false);
         return;
       }
 
-      if (!isStrongPassword(password)) {
-        const message = 'La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas, número y símbolo.';
-        setFormError(message);
-        setHasError(true);
+      if (!isStrongPassword(form.password)) {
+        setFormError(
+          'La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas, número y símbolo.',
+        );
         setIsValidating(false);
         return;
       }
     }
 
-    setIsValidating(false);
-    setHasError(false);
-    setFormError(null);
-
-    const { nombre, apellido } = splitNombreCompleto(form.nombreCompleto);
-    if (!nombre || !apellido) {
-      setFormError('Ingresa nombre y apellido.');
+    const plantelId = Number(form.plantelId);
+    if (!plantelId) {
+      setFormError('Selecciona un plantel para asignar al director.');
+      setIsValidating(false);
       return;
     }
 
+    setIsValidating(false);
     setLoading(true);
-    try {
-      const plantelId = Number(form.plantelId) || planteles[0]?.id || 0;
 
-      if (!plantelId) {
-        setFormError('No hay un plantel disponible para asignar al director.');
-        return;
-      }
+    try {
+      const datosPersona = {
+        nombre: form.nombre.trim(),
+        apellidoPaterno: form.apellidoPaterno.trim(),
+        apellidoMaterno: form.apellidoMaterno.trim(),
+        email: formatearEmailInstitucional(form.email),
+        numeroTelefono: form.numeroTelefono.trim(),
+        calle: form.calle.trim(),
+        colonia: form.colonia.trim(),
+        municipio: form.municipio.trim(),
+        estado: form.estado.trim(),
+        codigoPostal: form.codigoPostal.trim(),
+        rol: 'DIRECTOR_PLANTEL',
+        plantelId,
+      };
 
       if (editingId) {
-        const response = await updatePersona(editingId, {
-          nombre,
-          apellido,
-          email: formatearEmailInstitucional(form.email),
-          plantelId,
-          rol: 'DIRECTOR_PLANTEL',
-        });
+        const response = await updatePersona(editingId, datosPersona);
         const updated = response.data as DirectorPersona;
-        setDirectores((prev) => prev.map((item) => (item.id === editingId ? updated : item)));
+
+        setDirectores((prev) =>
+          prev.map((item) => (item.id === editingId ? updated : item)),
+        );
+
         setToast('Director actualizado correctamente.');
       } else {
-        const emailInstitucional = formatearEmailInstitucional(form.email);
-        const username = buildPersonaUsername(emailInstitucional, plantelId);
         const response = await createPersona({
           id: crypto.randomUUID(),
-          nombre,
-          apellido,
-          email: emailInstitucional,
-          rol: 'DIRECTOR_PLANTEL',
+          ...datosPersona,
           activo: true,
-          plantelId,
-          username,
-          password,
+          password: form.password,
         });
+
         const created = response.data as DirectorPersona;
+
         setDirectores((prev) => [created, ...prev]);
         setToast('Director creado correctamente.');
       }
 
       closeModal();
     } catch (err) {
-      setFormError(err instanceof Error ? err.message : 'No se pudo guardar el director.');
+      setFormError(
+        err instanceof Error
+          ? err.message
+          : 'No se pudo guardar el director.',
+      );
     } finally {
       setLoading(false);
     }
@@ -239,10 +294,15 @@ export default function DirectoresPlanteles() {
 
   async function handleDeactivate(director: DirectorPersona) {
     setLoading(true);
+
     try {
       const response = await updatePersona(director.id, { activo: false });
       const updated = response.data as DirectorPersona;
-      setDirectores((prev) => prev.map((item) => (item.id === director.id ? updated : item)));
+
+      setDirectores((prev) =>
+        prev.map((item) => (item.id === director.id ? updated : item)),
+      );
+
       setConfirmDeactivate(null);
       setToast('Director desactivado correctamente.');
     } catch {
@@ -252,23 +312,23 @@ export default function DirectoresPlanteles() {
     }
   }
 
-    async function handleActivate(director: DirectorPersona) {
-      setLoading(true);
-  
-      try {
-        const response = await updatePersona(director.id, { activo: true });
-        const updated = response.data as DirectorPersona;
-  
-        setDirectores((prev) =>
-          prev.map((item) => (item.id === director.id ? updated : item)),
-        );
-  
-        setToast('Director reactivado correctamente.');
-      } catch {
-        setToast('No se pudo reactivar el Director.');
-      } finally {
-        setLoading(false);
-      }
+  async function handleActivate(director: DirectorPersona) {
+    setLoading(true);
+
+    try {
+      const response = await updatePersona(director.id, { activo: true });
+      const updated = response.data as DirectorPersona;
+
+      setDirectores((prev) =>
+        prev.map((item) => (item.id === director.id ? updated : item)),
+      );
+
+      setToast('Director reactivado correctamente.');
+    } catch {
+      setToast('No se pudo reactivar el director.');
+    } finally {
+      setLoading(false);
+    }
   }
 
   const filteredDirectores = useMemo(() => {
@@ -278,9 +338,18 @@ export default function DirectoresPlanteles() {
     return directores.filter((director) => {
       const fullName = getNombreCompleto(director).toLowerCase();
       const plantelNombre = getPlantelNombre(director.plantelId).toLowerCase();
-      return fullName.includes(query) || director.email.toLowerCase().includes(query) || plantelNombre.includes(query);
+
+      return (
+        fullName.includes(query) ||
+        director.email.toLowerCase().includes(query) ||
+        plantelNombre.includes(query)
+      );
     });
   }, [directores, search, planteles]);
+
+  const plantelesDisponibles = planteles.filter((plantel) =>
+  !existeDirectorActivoEnPlantel(plantel.id, editingId ?? undefined),
+);
 
   return (
     <article className="dp-screen">
@@ -300,13 +369,15 @@ export default function DirectoresPlanteles() {
         <header className="dp-header">
           <article>
             <h1 className="dp-title">Directores de Plantel Escolar</h1>
-            <p className="dp-subtitle">Asignación y control de directores por sede.</p>
+            <p className="dp-subtitle">
+              Asignación y control de directores por sede.
+            </p>
           </article>
         </header>
 
         <article className="dp-toolbar">
           <article className="dp-search-row">
-            <i className="bi bi-search dp-search-icon"></i>
+            <i className="bi bi-search dp-search-icon" />
             <input
               className="dp-search-input"
               value={search}
@@ -314,15 +385,26 @@ export default function DirectoresPlanteles() {
               placeholder="Buscar en directores de plantel..."
             />
           </article>
-          <button className="dp-new-button" type="button" onClick={openCreateModal}>
-            <i className="bi bi-plus-lg"></i> Agregar Director
+
+          <button
+            className="dp-new-button"
+            type="button"
+            onClick={openCreateModal}
+          >
+            <i className="bi bi-plus-lg" /> Agregar Director
           </button>
         </article>
 
         <article className="dp-table-wrap">
-          <h2 style={{ margin: '1rem 1rem 0' }}>Directores de Plantel Escolar</h2>
+          <h2 style={{ margin: '1rem 1rem 0' }}>
+            Directores de Plantel Escolar
+          </h2>
 
-          {fetchError && <p className="dp-empty" style={{ paddingTop: 0 }}>{fetchError}</p>}
+          {fetchError && (
+            <p className="dp-empty" style={{ paddingTop: 0 }}>
+              {fetchError}
+            </p>
+          )}
 
           {filteredDirectores.length === 0 && !fetchError ? (
             <p className="dp-empty">No hay directores creados aún.</p>
@@ -337,14 +419,28 @@ export default function DirectoresPlanteles() {
                   <th className="dp-th-acciones">Acciones</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredDirectores.map((director) => (
-                  <tr key={director.id} className={director.activo ? '' : 'dp-row-inactivo'}>
-                    <td className="dp-td-nombre">{getNombreCompleto(director)}</td>
+                  <tr
+                    key={director.id}
+                    className={director.activo ? '' : 'dp-row-inactivo'}
+                  >
+                    <td className="dp-td-nombre">
+                      {getNombreCompleto(director)}
+                    </td>
                     <td className="dp-td-suave">{director.email}</td>
-                    <td className="dp-td-suave">{getPlantelNombre(director.plantelId)}</td>
+                    <td className="dp-td-suave">
+                      {getPlantelNombre(director.plantelId)}
+                    </td>
                     <td>
-                      <span className={`dp-estado ${director.activo ? 'dp-estado-activo' : 'dp-estado-inactivo'}`}>
+                      <span
+                        className={`dp-estado ${
+                          director.activo
+                            ? 'dp-estado-activo'
+                            : 'dp-estado-inactivo'
+                        }`}
+                      >
                         {director.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
@@ -352,13 +448,19 @@ export default function DirectoresPlanteles() {
                       <button
                         type="button"
                         className="ca-link-button"
-                        disabled={director.activo === false || loading}
+                        disabled={!director.activo || loading}
                         onClick={() => openEditModal(director)}
                       >
-                        <i className="bi bi-pencil"></i> Editar
+                        <i className="bi bi-pencil" /> Editar
                       </button>
+
                       <button
-                        className={`ca-link-button ${director.activo ? 'ca-link-danger' : 'ca-link-success'}`}
+                        type="button"
+                        className={`ca-link-button ${
+                          director.activo
+                            ? 'ca-link-danger'
+                            : 'ca-link-success'
+                        }`}
                         disabled={loading}
                         onClick={() =>
                           director.activo
@@ -384,46 +486,82 @@ export default function DirectoresPlanteles() {
           form={form}
           formError={formError}
           loading={loading || isValidating}
-          hasError={hasError}
           isValidating={isValidating}
-          planteles={planteles}
+          planteles={plantelesDisponibles}
           onClose={closeModal}
           onSubmit={handleSubmit}
           onChange={handleFormChange}
         />
       )}
 
-      {confirmDeactivate && createPortal(
-        <article className="dp-modal-overlay">
-          <article className="dp-modal">
-            <header className="dp-modal-header">
-              Confirmar
-            </header>
-            <section className="dp-modal-form">
-              <p>¿Deseas desactivar el registro "{getNombreCompleto(confirmDeactivate)}"?</p>
-              <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
-              <footer className="dp-modal-actions">
-                <button type="button" className="dp-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
-                  Cancelar
-                </button>
-                <button type="button" className="dp-btn-primary" onClick={() => void handleDeactivate(confirmDeactivate)}>
-                  Confirmar
-                </button>
-              </footer>
-            </section>
-          </article>
-        </article>,
-        document.body,
-      )}
+      {confirmDeactivate &&
+        createPortal(
+          <article className="dp-modal-overlay">
+            <article className="dp-modal">
+              <header className="dp-modal-header">Confirmar</header>
 
-      {toast && createPortal(
-        <article style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>
-          <section style={{ background: 'var(--ar-profundo)', color: 'var(--seige-superficie)', padding: '10px 14px', borderRadius: 10, boxShadow: '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)' }}>
-            {toast}
-          </section>
-        </article>,
-        document.body,
-      )}
+              <section className="dp-modal-form">
+                <p>
+                  ¿Deseas desactivar el registro "
+                  {getNombreCompleto(confirmDeactivate)}"?
+                </p>
+
+                <p style={{ marginBottom: 0 }}>
+                  No se elimina ni su historial, solo deja de estar disponible
+                  para asignarse.
+                </p>
+
+                <footer className="dp-modal-actions">
+                  <button
+                    type="button"
+                    className="dp-btn-secondary"
+                    onClick={() => setConfirmDeactivate(null)}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="dp-btn-primary"
+                    disabled={loading}
+                    onClick={() =>
+                      void handleDeactivate(confirmDeactivate)
+                    }
+                  >
+                    Confirmar
+                  </button>
+                </footer>
+              </section>
+            </article>
+          </article>,
+          document.body,
+        )}
+
+      {toast &&
+        createPortal(
+          <article
+            style={{
+              position: 'fixed',
+              right: 20,
+              bottom: 20,
+              zIndex: 60,
+            }}
+          >
+            <section
+              style={{
+                background: 'var(--ar-profundo)',
+                color: 'var(--seige-superficie)',
+                padding: '10px 14px',
+                borderRadius: 10,
+                boxShadow:
+                  '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)',
+              }}
+            >
+              {toast}
+            </section>
+          </article>,
+          document.body,
+        )}
     </article>
   );
 }
