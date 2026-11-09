@@ -578,52 +578,67 @@ export default function CatalogoAlumnos() {
       {confirmDeactivate &&
         createPortal(
           <article
-            className="ca-confirm-backdrop"
+            className="modal show d-block"
+            tabIndex={-1}
             role="presentation"
             onClick={() => setConfirmDeactivate(null)}
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1055,
+            }}
           >
             <article
-              className="ca-confirm-modal"
+              className="modal-dialog modal-dialog-centered"
               role="alertdialog"
               aria-modal="true"
               aria-labelledby="ca-deactivate-title"
               onClick={(event) => event.stopPropagation()}
             >
-              <header className="ca-confirm-header">
-                <article>
-                  <h2 id="ca-deactivate-title" className="ca-confirm-title">
-                    Confirmar desactivación
-                  </h2>
+              <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <header
+                  className="modal-header text-white"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, var(--ar-profundo), var(--ar-azul))',
+                  }}
+                >
+                  <article>
+                    <h5
+                      id="ca-deactivate-title"
+                      className="modal-title fw-bold text-white"
+                    >
+                      Confirmar desactivación
+                    </h5>
 
-                  <p className="ca-confirm-subtitle">
-                    {getNombreCompleto(confirmDeactivate)}
+                    <p className="mb-0 small text-white opacity-75">
+                      {getNombreCompleto(confirmDeactivate)}
+                    </p>
+                  </article>
+                </header>
+
+                <section className="modal-body py-4">
+                  <p className="mb-0">
+                    ¿Desea dar de baja al alumno <strong>{confirmDeactivate.nombre}</strong>? no podrá asignarlo a mas grupos
                   </p>
-                </article>
-              </header>
+                </section>
 
-              <section className="ca-confirm-body">
-                <p className="ca-confirm-text">
-                  El alumno dejará de estar disponible para asignaciones, pero
-                  conservará su historial.
-                </p>
-              </section>
+                <footer className="modal-footer border-0 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setConfirmDeactivate(null)}
+                  >
+                    Cancelar
+                  </button>
 
-              <article className="ca-confirm-actions">
-                <button
-                  type="button"
-                  className="ca-btn-secondary"
-                  onClick={() => setConfirmDeactivate(null)}
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  className="ca-confirm-button"
-                  onClick={() => void handleDeactivate(confirmDeactivate)}
-                >
-                  Confirmar
-                </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => void handleDeactivate(confirmDeactivate)}
+                  >
+                    Desactivar
+                  </button>
+                </footer>
               </article>
             </article>
           </article>,

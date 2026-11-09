@@ -484,30 +484,67 @@ console.table({
         document.body,
       )}
 
-      {confirmDeactivate && createPortal(
-        <div className="dd-confirm-backdrop" role="presentation" onClick={() => setConfirmDeactivate(null)}>
-          <article className="dd-confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="dd-deactivate-title" onClick={(event) => event.stopPropagation()}>
-            <header className="dd-confirm-header">
-              <article>
-                <h2 id="dd-deactivate-title" className="dd-confirm-title">Confirmar desactivación</h2>
-                <p className="dd-confirm-subtitle">{getNombreCompleto(confirmDeactivate)}</p>
-              </article>
-            </header>
-            <section className="dd-confirm-body">
-              <p className="dd-confirm-text">El docente dejará de estar disponible para asignaciones, pero conservará su historial.</p>
-            </section>
-            <article className="dd-confirm-actions">
-              <button type="button" className="dd-btn-secondary" onClick={() => setConfirmDeactivate(null)}>
-                Cancelar
-              </button>
-              <button type="button" className="dd-confirm-button" disabled={loading} onClick={() => void handleDeactivate(confirmDeactivate)}>
-                Confirmar
-              </button>
-            </article>
+      
+{confirmDeactivate && createPortal(
+  <article
+    className="modal show d-block"
+    tabIndex={-1}
+    role="presentation"
+    onClick={() => setConfirmDeactivate(null)}
+    style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', zIndex: 1055 }}
+  >
+    <article
+      className="modal-dialog modal-dialog-centered"
+      role="alertdialog"
+      aria-modal="true"
+      aria-labelledby="dd-deactivate-title"
+      onClick={(event) => event.stopPropagation()}
+    >
+      <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+
+        <article className="modal-header text-white" style={{background: 'linear-gradient(135deg,var(--ar-profundo, var(--ar-azul))', }}>
+          <article>
+            <h5 className="modal-title fw-bold" id="dd-deactivate-title style={{''}}">
+              Confirmar desactivación
+            </h5>
+            <p className="mb-0 small opacity-75">
+              {getNombreCompleto(confirmDeactivate)}
+            </p>
           </article>
-        </div>,
-        document.body,
-      )}
+        </article>
+
+        <article className="modal-body py-4">
+          <p className="mb-0">
+            El docente <strong>{confirmDeactivate.nombre}</strong> de estar disponible para asignaciones,
+            pero conservará su historial.
+          </p>
+        </article>
+
+        <article className="modal-footer border-0 pt-0">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setConfirmDeactivate(null)}
+          >
+            Cancelar
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-danger"
+            disabled={loading}
+            onClick={() => void handleDeactivate(confirmDeactivate)}
+          >
+            {loading ? 'Desactivando...' : 'Desactivar'}
+          </button>
+        </article>
+
+      </article>
+    </article>
+  </article>,
+  document.body,
+)}
+
 
       {toast && createPortal(
         <Toast toast={toast} onCerrar={cerrarToast} />,

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import CreateGroupModal from '../components//modals/ModalGrupos.tsx';
+import CreateGroupModal from '../components/modals/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchPersonas, type PersonaRecord } from '../services/personaService';
@@ -257,33 +258,41 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
           </article>
      </article>
 
-        <article className="groups-toolbar">
-          <article className="groups-search-row">
-            <i className="bi bi-search groups-search-icon"></i>
+        <article className="d-flex align-items-center gap-2 mb-3 flex-wrap">
+
+          <article className="input-group flex-grow-1" style={{ maxWidth: '765px',minWidth: '200px' }}>
+            <span className="input-group-text">
+              <i className="bi bi-search"></i>
+            </span>
             <input
-              className="groups-search-input"
               type="text"
+              className="form-control"
               placeholder="Buscar por nombre, clave, docente o semestre..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </article>
 
-          <button className="groups-new-button" onClick={() => setShowArchived((prev) => !prev)}>
-            <i className={`bi ${showArchived ? 'bi-archive-fill' : 'bi-archive'}`}></i>
+          <button
+            type="button"
+            className="groups-new-button btn-sm text-nowrap"
+            onClick={() => setShowArchived((prev) => !prev)}
+          >
+            <i className={`bi ${showArchived ? 'bi-archive-fill' : 'bi-archive'} me-1`}></i>
             Archivados ({filteredArchived.length})
-
           </button>
 
-          {normalizedRole !== 'alumno' && normalizedRole !== 'docente' && (
+         {normalizedRole !== 'alumno' && normalizedRole !== 'docente' && (
             <button
-              className="groups-new-button"
+              type="button"
+              className="groups-new-button  btn-sm text-nowrap"
               onClick={() => setShowModal(true)}
             >
-              <i className="bi bi-plus-lg"></i>
+              <i className="bi bi-plus-lg me-1"></i>
               Nuevo grupo
             </button>
           )}
+
         </article>
 
         {fetchError && <p className="groups-empty">{fetchError}</p>}
@@ -400,35 +409,84 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
         />
       )}
 
-      {pendingArchiveGroup && (
-        <article className="groups-modal-backdrop" role="presentation" onClick={() => setPendingArchiveGroup(null)}>
-          <article className="groups-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="archive-group-title" onClick={(event) => event.stopPropagation()}>
-            <header className="groups-confirm-header">
-              <article>
-                <h3 id="archive-group-title" className="groups-confirm-title">Archivar grupo</h3>
-                <p className="groups-confirm-subtitle">Confirmación requerida</p>
+      {pendingArchiveGroup &&
+        createPortal(
+          <article       
+            className="modal show d-block"
+            tabIndex={-1}
+            role="presentation"
+            onClick={() => setPendingArchiveGroup(null)}
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1055,
+            }}
+          >
+            <article
+              className="modal-dialog modal-dialog-centered"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="archive-group-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <header
+                  className="modal-header text-white"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, var(--ar-profundo, #17324d), var(--ar-azul, #287ca5))',
+                  }}
+                >
+                  <article>
+                    <h5
+                      id="archive-group-title"
+                      className="modal-title fw-bold text-white"
+                    >
+                      Archivar grupo
+                    </h5>
+
+                    <p className="mb-0 small text-white opacity-75">
+                      Confirmación requerida
+                    </p>
+                  </article>
+                </header>
+
+                <section className="modal-body py-4">
+                  <p className="mb-0">
+                    ¿Deseas archivar el grupo{' '}
+                    <strong>{pendingArchiveGroup.nombre}</strong>?
+                  </p>
+
+                  <p className="mt-2 mb-0">
+                    Ya no aparecerá en este catálogo, pero podrás seguir entrando
+                    a su detalle desde la ruta directa si lo necesitas.
+                  </p>
+                </section>
+
+                <footer className="modal-footer border-0 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setPendingArchiveGroup(null)}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() =>
+                      void toggleGroupActivo(pendingArchiveGroup.id, false)
+                    }
+                  >
+                    <i className="bi bi-archive me-1" />
+                    Archivar
+                  </button>
+                </footer>
               </article>
-            </header>
-
-            <section className="groups-confirm-body">
-              <p className="groups-confirm-text">
-                ¿Deseas archivar el grupo <strong>{pendingArchiveGroup.nombre}</strong>?
-                <br />
-                Ya no aparecerá en este catálogo, pero podrás seguir entrando a su detalle desde la ruta directa si lo necesitas.
-              </p>
-            </section>
-
-            <article className="groups-confirm-actions">
-              <button type="button" className="groups-secondary-button" onClick={() => setPendingArchiveGroup(null)}>
-                Cancelar
-              </button>
-              <button type="button" className="groups-confirm-button" onClick={() => void toggleGroupActivo(pendingArchiveGroup.id, false)}>
-                <i className="bi bi-archive"></i> Archivar
-              </button>
             </article>
-          </article>
-        </article>
-      )}
+          </article>,
+          document.body,
+        )}
 
       {createdGroupName && (
         <article
