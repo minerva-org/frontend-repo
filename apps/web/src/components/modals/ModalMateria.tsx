@@ -94,6 +94,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const [prefijo, setPrefijo] = useState(materia?.prefijo?.replace(/\d$/, '') || derivarPrefijo(materia?.nombre ?? ''));
   const [prefijoModificado, setPrefijoModificado] = useState(false);
   const prefijoFinal = `${prefijo}${numero}`;
+  const [archivo, setArchivo] = useState<File | null>(null);
 
   const validate = (): string => {
     if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
@@ -302,6 +303,42 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           </article>
 
           <fieldset className="mm-fieldset">
+                <article className="mm-field">
+                  <label className="mm-label">Plan de estudio</label>
+
+                  <label htmlFor="materia-archivo" className="mm-add-btn">
+                    <i className="bi bi-paperclip"></i>
+                    {archivo ? 'Cambiar archivo' : 'Agregar archivo'}
+                  </label>
+
+                  <input
+                    id="materia-archivo"
+                    type="file"
+                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    hidden
+                    onChange={(e) => {
+                      const seleccionado = e.target.files?.[0] ?? null;
+                      setArchivo(seleccionado);
+                    }}
+                  />
+
+                  {archivo && (
+                    <div className="mm-hint-box">
+                      <span>{archivo.name}</span>
+
+                      <button
+                        type="button"
+                        className="mm-icon-btn"
+                        onClick={() => setArchivo(null)}
+                        aria-label="Eliminar archivo"
+                        title="Eliminar archivo"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  )}
+                </article>
+
             <legend className="mm-legend">Unidades, temas y conceptos</legend>
             <p className="mm-hint-box">Cada materia puede incluir varias unidades con temas y conceptos para crear quizzes con contenido real.</p>
 

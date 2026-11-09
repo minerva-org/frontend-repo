@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
@@ -9,6 +9,7 @@ import type { PlantelItem } from '../types/PlantelTypes.ts';
 import { DocenteModal } from '../components/modals/ModalDocentes.tsx';
 import type { DocenteFormState } from '../types/DocenteTypes.ts';
 import type { SubmitEvent } from 'react';
+import Toast, {type ToastData} from '../components/common/Toast.tsx';
 
 
 const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -71,7 +72,8 @@ export default function DirectorioDocentes() {
   const [form, setForm] = useState<DocenteFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
   const [confirmDeactivate, setConfirmDeactivate] = useState<PersonaRecord | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
+  const cerrarToast = useCallback(() => {setToast(null);},[]);
   const activePlantelId = canChoosePlantel
     ? (selectedPlantel?.id ?? planteles[0]?.id ?? null)
     : ownPlantelId;
@@ -151,11 +153,6 @@ export default function DirectorioDocentes() {
     void loadDocentes();
   }, [activePlantelId]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const id = window.setTimeout(() => setToast(null), 2600);
-    return () => window.clearTimeout(id);
-  }, [toast]);
 
   function openCreateModal() {
     setEditingId(null);
@@ -273,7 +270,7 @@ console.table({
         const response = await updatePersona(editingId, payload);
         const updated = response.data as PersonaRecord;
         actualizarEnListas(updated);
-        setToast('Docente actualizado correctamente.');
+        setToast({mensaje: 'Docente actualizado correctamente.', tipo: 'exito',});
       } else {
         const response = await createPersona({
           id: crypto.randomUUID(),
@@ -287,7 +284,7 @@ console.table({
         } else{
         setDocentes((prev) => [created, ...prev]);
         }
-        setToast('Docente creado correctamente.');
+        setToast({mensaje: 'Docente creado exitosamente.', tipo: 'exito',});
       }
 
       closeModal();
@@ -314,9 +311,10 @@ console.table({
       const updated = response.data as PersonaRecord;
       actualizarEnListas(updated);
       setConfirmDeactivate(null);
-      setToast('Docente desactivado correctamente.');
+      setToast({mensaje: 'Docente desactivado correctamente.',tipo: 'exito',});
     } catch {
-      setToast('No se pudo desactivar el docente.');
+      setToast({mensaje: 'No se pudo desactivar el docente.',
+  tipo: 'error',});
     } finally {
       setLoading(false);
     }
@@ -331,9 +329,10 @@ console.table({
 
       actualizarEnListas(updated);
 
-      setToast('Docente reactivado correctamente.');
+      setToast({mensaje: 'Docente reactivado correctamente.',tipo: 'exito',});
     } catch {
-      setToast('No se pudo reactivar el docente.');
+      setToast({mensaje: 'No se pudo reactivar el docente',
+  tipo: 'error',});
     } finally {
       setLoading(false);
     }
@@ -495,11 +494,7 @@ console.table({
       )}
 
       {toast && createPortal(
-        <article style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>
-          <section style={{ background: 'var(--ar-profundo)', color: 'var(--seige-superficie)', padding: '10px 14px', borderRadius: 10, boxShadow: '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)' }}>
-            {toast}
-          </section>
-        </article>,
+        <Toast toast={toast} onCerrar={cerrarToast} />,
         document.body,
       )}
     </article>
