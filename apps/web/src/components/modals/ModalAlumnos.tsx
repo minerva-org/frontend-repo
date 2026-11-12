@@ -39,12 +39,13 @@ export function ModalAlumnos({
       aria-labelledby="ca-modal-title"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }}
     >
-      <article className="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <article className="modal-dialog modal-xl modal-dialog-centered">
         <article className="modal-content border-0 shadow">
           <article
             className="modal-header text-white"
             style={{
-              background: 'linear-gradient(135deg, var(--ar-profundo), var(--ar-azul))',
+              background:
+                'linear-gradient(135deg, var(--ar-profundo), var(--ar-azul))',
               borderBottom: 'none',
             }}
           >
@@ -60,44 +61,57 @@ export function ModalAlumnos({
                 Alta y edición de alumnos
               </p>
             </article>
-
           </article>
 
           <form onSubmit={onSubmit}>
             <article className="modal-body">
               <article className="row g-3">
-
                 <article className="col-md-6">
                   <label className="form-label fw-semibold">Nombre(s)</label>
                   <input
                     type="text"
                     className="form-control"
                     value={form.nombre ?? ''}
-                    onChange={(e) => onChange({ ...form, nombre: e.target.value })}
+                    onChange={(e) =>
+                      onChange({ ...form, nombre: e.target.value })
+                    }
+                    required
                   />
                 </article>
 
                 <article className="col-md-6">
-                  <label className="form-label fw-semibold">Apellido paterno</label>
+                  <label className="form-label fw-semibold">
+                    Apellido paterno
+                  </label>
                   <input
                     type="text"
                     className="form-control"
                     value={form.apellidoPaterno ?? ''}
                     onChange={(e) =>
-                      onChange({ ...form, apellidoPaterno: e.target.value })
+                      onChange({
+                        ...form,
+                        apellidoPaterno: e.target.value,
+                      })
                     }
+                    required
                   />
                 </article>
 
                 <article className="col-md-6">
-                  <label className="form-label fw-semibold">Apellido materno</label>
+                  <label className="form-label fw-semibold">
+                    Apellido materno
+                  </label>
                   <input
                     type="text"
                     className="form-control"
                     value={form.apellidoMaterno ?? ''}
                     onChange={(e) =>
-                      onChange({ ...form, apellidoMaterno: e.target.value })
+                      onChange({
+                        ...form,
+                        apellidoMaterno: e.target.value,
+                      })
                     }
+                    required
                   />
                 </article>
 
@@ -111,7 +125,13 @@ export function ModalAlumnos({
                       type="text"
                       className="form-control"
                       value={form.email ?? ''}
-                      onChange={(e) => onChange({ ...form, email: e.target.value })}
+                      onChange={(e) =>
+                        onChange({ ...form, email: e.target.value })
+                      }
+                      placeholder="ejemplo.alumno"
+                      pattern="[a-zA-Z0-9._%+-]+"
+                      title="Escribe solamente el nombre del correo institucional, sin espacios ni dominio."
+                      required
                     />
 
                     <span className="input-group-text">
@@ -121,14 +141,27 @@ export function ModalAlumnos({
                 </article>
 
                 <article className="col-md-6">
-                  <label className="form-label fw-semibold">Teléfono</label>
+                  <label className="form-label fw-semibold">
+                    Teléfono
+                  </label>
                   <input
                     type="tel"
                     className="form-control"
                     value={form.numeroTelefono ?? ''}
                     onChange={(e) =>
-                      onChange({ ...form, numeroTelefono: e.target.value })
+                      onChange({
+                        ...form,
+                        numeroTelefono: e.target.value
+                          .replace(/\D/g, '')
+                          .slice(0, 10),
+                      })
                     }
+                    placeholder="Ej. 3312345678"
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    title="El teléfono debe contener exactamente 10 dígitos."
+                    required
                   />
                 </article>
 
@@ -138,7 +171,9 @@ export function ModalAlumnos({
                     type="text"
                     className="form-control"
                     value={form.calle ?? ''}
-                    onChange={(e) => onChange({ ...form, calle: e.target.value })}
+                    onChange={(e) =>
+                      onChange({ ...form, calle: e.target.value })
+                    }
                   />
                 </article>
 
@@ -148,19 +183,34 @@ export function ModalAlumnos({
                     type="text"
                     className="form-control"
                     value={form.colonia ?? ''}
-                    onChange={(e) => onChange({ ...form, colonia: e.target.value })}
+                    onChange={(e) =>
+                      onChange({ ...form, colonia: e.target.value })
+                    }
                   />
                 </article>
 
                 <article className="col-md-6">
-                  <label className="form-label fw-semibold">Código postal</label>
+                  <label className="form-label fw-semibold">
+                    Código postal
+                  </label>
                   <input
                     type="text"
                     className="form-control"
                     value={form.codigoPostal ?? ''}
                     onChange={(e) =>
-                      onChange({ ...form, codigoPostal: e.target.value })
+                      onChange({
+                        ...form,
+                        codigoPostal: e.target.value
+                          .replace(/\D/g, '')
+                          .slice(0, 5),
+                      })
                     }
+                    placeholder="Ej. 45900"
+                    inputMode="numeric"
+                    maxLength={5}
+                    pattern="[0-9]{5}"
+                    title="El código postal debe contener exactamente 5 dígitos."
+                    required
                   />
                 </article>
 
@@ -182,7 +232,9 @@ export function ModalAlumnos({
                     type="text"
                     className="form-control"
                     value={form.estado ?? ''}
-                    onChange={(e) => onChange({ ...form, estado: e.target.value })}
+                    onChange={(e) =>
+                      onChange({ ...form, estado: e.target.value })
+                    }
                   />
                 </article>
 
@@ -202,6 +254,7 @@ export function ModalAlumnos({
                               : null,
                           })
                         }
+                        required
                       >
                         <option value="">Selecciona un plantel</option>
 
@@ -221,15 +274,19 @@ export function ModalAlumnos({
                     )}
                   </article>
                 )}
-
                 <article className="col-md-6">
-                  <label className="form-label fw-semibold">Nombre del tutor</label>
+                  <label className="form-label fw-semibold">
+                    Nombre del tutor
+                  </label>
                   <input
                     type="text"
                     className="form-control"
                     value={form.nombreTutor ?? ''}
                     onChange={(e) =>
-                      onChange({ ...form, nombreTutor: e.target.value })
+                      onChange({
+                        ...form,
+                        nombreTutor: e.target.value,
+                      })
                     }
                   />
                 </article>
@@ -243,32 +300,46 @@ export function ModalAlumnos({
                     className="form-control"
                     value={form.numeroTutor ?? ''}
                     onChange={(e) =>
-                      onChange({ ...form, numeroTutor: e.target.value })
+                      onChange({
+                        ...form,
+                        numeroTutor: e.target.value
+                          .replace(/\D/g, '')
+                          .slice(0, 10),
+                      })
                     }
+                    placeholder="Teléfono del tutor"
+                    inputMode="numeric"
+                    maxLength={10}
+                    pattern="[0-9]{10}"
+                    title="Si ingresas un teléfono, debe contener exactamente 10 dígitos."
                   />
                 </article>
 
                 {!alumno && (
-                  <>
-                    <article className="col-12">
-                      <label className="form-label fw-semibold">
-                        Contraseña temporal
-                      </label>
-                      <input
-                        type="password"
-                        name="password"
-                        className="form-control"
-                        value={form.password ?? ''}
-                        onChange={(e) =>
-                          onChange({ ...form, password: e.target.value })
-                        }
-                      />
-                      <article className="form-text">
-                        Debe contener al menos 8 caracteres, mayúsculas,
-                        minúsculas, números y caracteres especiales.
-                      </article>
+                  <article className="col-12">
+                    <label className="form-label fw-semibold">
+                      Contraseña temporal
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      className="form-control"
+                      value={form.password ?? ''}
+                      onChange={(e) =>
+                        onChange({
+                          ...form,
+                          password: e.target.value,
+                        })
+                      }
+                      autoComplete="new-password"
+                      minLength={8}
+                      required
+                    />
+                    <article className="form-text">
+                      Debe contener al menos 8 caracteres, mayúsculas,
+                      minúsculas, números y caracteres especiales.
                     </article>
-                  </>
+                  </article>
                 )}
 
                 {formError && (

@@ -21,7 +21,7 @@ interface PlantelModalProps {
   form: PlantelForm;
   formError: string | null;
   onClose: () => void;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onSubmit: (event: React.SubmitEvent<HTMLFormElement>) => void;
   onChange: (form: PlantelForm) => void;
 }
 

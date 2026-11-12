@@ -328,49 +328,74 @@ export default function Materias() {
         />
       )}
 
-      {confirmDeactivate && createPortal(
-        <article
-          className="mat-modal-overlay"
-          onClick={() => setConfirmDeactivate(null)}
-        >
-          <article
-            className="mat-modal"
-            role="alertdialog"
-            aria-modal="true"
-            onClick={(event) => event.stopPropagation()}
+      
+  {confirmDeactivate && createPortal(
+    <article
+      className="modal show d-block"
+      tabIndex={-1}
+      role="presentation"
+      onClick={() => setConfirmDeactivate(null)}
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        zIndex: 1055,
+      }}
+    >
+      <article
+        className="modal-dialog modal-dialog-centered"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="mat-deactivate-title"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+
+          <header
+            className="modal-header text-white"
+            style={{
+              background: 'linear-gradient(135deg, var(--ar-profundo), var(--ar-azul))',
+            }}
           >
-            <header className="mat-modal-header">
+            <h5
+              className="modal-title fw-bold text-white"
+              id="mat-deactivate-title"
+            >
               Confirmar desactivación
-            </header>
+            </h5>
+          </header>
 
-            <section className="mat-modal-body">
-              <p>¿Deseas desactivar el registro "{confirmDeactivate.nombre}"?</p>
-              <p>
-                Dejará de estar disponible para asignarse.
-              </p>
-            </section>
+          <section className="modal-body py-4">
+            <p className="mb-2">
+              ¿Deseas desactivar el registro <strong>{confirmDeactivate.nombre}</strong>?
+            </p>
+            <p className="mb-0">
+              Dejará de estar disponible para asignarse.
+            </p>
+          </section>
 
-            <footer className="mat-modal-actions">
-              <button
-                type="button"
-                onClick={() => setConfirmDeactivate(null)}
-                className="mat-btn mat-btn-secondary"
-              >
-                Cancelar
-              </button>
+          <footer className="modal-footer border-0 pt-0">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setConfirmDeactivate(null)}
+            >
+              Cancelar
+            </button>
 
-              <button
-                type="button"
-                onClick={() => void handleDeactivate(confirmDeactivate)}
-                className="mat-btn mat-btn-primary"
-              >
-                Confirmar
-              </button>
-            </footer>
-          </article>
-        </article>,
-        document.body,
-      )}
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={() => void handleDeactivate(confirmDeactivate)}
+            >
+              Desactivar
+            </button>
+          </footer>
+
+        </article>
+      </article>
+    </article>,
+    document.body,
+  )}
+
 
       {toast && createPortal(
         <article

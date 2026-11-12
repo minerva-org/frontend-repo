@@ -21,6 +21,7 @@ interface QuizBackend {
   fechaInicio: string | null;
   fechaFinalizacion: string | null;
   grupoId: string | null;
+  Realizado?: boolean;
 }
 
 type QuizEstado = 'activo' | 'proximo' | 'pasado';
@@ -335,6 +336,8 @@ export default function GrupoDetalleAlumno({
                         Resolver
                       </button>
                     )}
+
+                    
                   </article>
                 </article>
               </article>

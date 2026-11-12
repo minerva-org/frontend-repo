@@ -194,7 +194,7 @@ function DirectorModal({ director, onCerrar, onGuardar }: DirectorModalProps) {
     }
   }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function handleSubmit(e: React.SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!nombre.trim() || !correo.trim() || !plantelAsignado) return;
     onGuardar({ nombre: nombre.trim(), correo: correo.trim(), plantelAsignado });

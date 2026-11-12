@@ -165,7 +165,7 @@ export default function Planteles() {
     setFormError(null);
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
 
@@ -417,28 +417,72 @@ export default function Planteles() {
         document.body,
       )}
 
-      {confirmDeactivate && createPortal(
-        <article className="pl-modal-overlay">
-          <article className="pl-modal">
-            <header className="pl-modal-header">
-              Confirmar
-            </header>
-            <section className="pl-modal-form">
-              <p>¿Deseas desactivar el registro "{confirmDeactivate.nombre}"?</p>
-              <p style={{ marginBottom: 0 }}>No se elimina ni su historial, solo deja de estar disponible para asignarse.</p>
-            <footer className="pl-modal-actions">
-              <button type="button" onClick={() => setConfirmDeactivate(null)} className="pl-btn-secondary">
-                Cancelar
-              </button>
-              <button type="button" onClick={() => void handleDeactivate(confirmDeactivate)} className="pl-btn-primary">
-                Confirmar
-              </button>
-            </footer>
-            </section>
-          </article>
-        </article>,
-        document.body,
-      )}
+      {confirmDeactivate &&
+          createPortal(
+            <article className="modal show d-block" tabIndex={-1} role="presentation" onClick={() => setConfirmDeactivate(null)}
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 1055,
+              }}
+            >
+              <article className="modal-dialog modal-dialog-centered" role="alertdialog" aria-modal="true" aria-labelledby="pl-deactivate-title"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+                  <header
+                    className="modal-header text-white"
+                    style={{
+                      background:
+                        'linear-gradient(135deg, var(--ar-profundo, #17324d), var(--ar-azul, #287ca5))',
+                    }}
+                  >
+                    <article>
+                      <h5
+                        id="pl-deactivate-title"
+                        className="modal-title fw-bold text-white"
+                      >
+                        Confirmar desactivación
+                      </h5>
+
+                      <p className="mb-0 small text-white opacity-75">
+                        {confirmDeactivate.nombre}
+                      </p>
+                    </article>
+                  </header>
+
+                  <section className="modal-body py-4">
+                    <p className="mb-2">
+                      ¿Deseas desactivar el plantel{' '}
+                      <strong>{confirmDeactivate.nombre}</strong>?
+                    </p>
+
+                    <p className="mb-0">
+                      No se elimina su historial, solo deja de estar disponible.
+                    </p>
+                  </section>
+
+                  <footer className="modal-footer border-0 pt-0">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setConfirmDeactivate(null)}
+                    >
+                      Cancelar
+                    </button>
+
+                    <button
+                      type="button"
+                      className="btn btn-danger"
+                      onClick={() => void handleDeactivate(confirmDeactivate)}
+                    >
+                      Desactivar
+                    </button>
+                  </footer>
+                </article>
+              </article>
+            </article>,
+            document.body,
+          )}
 
       {toast && createPortal(
         <article style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>

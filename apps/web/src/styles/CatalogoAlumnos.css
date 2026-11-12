@@ -327,6 +327,7 @@
   cursor: pointer;
 }
 
+
 .ca-confirm-button:hover {
   background: var(--ar-profundo);
 }
@@ -345,6 +346,7 @@
   outline: 2px solid var(--seige-acento);
   outline-offset: 2px;
 }
+
 
 .ca-modal-overlay {
   position: fixed;

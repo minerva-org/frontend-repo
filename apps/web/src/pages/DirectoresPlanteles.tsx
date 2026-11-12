@@ -496,25 +496,61 @@ export default function DirectoresPlanteles() {
 
       {confirmDeactivate &&
         createPortal(
-          <article className="dp-modal-overlay">
-            <article className="dp-modal">
-              <header className="dp-modal-header">Confirmar</header>
+          <article
+            className="modal show d-block"
+            tabIndex={-1}
+            role="presentation"
+            onClick={() => setConfirmDeactivate(null)}
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1055,
+            }}
+          >
+            <article
+              className="modal-dialog modal-dialog-centered"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="dp-deactivate-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <header
+                  className="modal-header text-white"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, var(--ar-profundo), var(--ar-azul))',
+                  }}
+                >
+                  <article>
+                    <h5
+                      id="dp-deactivate-title"
+                      className="modal-title fw-bold text-white"
+                    >
+                      Confirmar desactivación
+                    </h5>
 
-              <section className="dp-modal-form">
-                <p>
-                  ¿Deseas desactivar el registro "
-                  {getNombreCompleto(confirmDeactivate)}"?
-                </p>
+                    <p className="mb-0 small text-white opacity-75">
+                      {getNombreCompleto(confirmDeactivate)}
+                    </p>
+                  </article>
+                </header>
 
-                <p style={{ marginBottom: 0 }}>
-                  No se elimina ni su historial, solo deja de estar disponible
-                  para asignarse.
-                </p>
+                <section className="modal-body py-4">
+                  <p className="mb-2">
+                    ¿Deseas desactivar al director{' '}
+                    <strong>{getNombreCompleto(confirmDeactivate)}</strong>?
+                  </p>
 
-                <footer className="dp-modal-actions">
+                  <p className="mb-0">
+                    No se elimina ni su historial, solo deja de estar disponible
+                    para asignarse.
+                  </p>
+                </section>
+
+                <footer className="modal-footer border-0 pt-0">
                   <button
                     type="button"
-                    className="dp-btn-secondary"
+                    className="btn btn-secondary"
                     onClick={() => setConfirmDeactivate(null)}
                   >
                     Cancelar
@@ -522,16 +558,14 @@ export default function DirectoresPlanteles() {
 
                   <button
                     type="button"
-                    className="dp-btn-primary"
+                    className="btn btn-danger"
                     disabled={loading}
-                    onClick={() =>
-                      void handleDeactivate(confirmDeactivate)
-                    }
+                    onClick={() => void handleDeactivate(confirmDeactivate)}
                   >
-                    Confirmar
+                    {loading ? 'Desactivando...' : 'Desactivar'}
                   </button>
                 </footer>
-              </section>
+              </article>
             </article>
           </article>,
           document.body,

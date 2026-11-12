@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useMemo, useState, type SubmitEvent } from 'react';
 import type { PersonaRecord } from '../../types/PersonaTypes';
 
 interface AgregarAlumnosFormProps {
@@ -30,23 +30,28 @@ export default function AgregarAlumnosForm({
   const [error, setError] = useState<string | null>(null);
 
   const alumnosFiltrados = useMemo(() => {
-    const texto = normalizeText(busqueda);
+  const texto = normalizeText(busqueda);
 
-    return alumnos.filter((alumno) => {
-      if (alumnosSeleccionados.includes(alumno.id)) return false;
-      if (seleccionados.includes(alumno.id)) return false;
+  return alumnos.filter((alumno) => {
+    if (alumno.activo !== true) return false;
 
-      const nombre = normalizeText(nombreCompleto(alumno));
-      const correo = normalizeText(alumno.email);
+    if (alumnosSeleccionados.includes(alumno.id)) return false;
 
-      return !texto || nombre.includes(texto) || correo.includes(texto);
-    });
-  }, [alumnos, alumnosSeleccionados, busqueda, seleccionados]);
+    if (seleccionados.includes(alumno.id)) return false;
 
-  const alumnosElegidos = useMemo(
-    () => alumnos.filter((alumno) => seleccionados.includes(alumno.id)),
-    [alumnos, seleccionados]
-  );
+    const nombre = normalizeText(nombreCompleto(alumno));
+    const correo = normalizeText(alumno.email);
+
+    return !texto || nombre.includes(texto) || correo.includes(texto);
+  });
+}, [alumnos, alumnosSeleccionados, busqueda, seleccionados]);
+
+  const alumnosElegidos = useMemo(() => alumnos.filter(
+      (alumno) =>
+        alumno.activo === true && seleccionados.includes(alumno.id)
+    ),
+  [alumnos, seleccionados]
+);
 
   function agregarAlumno(id: string) {
     setSeleccionados((prev) =>
@@ -60,7 +65,7 @@ export default function AgregarAlumnosForm({
     setSeleccionados((prev) => prev.filter((alumnoId) => alumnoId !== id));
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (seleccionados.length === 0) {
