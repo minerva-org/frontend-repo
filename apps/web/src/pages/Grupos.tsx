@@ -1,0 +1,557 @@
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.tsx';
+import { useSidebar } from '../context/SidebarContext.tsx';
+import CreateGroupModal from '../components/modals/ModalGrupos.tsx';
+import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
+import { apiClient } from '../services/ApiClient';
+import { fetchPersonas, type PersonaRecord } from '../services/personaService';
+import type { GrupoBackend, GrupoListado,NewGroupData } from '../types/GrupoTypes.ts';
+import '../styles/Grupos.css';
+
+interface GruposProps {
+  soloMisGrupos?: boolean;
+}
+
+export default function Grupos({ soloMisGrupos = false }: GruposProps) {
+  const [groups, setGroups] = useState<GrupoListado[]>([]);
+  const [personas, setPersonas] = useState<PersonaRecord[]>([]);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { role, email, user, selectedPlantel, setSelectedPlantel } = useAuth();
+  const { toggleSidebar } = useSidebar();
+  const [search, setSearch] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [openMenuGroupId, setOpenMenuGroupId] = useState<string | null>(null);
+  const [pendingArchiveGroup, setPendingArchiveGroup] = useState<GrupoListado | null>(null);
+  const [createdGroupName, setCreatedGroupName] = useState<string | null>(null);
+  const [createGroupError, setCreateGroupError] = useState(false);
+
+  const urlPlantelId = Number(searchParams.get('plantelId')) || null;
+  const activePlantelId = urlPlantelId ?? selectedPlantel?.id ?? null;
+  const [showArchived, setShowArchived] = useState(false);
+
+
+
+  useEffect(() => {
+    if (urlPlantelId && selectedPlantel?.id !== urlPlantelId) {
+      setSelectedPlantel({ id: urlPlantelId, nombre: selectedPlantel?.nombre ?? `Plantel ${urlPlantelId}` });
+    }
+  }, [urlPlantelId, selectedPlantel, setSelectedPlantel]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (target.closest('.groups-action-menu')) {
+        return;
+      }
+      setOpenMenuGroupId(null);
+    }
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, []);
+
+  async function loadGroups() {
+    setLoading(true);
+    try {
+      const [gruposResponse, personasResponse] = await Promise.all([
+        activePlantelId != null
+          ? apiClient.get<GrupoBackend[]>('/api/grupos', { params: { plantelId: activePlantelId } })
+          : apiClient.get<GrupoBackend[]>('/api/grupos'),
+        fetchPersonas(),
+      ]);
+
+      const personasData = personasResponse.data ?? [] as PersonaRecord[];
+      setPersonas(personasData);
+      const personaMap = new Map<string, PersonaRecord>(personasData.map((persona) => [persona.id, persona]));
+
+      const grupos = gruposResponse.data ?? [];
+      const alumnoCounts = await Promise.all(
+        grupos.map(async (grupo) => {
+          try {
+            const alumnosResponse = await apiClient.get<string[]>(`/api/grupos/${grupo.id}/alumnos`);
+            return [grupo.id, alumnosResponse.data?.length ?? 0] as const;
+          } catch {
+            return [grupo.id, 0] as const;
+          }
+        }),
+      );
+
+      const countMap = new Map<string, number>(alumnoCounts);
+
+      setGroups(
+        grupos.map((grupo) => {
+          const persona = personaMap.get(grupo.docenteId);
+          return {
+            ...grupo,
+            docenteNombre: persona ? `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar',
+            docenteEmail: persona?.email ?? '',
+            alumnosCount: countMap.get(grupo.id) ?? 0,
+          };
+        }),
+      );
+      setFetchError(null);
+    } catch {
+      setGroups([]);
+      setFetchError('');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadGroups();
+  }, [activePlantelId]);
+
+  const normalizedRole = String(role ?? '').toLowerCase();
+
+  const relatedGroups = groups.filter((group) => {
+      if (activePlantelId != null && group.plantelId != null) {
+        if (group.plantelId !== activePlantelId) return false;
+      }
+
+      if (normalizedRole === 'alumno') {
+        return Boolean(user?.id && group.alumnosIds?.includes(user.id));
+      }
+
+      if (['directorgeneral', 'directorplantel', 'admin', 'dev'].includes(normalizedRole)) {
+        return true;
+      }
+
+      const esMiGrupo =
+        Boolean(email) &&
+        (group.docenteEmail ?? '').toLowerCase() === (email ?? '').toLowerCase();
+
+      if (soloMisGrupos || normalizedRole === 'docente') return esMiGrupo;
+      if (normalizedRole === 'coordinador') return true;
+
+      return false;
+    });
+  
+
+  const visibleGroups = useMemo(
+    () => relatedGroups.filter((group) => group.activo !== false),
+    [relatedGroups],
+  );
+
+  const archivedGroups = useMemo(
+    () => relatedGroups.filter((group) => group.activo === false),
+    [relatedGroups],
+  );
+
+  const filtered = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return visibleGroups;
+
+    return visibleGroups.filter((group) => {
+      const haystack = [group.nombre, group.claveGrupo, group.semestre, group.docenteNombre, group.docenteId].join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [visibleGroups, search]);
+
+  const filteredArchived = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return archivedGroups;
+
+    return archivedGroups.filter((group) => {
+      const haystack = [group.nombre, group.claveGrupo, group.semestre, group.docenteNombre, group.docenteId].join(' ').toLowerCase();
+      return haystack.includes(query);
+    });
+  }, [archivedGroups, search]);
+
+  function openArchiveModal(group: GrupoListado) {
+    setPendingArchiveGroup(group);
+    setOpenMenuGroupId(null);
+  }
+
+  async function toggleGroupActivo(groupId: string, activo: boolean) {
+    await apiClient.patch(`/api/grupos/${groupId}`, { activo });
+    await loadGroups();
+    if (activo) setShowArchived(false);
+    setOpenMenuGroupId(null);
+    setPendingArchiveGroup(null);
+  }
+
+  const handleCreateGroup = async (data: NewGroupData) => {
+  setCreateGroupError(false);
+  setCreatedGroupName(null);
+
+  const plantelId = data.plantelId ?? selectedPlantel?.id;
+
+  if (plantelId == null) {
+    setCreateGroupError(true);
+    setCreatedGroupName(data.materia);
+    throw new Error('No hay un plantel seleccionado.');
+  }
+
+  const docenteId = data.docenteId ?? null;
+  const alumnosIds = data.alumnosIds ?? [];
+
+  const docente = docenteId
+    ? personas.find((persona) => persona.id === docenteId)
+    : undefined;
+
+  const alumnosInactivos = alumnosIds.filter((alumnoId) => {
+    const alumno = personas.find((persona) => persona.id === alumnoId);
+    return alumno?.activo === false;
+  });
+
+  if (!docente || !docente?.activo || alumnosInactivos.length > 0) {
+    setCreateGroupError(true);
+    setCreatedGroupName(data.materia);
+    throw new Error('No puedes agregar personas desactivadas al grupo.');
+  }
+
+  const payload = {
+    id: crypto.randomUUID(),
+    claveGrupo: data.claveGrupo,
+    nombre: data.materia,
+    semestre: data.grado,
+    activo: true,
+    docenteId,
+    plantelId,
+    materiaId: data.materiaId,
+    alumnosIds,
+  };
+
+  try {
+    const response = await apiClient.post('/api/grupos', payload);
+
+    await loadGroups();
+    setShowModal(false);
+    setCreatedGroupName(data.materia);
+    setCreateGroupError(false);
+
+    return response.data;
+  } catch (error: any) {
+    console.error('Response data:', error?.response?.data);
+
+    setShowModal(false);
+    setCreateGroupError(true);
+    setCreatedGroupName(data.materia);
+
+    throw error;
+  }
+};
+
+  return (
+    <article className="groups-screen">
+      <header className="groups-topbar">
+        <article className="groups-topbar-left">
+          <button className="groups-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
+            <i className="bi bi-list groups-icon-button"></i>
+          </button>
+          <span className="groups-topbar-title">Grupos</span>
+        </article>
+      </header>
+
+      <main className="groups-content">
+        <article className="groups-header">
+          <article>
+            <h1 className="groups-title">Listado de grupos</h1>
+            <p className="groups-subtitle">Ciclo Activo 2026</p>
+          </article>
+     </article>
+
+        <article className="d-flex align-items-center gap-2 mb-3 flex-wrap">
+
+          <article className="input-group flex-grow-1" style={{ maxWidth: '765px',minWidth: '200px' }}>
+            <span className="input-group-text">
+              <i className="bi bi-search"></i>
+            </span>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Buscar por nombre, clave, docente o semestre..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </article>
+
+          <button
+            type="button"
+            className="groups-new-button btn-sm text-nowrap"
+            onClick={() => setShowArchived((prev) => !prev)}
+          >
+            <i className={`bi ${showArchived ? 'bi-archive-fill' : 'bi-archive'} me-1`}></i>
+            Archivados ({filteredArchived.length})
+          </button>
+
+         {normalizedRole !== 'alumno' && normalizedRole !== 'docente' && (
+            <button
+              type="button"
+              className="groups-new-button  btn-sm text-nowrap"
+              onClick={() => setShowModal(true)}
+            >
+              <i className="bi bi-plus-lg me-1"></i>
+              Nuevo grupo
+            </button>
+          )}
+
+        </article>
+
+        {fetchError && <p className="groups-empty">{fetchError}</p>}
+
+        {loading ? (
+          <p className="groups-empty">Cargando grupos...</p>
+        ) : (
+          <>
+            {!showArchived &&(
+              filtered.length === 0 ? (
+              <p className="groups-empty">
+                {soloMisGrupos || normalizedRole === 'docente'
+                  ? 'Aún no tienes grupos asignados.'
+                  : 'No se encontraron grupos activos.'}
+              </p>
+            ) : (
+              <article className="groups-table-wrap">
+                <table className="groups-table">
+                  <thead>
+                    <tr>
+                      <th>Nombre</th>
+                      <th>Clave</th>
+                      <th>Semestre</th>
+                      <th>Docente</th>
+                      <th>Alumnos</th>
+                      <th className="groups-th-actions">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((group) => (
+                      <tr key={group.id}>
+                        <td className="groups-td-nombre" data-label="Nombre">{group.nombre}</td>
+                        <td data-label="Clave">
+                          <span className="groups-pill-code">{group.claveGrupo}</span>
+                        </td>
+                        <td data-label="Semestre">{group.semestre}</td>
+                        <td data-label="Docente">{group.docenteNombre}</td>
+                        <td data-label="Alumnos">{group.alumnosCount}</td>
+                        <td data-label="Acciones">
+                          <article className="groups-actions">
+                            <GroupActionsMenu
+                              group={group}
+                              isOpen={openMenuGroupId === group.id}
+                              onToggle={setOpenMenuGroupId}
+                              onView={(groupId) => navigate(`/grupos/${groupId}`)}
+                              onArchive={openArchiveModal}
+                            />
+                          </article>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </article>
+            )
+            )}
+
+            {showArchived && (
+              <article className="groups-archived-section">
+                <h2 className="groups-archived-title">Archivados</h2>
+                {filteredArchived.length === 0 ? (
+                  <p className="groups-empty">No hay grupos archivados.</p>
+                ) : (
+                  <article className="groups-table-wrap groups-table-wrap-archived">
+                    <table className="groups-table">
+                      <thead>
+                      <tr>
+                        <th>Nombre</th>
+                        <th>Clave</th>
+                        <th>Semestre</th>
+                        <th>Docente</th>
+                        <th>Estado</th>
+                        <th className="groups-th-actions">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredArchived.map((group) => (
+                        <tr key={group.id} className="groups-row-archived">
+                          <td className="groups-td-nombre" data-label="Nombre">{group.nombre}</td>
+                          <td data-label="Clave">
+                            <span className="groups-pill-code groups-pill-code-archived">{group.claveGrupo}</span>
+                          </td>
+                          <td data-label="Semestre">{group.semestre}</td>
+                          <td data-label="Docente">{group.docenteNombre}</td>
+                          <td data-label="Estado">
+                            <span className="groups-status-inactive">Inactivo</span>
+                          </td>
+                          <td data-label="Acciones">
+                            <GroupActionsMenu
+                              group={group}
+                              isOpen={openMenuGroupId === group.id}
+                              onToggle={setOpenMenuGroupId}
+                              onView={(groupId) => navigate(`/grupos/${groupId}`)}
+                              onReactivate={(groupId) => void toggleGroupActivo(groupId, true)}
+                              archived
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </article>
+                )}
+              </article>
+            )}
+          </>
+        )}
+      </main>
+
+      {showModal && (
+        <CreateGroupModal
+          onClose={() => setShowModal(false)}
+          onCreate={handleCreateGroup}
+        />
+      )}
+
+      {pendingArchiveGroup &&
+        createPortal(
+          <article       
+            className="modal show d-block"
+            tabIndex={-1}
+            role="presentation"
+            onClick={() => setPendingArchiveGroup(null)}
+            style={{
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1055,
+            }}
+          >
+            <article
+              className="modal-dialog modal-dialog-centered"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="archive-group-title"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <header
+                  className="modal-header text-white"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, var(--ar-profundo, #17324d), var(--ar-azul, #287ca5))',
+                  }}
+                >
+                  <article>
+                    <h5
+                      id="archive-group-title"
+                      className="modal-title fw-bold text-white"
+                    >
+                      Archivar grupo
+                    </h5>
+
+                    <p className="mb-0 small text-white opacity-75">
+                      Confirmación requerida
+                    </p>
+                  </article>
+                </header>
+
+                <section className="modal-body py-4">
+                  <p className="mb-0">
+                    ¿Deseas archivar el grupo{' '}
+                    <strong>{pendingArchiveGroup.nombre}</strong>?
+                  </p>
+
+                  <p className="mt-2 mb-0">
+                    Ya no aparecerá en este catálogo, pero podrás seguir entrando
+                    a su detalle desde la ruta directa si lo necesitas.
+                  </p>
+                </section>
+
+                <footer className="modal-footer border-0 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setPendingArchiveGroup(null)}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() =>
+                      void toggleGroupActivo(pendingArchiveGroup.id, false)
+                    }
+                  >
+                    <i className="bi bi-archive me-1" />
+                    Archivar
+                  </button>
+                </footer>
+              </article>
+            </article>
+          </article>,
+          document.body,
+        )}
+
+      {createdGroupName && (
+        <article
+          className="groups-modal-backdrop"
+          role="presentation"
+          onClick={() => {
+            setCreatedGroupName(null);
+            setCreateGroupError(false);
+          }}
+        >
+          <article
+            className={`groups-confirm-modal ${
+              createGroupError ? 'groups-confirm-modal-error' : ''
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="created-group-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="groups-confirm-header">
+              <article>
+                <h3 id="created-group-title" className="groups-confirm-title">
+                  {createGroupError ? 'No se pudo crear el grupo' : 'Grupo creado'}
+                </h3>
+                <p className="groups-confirm-subtitle">
+                  {createGroupError
+                    ? 'Ocurrió un problema al guardar la información'
+                    : 'La operación se realizó correctamente'}
+                </p>
+              </article>
+            </header>
+                    
+            <section className="groups-confirm-body">
+              <p className="groups-confirm-text">
+                {createGroupError ? (
+                  <>
+                  
+                    No se pudo crear el grupo <strong>{createdGroupName}</strong>.
+                    Revisa los datos e inténtalo nuevamente.
+                  </>
+                ) : (
+                  <>
+                    El grupo <strong>{createdGroupName}</strong> fue creado correctamente.
+                  </>
+                )}
+              </p>
+            </section>
+
+            <article className="groups-confirm-actions">
+              <button
+                type="button"
+                className={`groups-confirm-button ${
+                  createGroupError ? 'groups-confirm-button-error' : ''
+                }`}
+                onClick={() => {
+                  setCreatedGroupName(null);
+                  setCreateGroupError(false);
+                }}
+              >
+                Aceptar
+              </button>
+            </article>
+          </article>
+        </article>
+      )}
+    </article>
+  );
+}
