@@ -96,6 +96,7 @@ export default function DirectorPlantelModal({
                     maxLength={50}
                     disabled={loading}
                     onChange={(e) => onChange({ ...form, nombre: e.target.value })}
+                    placeholder='Ejemplo: Juan'
                   />
                 </article>
 
@@ -109,6 +110,7 @@ export default function DirectorPlantelModal({
                     maxLength={50}
                     disabled={loading}
                     onChange={(e) => onChange({ ...form, apellidoPaterno: e.target.value })}
+                    placeholder='Ejemplo: Perez'
                   />
                 </article>
 
@@ -122,6 +124,7 @@ export default function DirectorPlantelModal({
                     maxLength={50}
                     disabled={loading}
                     onChange={(e) => onChange({ ...form, apellidoMaterno: e.target.value })}
+                    placeholder='Ejemplo: López'
                   />
                 </article>
 

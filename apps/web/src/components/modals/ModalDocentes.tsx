@@ -54,6 +54,7 @@ export function DocenteModal({
                     maxLength={50}
                     pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+([ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*"
                     title="Sin caracteres especiales ni numeros"
+                    placeholder='Ejemplo: Juan'
                   />
                 </article>
 
@@ -70,6 +71,7 @@ export function DocenteModal({
                     maxLength={50}
                     pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+([ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*"
                     title="Sin caracteres especiales ni numeros"
+                    placeholder='Ejemplo: Perez'
                   />
                 </article>
 
@@ -85,6 +87,7 @@ export function DocenteModal({
                     maxLength={50}
                     pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+([ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*"
                     title="Sin caracteres especiales ni numeros"
+                    placeholder='Ejemplo: López'
                   />
                 </article>
 
@@ -103,6 +106,7 @@ export function DocenteModal({
                       maxLength={64}
                       pattern="[A-Za-z0-9._%+-]+"
                       title="Ingresa la parte inicial sin espacios."
+                      placeholder='juan.p'
                     />
 
                     <span className="input-group-text">
@@ -125,34 +129,7 @@ export function DocenteModal({
                     maxLength={10}
                     pattern="[0-9]{10}"
                     title="El teléfono debe contener exactamente 10 dígitos."
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Calle
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.calle ?? ''}
-                    onChange={(e) => onChange({...form,calle: e.target.value})}
-                    required
-                    maxLength={100}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Colonia
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.colonia ?? ''}
-                    onChange={(e) => onChange({...form,colonia: e.target.value})}
-                    required
-                    maxLength={80}
+                    placeholder='667 152 4236'
                   />
                 </article>
 
@@ -175,20 +152,6 @@ export function DocenteModal({
 
                 <article className="col-md-6">
                   <label className="form-label fw-semibold">
-                    Municipio
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.municipio ?? ''}
-                    onChange={(e) => onChange({...form,municipio: e.target.value})}
-                    required
-                    maxLength={80}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
                     Estado
                   </label>
                   <input
@@ -198,8 +161,53 @@ export function DocenteModal({
                     onChange={(e) => onChange({...form,estado: e.target.value})}
                     required={!docente}
                     maxLength={80}
+                    disabled
                   />
                 </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Municipio
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.municipio ?? ''}
+                    onChange={(e) => onChange({...form,municipio: e.target.value})}
+                    required
+                    maxLength={80}
+                    disabled
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Colonia
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.colonia ?? ''}
+                    onChange={(e) => onChange({...form,colonia: e.target.value})}
+                    required
+                    maxLength={80}
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Calle
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.calle ?? ''}
+                    onChange={(e) => onChange({...form,calle: e.target.value})}
+                    required
+                    maxLength={100}
+                    placeholder='Av. Alvaro Obregon '
+                  />
+                </article>               
 
                 <article className="col-md-6">
                   <label className="form-label fw-semibold">
@@ -212,6 +220,7 @@ export function DocenteModal({
                     onChange={(e) => onChange({...form, carrera: e.target.value})}
                     required
                     maxLength={100}
+                    placeholder='Ing. en sistemas'
                   />
                 </article>
 
@@ -226,6 +235,7 @@ export function DocenteModal({
                     onChange={(e) => onChange({...form, tituloEdu: e.target.value})}
                     required
                     maxLength={100}
+                    placeholder='Lic en sistemas'
                   />
                 </article>
 

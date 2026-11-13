@@ -76,6 +76,7 @@ export function ModalAlumnos({
                       onChange({ ...form, nombre: e.target.value })
                     }
                     required
+                    placeholder='Ejemplo: Juan'
                   />
                 </article>
 
@@ -94,6 +95,7 @@ export function ModalAlumnos({
                       })
                     }
                     required
+                    placeholder='Ejemplo: Perez'
                   />
                 </article>
 
@@ -112,6 +114,7 @@ export function ModalAlumnos({
                       })
                     }
                     required
+                    placeholder='Ejemplo: López'
                   />
                 </article>
 
@@ -128,7 +131,7 @@ export function ModalAlumnos({
                       onChange={(e) =>
                         onChange({ ...form, email: e.target.value })
                       }
-                      placeholder="ejemplo.alumno"
+                      placeholder="Ejemplo: juan.p"
                       pattern="[a-zA-Z0-9._%+-]+"
                       title="Escribe solamente el nombre del correo institucional, sin espacios ni dominio."
                       required
@@ -156,36 +159,12 @@ export function ModalAlumnos({
                           .slice(0, 10),
                       })
                     }
-                    placeholder="Ej. 3312345678"
+                    placeholder="667 156 7815"
                     inputMode="numeric"
                     maxLength={10}
                     pattern="[0-9]{10}"
                     title="El teléfono debe contener exactamente 10 dígitos."
                     required
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">Calle</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.calle ?? ''}
-                    onChange={(e) =>
-                      onChange({ ...form, calle: e.target.value })
-                    }
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">Colonia</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.colonia ?? ''}
-                    onChange={(e) =>
-                      onChange({ ...form, colonia: e.target.value })
-                    }
                   />
                 </article>
 
@@ -205,24 +184,12 @@ export function ModalAlumnos({
                           .slice(0, 5),
                       })
                     }
-                    placeholder="Ej. 45900"
+                    placeholder="Ejemplo: 80181"
                     inputMode="numeric"
                     maxLength={5}
                     pattern="[0-9]{5}"
                     title="El código postal debe contener exactamente 5 dígitos."
                     required
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">Municipio</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.municipio ?? ''}
-                    onChange={(e) =>
-                      onChange({ ...form, municipio: e.target.value })
-                    }
                   />
                 </article>
 
@@ -235,6 +202,46 @@ export function ModalAlumnos({
                     onChange={(e) =>
                       onChange({ ...form, estado: e.target.value })
                     }
+                    disabled
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Municipio</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.municipio ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, municipio: e.target.value })
+                    }
+                    disabled
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Colonia</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.colonia ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, colonia: e.target.value })
+                    }
+                    disabled
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Calle</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.calle ?? ''}
+                    onChange={(e) =>
+                      onChange({ ...form, calle: e.target.value })
+                    }
+                    placeholder='Ejemplo: Av. Alvaro Obregon'
                   />
                 </article>
 
@@ -288,6 +295,8 @@ export function ModalAlumnos({
                         nombreTutor: e.target.value,
                       })
                     }
+                    placeholder='Ejemplo: José'
+                    required
                   />
                 </article>
 
@@ -307,7 +316,7 @@ export function ModalAlumnos({
                           .slice(0, 10),
                       })
                     }
-                    placeholder="Teléfono del tutor"
+                    placeholder="687 523 4586"
                     inputMode="numeric"
                     maxLength={10}
                     pattern="[0-9]{10}"

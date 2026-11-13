@@ -51,7 +51,6 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
         label: 'Dirección de Sede',
         items: [
           { to: '/plantel/dashboard', label: 'Dashboard Ejecutivo Local', icon: 'bi-speedometer2' },
-          { to: '/plantel/directorio-docente', label: 'Directorio Docente', icon: 'bi-person-badge' },
         ],
       },
       {

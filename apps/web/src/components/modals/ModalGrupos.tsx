@@ -173,7 +173,7 @@ export default function CreateGroupModal({
               className="create-group-input"
               value={claveGrupo}
               onChange={(event) => setClaveGrupo(event.target.value)}
-              placeholder="Ej. MAT-1A"
+              placeholder="Ejemplo: MAT-1A"
             />
           </label>
 
@@ -183,7 +183,7 @@ export default function CreateGroupModal({
               className="create-group-input"
               value={semestre}
               onChange={(event) => setSemestre(event.target.value)}
-              placeholder="Ej. 1er semestre"
+              placeholder=""
             />
           </label>
 
@@ -222,7 +222,7 @@ export default function CreateGroupModal({
             </button>
 
             <button type="submit" className="create-group-submit">
-              Crear grupo
+              Crear
             </button>
           </article>
         </form>

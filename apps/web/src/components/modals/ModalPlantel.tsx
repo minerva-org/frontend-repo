@@ -88,62 +88,7 @@ export function PlantelModal({
                     onChange={(e) => onChange({ ...form, nombre: e.target.value })}
                     required
                     maxLength={100}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Calle
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.calle}
-                    onChange={(e) => onChange({ ...form, calle: e.target.value })}
-                    required
-                    maxLength={100}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Colonia
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.colonia}
-                    onChange={(e) => onChange({ ...form, colonia: e.target.value })}
-                    required
-                    maxLength={80}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Municipio
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.municipio}
-                    onChange={(e) => onChange({ ...form, municipio: e.target.value })}
-                    required
-                    maxLength={80}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Estado
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.estado}
-                    onChange={(e) => onChange({ ...form, estado: e.target.value })}
-                    required
-                    maxLength={80}
+                    placeholder="Ejemplo: Plantel sur"
                   />
                 </article>
 
@@ -161,6 +106,67 @@ export function PlantelModal({
                     maxLength={5}
                     pattern="[0-9]{5}"
                     title="El código postal debe contener exactamente 5 dígitos."
+                    placeholder="Ejemplo: 80181"
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Estado
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.estado}
+                    onChange={(e) => onChange({ ...form, estado: e.target.value })}
+                    required
+                    maxLength={80}
+                    disabled
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Municipio
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.municipio}
+                    onChange={(e) => onChange({ ...form, municipio: e.target.value })}
+                    required
+                    maxLength={80}
+                    disabled
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Colonia
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.colonia}
+                    onChange={(e) => onChange({ ...form, colonia: e.target.value })}
+                    required
+                    maxLength={80}
+                    disabled
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Calle
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.calle}
+                    onChange={(e) => onChange({ ...form, calle: e.target.value })}
+                    required
+                    maxLength={100}
+                    placeholder="Ejemplo: Av. Alvaro Obregon"
                   />
                 </article>
 
