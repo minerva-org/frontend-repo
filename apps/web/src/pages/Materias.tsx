@@ -165,7 +165,7 @@ export default function Materias() {
 
   async function handleActivate(materia: Materia) {
     try {
-      const response = await apiClient.patch(`/api/materias/${materia.id}`, {
+      await apiClient.patch(`/api/materias/${materia.id}`, {
         activo: true,
       });
 

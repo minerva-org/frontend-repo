@@ -63,7 +63,7 @@ function crearUnidadVacia(): UnidadForm {
 }
 
 
-function crearDatosDesdeMateria(materia: Materia | null | undefined, esEdicion: boolean): UnidadForm[] {
+function crearDatosDesdeMateria(materia: Materia | null | undefined): UnidadForm[] {
   if (!materia?.unidades?.length) {
     return [];
   }
@@ -88,7 +88,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const [id] = useState(materia?.id ?? crypto.randomUUID());
   const [nombre, setNombre] = useState(materia?.nombre ?? '');
   const [numero, setNumero] = useState<number>(() => extraerNumeroDesdePrefijo(materia?.prefijo));
-  const [unidades, setUnidades] = useState<UnidadForm[]>(() => crearDatosDesdeMateria(materia, esEdicion));
+  const [unidades, setUnidades] = useState<UnidadForm[]>(() => crearDatosDesdeMateria(materia));
   const [error, setError] = useState('');
 
   const [prefijo, setPrefijo] = useState(materia?.prefijo?.replace(/\d$/, '') || derivarPrefijo(materia?.nombre ?? ''));

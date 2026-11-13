@@ -86,7 +86,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
 
       setGroups(
         grupos.map((grupo) => {
-          const persona = personaMap.get(grupo.docenteId);
+          const persona = grupo.docenteId != null ? personaMap.get(grupo.docenteId) : undefined;
           return {
             ...grupo,
             docenteNombre: persona ? `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar',

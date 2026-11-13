@@ -253,7 +253,7 @@ export default function DirectoresPlanteles() {
         municipio: form.municipio.trim(),
         estado: form.estado.trim(),
         codigoPostal: form.codigoPostal.trim(),
-        rol: 'DIRECTOR_PLANTEL',
+        rol: 'DIRECTOR_PLANTEL' as const,
         plantelId,
       };
 

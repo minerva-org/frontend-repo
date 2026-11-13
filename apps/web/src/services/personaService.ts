@@ -31,7 +31,7 @@ export async function fetchPersonasByRol(rol: PersonaRol) {
   return fetchPersonas({ rol });
 }
 
-export async function fetchPersonasByPlantelAndRol(plantelId: number, rol: 'ALUMNO' | 'DOCENTE') {
+export async function fetchPersonasByPlantelAndRol(plantelId: number, rol: 'ALUMNO' | 'DOCENTE' | 'COORDINADOR') {
   return apiClient.get<PersonaRecord[]>('/api/personas', { params: { plantelId, rol } });
 }
 
