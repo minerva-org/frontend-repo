@@ -14,6 +14,8 @@ import '../styles/CatalogoAlumnos.css';
 import type { AlumnoFormState } from '../types/AlumnoTypes.ts';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
 import { ModalAlumnos } from '../components/modals/ModalAlumnos.tsx';
+import { usePaginacion } from '../hooks/usePaginacion.ts';
+import { Paginacion } from '../components/common/Paginacion.tsx';
 
 const SAFE_PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -21,6 +23,7 @@ const SAFE_PASSWORD_REGEX =
 const PHONE_REGEX = /^\d{10}$/;
 const POSTAL_CODE_REGEX = /^\d{5}$/;
 const EMAIL_LOCAL_REGEX = /^[a-zA-Z0-9._%+-]+$/;
+const ITEMS_POR_PAGINA = 10;
 
 const emptyForm: AlumnoFormState = {
   nombre: '',
@@ -89,6 +92,7 @@ export default function CatalogoAlumnos() {
   const [confirmDeactivate, setConfirmDeactivate] =
     useState<PersonaRecord | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+  
 
   const activePlantelId = canChoosePlantel
     ? (selectedPlantel?.id ?? planteles[0]?.id ?? null)
@@ -417,6 +421,21 @@ export default function CatalogoAlumnos() {
     });
   }, [alumnos, search, planteles]);
 
+  const {
+    paginaActual,
+    totalPaginas,
+    dataPaginada,
+    irAPagina,
+    setPaginaActual,
+  } = usePaginacion({
+    data: filteredAlumnos,
+    itemsPorPagina: ITEMS_POR_PAGINA,
+  });
+
+    useEffect(() =>{
+      setPaginaActual(1);
+  }, [search,activePlantelId,setPaginaActual]);
+
   return (
     <article className="ca-screen">
       <header className="ca-topbar">
@@ -475,7 +494,7 @@ export default function CatalogoAlumnos() {
             </thead>
 
             <tbody>
-              {filteredAlumnos.map((alumno) => {
+              {dataPaginada.map((alumno) => {
                 const plantelNombre =
                   planteles.find((item) => item.id === alumno.plantelId)
                     ?.nombre ?? `Plantel ${alumno.plantelId ?? '-'}`;
@@ -489,7 +508,6 @@ export default function CatalogoAlumnos() {
                       <span className="ca-nombre">
                         {getNombreCompleto(alumno)}
                       </span>
-                      <span className="ca-correo">{alumno.email}</span>
                     </td>
 
                     <td>
@@ -547,6 +565,15 @@ export default function CatalogoAlumnos() {
           {filteredAlumnos.length === 0 && !fetchError && (
             <p className="ca-empty">No se encontraron alumnos.</p>
           )}
+
+          <Paginacion
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          totalItems={filteredAlumnos.length}
+          itemsPorPagina={ITEMS_POR_PAGINA}
+          onPageChange={irAPagina}
+          />
+          
         </article>
       </article>
 
