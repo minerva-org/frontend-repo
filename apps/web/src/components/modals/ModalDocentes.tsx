@@ -1,5 +1,6 @@
 
 import type { DocenteModalProps } from '../../types/DocenteTypes';
+import { useSepomex } from '../../hooks/useSepomex';
 
 export function DocenteModal({
   planteles,
@@ -15,6 +16,26 @@ export function DocenteModal({
   hideRoleField,
   defaultPlantelName,
 }: DocenteModalProps) {
+  const {
+    colonias,
+    buscandoCP,
+    errorCP,
+    consultarCP,
+    limpiarCP,
+  } = useSepomex();
+
+  const handleConsultarCP = async() => {
+    const resultados = await consultarCP(form.codigoPostal ?? '');
+    if(!resultados){
+      return;
+    }
+    onChange({
+      ...form,
+      estado: resultados[0].d_estado,
+      municipio: resultados[0].d_mnpio,
+      colonia: resultados.length === 1 ? resultados[0].d_asenta : '',
+    });
+  };
   return (
     <article className="modal show d-block" tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="dd-modal-title" style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }} >
       <article className="modal-dialog modal-xl modal-dialog-centered">
@@ -134,20 +155,42 @@ export function DocenteModal({
                 </article>
 
                 <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Código Postal
-                  </label>
+                  <label className="form-label fw-semibold">Código postal</label>
                   <input
-                    type="text"
                     className="form-control"
+                    type='text'
                     value={form.codigoPostal ?? ''}
-                    onChange={(e) => onChange({...form,codigoPostal: e.target.value})}
-                    required={!docente}
-                    inputMode="numeric"
                     maxLength={5}
                     pattern="[0-9]{5}"
-                    title="El código postal debe contener 5 dígitos."
+                    placeholder='Ejemplo: 80150'
+                    required
+                    disabled={loading || buscandoCP}
+                    onChange={(e) =>{
+                      onChange({
+                        ...form, 
+                        codigoPostal:e.target.value.replace(/\D/g, '').slice(0,5), 
+                        colonia: '', 
+                        municipio: '', 
+                        estado: '',                      
+                      });
+
+                      limpiarCP();
+                    }}
+                    onKeyDown={(e) =>  {
+                      if(e.key === 'Enter'){
+                        e.preventDefault();
+                        handleConsultarCP();
+                      }
+                    }}
                   />
+
+                  {buscandoCP && (
+                    <small> Consultando código postal</small>
+                  )}
+
+                  {errorCP && (
+                    <small>{errorCP}</small>
+                  )}
                 </article>
 
                 <article className="col-md-6">
@@ -158,10 +201,7 @@ export function DocenteModal({
                     type="text"
                     className="form-control"
                     value={form.estado ?? ''}
-                    onChange={(e) => onChange({...form,estado: e.target.value})}
-                    required={!docente}
-                    maxLength={80}
-                    disabled
+                    readOnly
                   />
                 </article>
 
@@ -173,25 +213,27 @@ export function DocenteModal({
                     type="text"
                     className="form-control"
                     value={form.municipio ?? ''}
-                    onChange={(e) => onChange({...form,municipio: e.target.value})}
-                    required
-                    maxLength={80}
-                    disabled
+                    readOnly
                   />
                 </article>
 
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Colonia
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
+               <article className="col-md-6">
+                  <label className="form-label fw-semibold">Colonia</label>
+                  <select
+                    className="form-select"
                     value={form.colonia ?? ''}
-                    onChange={(e) => onChange({...form,colonia: e.target.value})}
                     required
-                    maxLength={80}
-                  />
+                    disabled={loading || colonias.length === 0 || buscandoCP} 
+                    onChange={(e) => onChange({ ...form, colonia: e.target.value })} 
+                  >
+                    <option value="">Seleccione una colonia</option>
+
+                    {colonias.map((colonia) =>(
+                      <option key={colonia.id} value={colonia.d_asenta}>
+                        {colonia.d_asenta}
+                      </option>
+                    ))}
+                    </select>
                 </article>
 
                 <article className="col-md-6">
