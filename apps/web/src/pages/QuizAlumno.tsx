@@ -388,7 +388,6 @@ export default function QuizResolve() {
         );
     }
 
-    // Quiz no encontrado
     if (!quiz) {
         return (
             <article className="qr-screen">

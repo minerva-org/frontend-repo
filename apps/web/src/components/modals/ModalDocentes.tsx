@@ -1,5 +1,6 @@
 
 import type { DocenteModalProps } from '../../types/DocenteTypes';
+import { useSepomex } from '../../hooks/useSepomex';
 
 export function DocenteModal({
   planteles,
@@ -15,6 +16,26 @@ export function DocenteModal({
   hideRoleField,
   defaultPlantelName,
 }: DocenteModalProps) {
+  const {
+    colonias,
+    buscandoCP,
+    errorCP,
+    consultarCP,
+    limpiarCP,
+  } = useSepomex();
+
+  const handleConsultarCP = async() => {
+    const resultados = await consultarCP(form.codigoPostal ?? '');
+    if(!resultados){
+      return;
+    }
+    onChange({
+      ...form,
+      estado: resultados[0].d_estado,
+      municipio: resultados[0].d_mnpio,
+      colonia: resultados.length === 1 ? resultados[0].d_asenta : '',
+    });
+  };
   return (
     <article className="modal show d-block" tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="dd-modal-title" style={{ backgroundColor: 'rgba(0, 0, 0, 0.55)' }} >
       <article className="modal-dialog modal-xl modal-dialog-centered">
@@ -54,6 +75,7 @@ export function DocenteModal({
                     maxLength={50}
                     pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+([ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*"
                     title="Sin caracteres especiales ni numeros"
+                    placeholder='Ejemplo: Juan'
                   />
                 </article>
 
@@ -70,6 +92,7 @@ export function DocenteModal({
                     maxLength={50}
                     pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+([ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*"
                     title="Sin caracteres especiales ni numeros"
+                    placeholder='Ejemplo: Perez'
                   />
                 </article>
 
@@ -85,6 +108,7 @@ export function DocenteModal({
                     maxLength={50}
                     pattern="[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+([ '-][A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+)*"
                     title="Sin caracteres especiales ni numeros"
+                    placeholder='Ejemplo: López'
                   />
                 </article>
 
@@ -103,6 +127,7 @@ export function DocenteModal({
                       maxLength={64}
                       pattern="[A-Za-z0-9._%+-]+"
                       title="Ingresa la parte inicial sin espacios."
+                      placeholder='juan.p'
                     />
 
                     <span className="input-group-text">
@@ -125,7 +150,90 @@ export function DocenteModal({
                     maxLength={10}
                     pattern="[0-9]{10}"
                     title="El teléfono debe contener exactamente 10 dígitos."
+                    placeholder='667 152 4236'
                   />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">Código postal</label>
+                  <input
+                    className="form-control"
+                    type='text'
+                    value={form.codigoPostal ?? ''}
+                    maxLength={5}
+                    pattern="[0-9]{5}"
+                    placeholder='Ejemplo: 80150'
+                    required
+                    disabled={loading || buscandoCP}
+                    onChange={(e) =>{
+                      onChange({
+                        ...form, 
+                        codigoPostal:e.target.value.replace(/\D/g, '').slice(0,5), 
+                        colonia: '', 
+                        municipio: '', 
+                        estado: '',                      
+                      });
+
+                      limpiarCP();
+                    }}
+                    onKeyDown={(e) =>  {
+                      if(e.key === 'Enter'){
+                        e.preventDefault();
+                        handleConsultarCP();
+                      }
+                    }}
+                  />
+
+                  {buscandoCP && (
+                    <small> Consultando código postal</small>
+                  )}
+
+                  {errorCP && (
+                    <small>{errorCP}</small>
+                  )}
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Estado
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.estado ?? ''}
+                    readOnly
+                  />
+                </article>
+
+                <article className="col-md-6">
+                  <label className="form-label fw-semibold">
+                    Municipio
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={form.municipio ?? ''}
+                    readOnly
+                  />
+                </article>
+
+               <article className="col-md-6">
+                  <label className="form-label fw-semibold">Colonia</label>
+                  <select
+                    className="form-select"
+                    value={form.colonia ?? ''}
+                    required
+                    disabled={loading || colonias.length === 0 || buscandoCP} 
+                    onChange={(e) => onChange({ ...form, colonia: e.target.value })} 
+                  >
+                    <option value="">Seleccione una colonia</option>
+
+                    {colonias.map((colonia) =>(
+                      <option key={colonia.id} value={colonia.d_asenta}>
+                        {colonia.d_asenta}
+                      </option>
+                    ))}
+                    </select>
                 </article>
 
                 <article className="col-md-6">
@@ -139,67 +247,9 @@ export function DocenteModal({
                     onChange={(e) => onChange({...form,calle: e.target.value})}
                     required
                     maxLength={100}
+                    placeholder='Av. Alvaro Obregon '
                   />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Colonia
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.colonia ?? ''}
-                    onChange={(e) => onChange({...form,colonia: e.target.value})}
-                    required
-                    maxLength={80}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Código Postal
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.codigoPostal ?? ''}
-                    onChange={(e) => onChange({...form,codigoPostal: e.target.value})}
-                    required={!docente}
-                    inputMode="numeric"
-                    maxLength={5}
-                    pattern="[0-9]{5}"
-                    title="El código postal debe contener 5 dígitos."
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Municipio
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.municipio ?? ''}
-                    onChange={(e) => onChange({...form,municipio: e.target.value})}
-                    required
-                    maxLength={80}
-                  />
-                </article>
-
-                <article className="col-md-6">
-                  <label className="form-label fw-semibold">
-                    Estado
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    value={form.estado ?? ''}
-                    onChange={(e) => onChange({...form,estado: e.target.value})}
-                    required={!docente}
-                    maxLength={80}
-                  />
-                </article>
+                </article>               
 
                 <article className="col-md-6">
                   <label className="form-label fw-semibold">
@@ -212,6 +262,7 @@ export function DocenteModal({
                     onChange={(e) => onChange({...form, carrera: e.target.value})}
                     required
                     maxLength={100}
+                    placeholder='Ing. en sistemas'
                   />
                 </article>
 
@@ -226,6 +277,7 @@ export function DocenteModal({
                     onChange={(e) => onChange({...form, tituloEdu: e.target.value})}
                     required
                     maxLength={100}
+                    placeholder='Lic en sistemas'
                   />
                 </article>
 
