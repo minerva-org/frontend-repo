@@ -11,14 +11,24 @@ export interface PaginacionProps {
     onPageChange: (page: number) => void;
 }
 
-export interface UsePaginacionReturn<T>{
+export interface UsePaginacionReturn{
     paginaActual:number;
     totalPaginas: number;
-    dataPaginada: T[];
     irAPagina: (page: number) => void;
     siguientePagina: () => void;
     anteriorPagina: () => void;
-    setPaginaActual: (page: number) => void;
     tieneSiguientePagina: boolean;
     tieneAnteriorPagina: boolean;
+}
+
+export interface PaginaResponse<T> {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+  numberOfElements: number;
+  empty: boolean;
 }
