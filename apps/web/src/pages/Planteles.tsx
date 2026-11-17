@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback,useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchInstituciones } from '../services/institucionService';
 import { PlantelModal }from '../components/modals/ModalPlantel.tsx'
 import '../styles/CatalogoPlanteles.css';
+import Toast, {type ToastData} from '../components/common/Toast.tsx'
 
 
 interface Plantel {
@@ -62,7 +63,8 @@ export default function Planteles() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const [confirmDeactivate, setConfirmDeactivate] = useState<Plantel | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
+  const cerrarToast = useCallback(() => { setToast(null);}, []);
 
   async function loadPlanteles() {
     try {
@@ -128,11 +130,6 @@ export default function Planteles() {
     }));
   }, [defaultInstitucionId]);
 
-  useEffect(() => {
-    if (!toast) return;
-    const id = window.setTimeout(() => setToast(null), 2600);
-    return () => window.clearTimeout(id);
-  }, [toast]);
 
   function openCreateModal() {
     setEditingId(null);
@@ -222,7 +219,9 @@ export default function Planteles() {
           ),
         );
 
-        setToast('Plantel actualizado correctamente.');
+        setToast({
+          mensaje:'Plantel actualizado correctamente.',
+          tipo:'exito'});
       } else {
         const response = await apiClient.post<Plantel>(
           '/api/planteles',
@@ -230,7 +229,9 @@ export default function Planteles() {
         );
 
         setPlanteles((prev) => [response.data, ...prev]);
-        setToast('Plantel creado correctamente.');
+        setToast({
+          mensaje:'Plantel creado correctamente.',
+          tipo:'exito'});
       }
 
       closeModal();
@@ -262,9 +263,13 @@ export default function Planteles() {
       );
 
       setConfirmDeactivate(null);
-      setToast('Plantel desactivado correctamente.');
+      setToast({
+        mensaje:'Plantel desactivado correctamente.',
+        tipo:'exito'});
     } catch {
-      setToast('No se pudo desactivar el plantel.');
+      setToast({
+        mensaje:'No se pudo desactivar el plantel.',
+        tipo:'error'});
     } finally {
       setLoading(false);
     }
@@ -296,9 +301,13 @@ export default function Planteles() {
         ),
       );
 
-      setToast('Plantel reactivado correctamente.');
+      setToast({
+        mensaje:'Plantel reactivado correctamente.',
+        tipo:'exito'});
     } catch {
-      setToast('No se pudo reactivar el plantel.');
+      setToast({
+        mensaje:'No se pudo reactivar el plantel.',
+        tipo:'error'});
     } finally {
       setLoading(false);
     }
@@ -484,14 +493,7 @@ export default function Planteles() {
             document.body,
           )}
 
-      {toast && createPortal(
-        <article style={{ position: 'fixed', right: 20, bottom: 20, zIndex: 60 }}>
-          <section style={{ background: 'var(--ar-profundo)', color: 'var(--seige-superficie)', padding: '10px 14px', borderRadius: 10, boxShadow: '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)' }}>
-            {toast}
-          </section>
-        </article>,
-        document.body,
-      )}
+      <Toast toast={toast} onCerrar={cerrarToast}/>
     </article>
   );
 }

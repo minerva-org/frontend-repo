@@ -41,7 +41,7 @@ function derivarPrefijo(nombre: string): string {
     .slice(0, 4)
     .toUpperCase();
 
-  return limpio || 'MATE';
+  return limpio;
 }
 
 function extraerNumeroDesdePrefijo(prefijo?: string): number {
@@ -258,7 +258,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                   setPrefijo(nuevoNombre.trim() ? derivarPrefijo(nuevoNombre) : '');
                 }
               }}
-
+              placeholder='Matemáticas'
             />
           </article>
 
@@ -279,7 +279,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                   setPrefijo(valor);
                   setPrefijoModificado(valor !== derivarPrefijo(nombre));
                 }}
-                placeholder='Ej.MATE'
+                placeholder='Ejemplo: MATE'
                 aria-label="Prefijo derivado de la materia"
               />
               <input

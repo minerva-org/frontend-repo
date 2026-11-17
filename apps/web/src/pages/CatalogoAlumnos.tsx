@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
@@ -6,14 +6,17 @@ import { apiClient } from '../services/ApiClient';
 import {
   createPersona,
   fetchPersonaByEmail,
-  fetchPersonasByPlantelAndRol,
+  fetchPersonasPaginadas,
   updatePersona,
   type PersonaRecord,
-} from '../services/personaService';
+} from '../services/personaService.ts';
 import '../styles/CatalogoAlumnos.css';
 import type { AlumnoFormState } from '../types/AlumnoTypes.ts';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
 import { ModalAlumnos } from '../components/modals/ModalAlumnos.tsx';
+import { usePaginacion } from '../hooks/usePaginacion.ts';
+import { Paginacion } from '../components/common/Paginacion.tsx';
+import Toast,{type ToastData} from '../components/common/Toast.tsx'
 
 const SAFE_PASSWORD_REGEX =
   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -21,6 +24,7 @@ const SAFE_PASSWORD_REGEX =
 const PHONE_REGEX = /^\d{10}$/;
 const POSTAL_CODE_REGEX = /^\d{5}$/;
 const EMAIL_LOCAL_REGEX = /^[a-zA-Z0-9._%+-]+$/;
+const ITEMS_POR_PAGINA = 10;
 
 const emptyForm: AlumnoFormState = {
   nombre: '',
@@ -86,9 +90,16 @@ export default function CatalogoAlumnos() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<AlumnoFormState>(emptyForm);
   const [formError, setFormError] = useState<string | null>(null);
-  const [confirmDeactivate, setConfirmDeactivate] =
-    useState<PersonaRecord | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [confirmDeactivate, setConfirmDeactivate] = useState<PersonaRecord | null>(null);
+  const [confirmActivate, setConfirmActivate] = useState<PersonaRecord | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
+  const cerrarToast = useCallback(() => { setToast(null);}, []);
+
+  const [paginaActual,setPaginaActual] = useState(1);
+  const [totalPaginas,setTotalPaginas] = useState(0);
+  const [totalAlumnos,setTotalAlumnos] = useState(0);
+
+  
 
   const activePlantelId = canChoosePlantel
     ? (selectedPlantel?.id ?? planteles[0]?.id ?? null)
@@ -126,22 +137,33 @@ export default function CatalogoAlumnos() {
   async function loadAlumnos() {
     if (!activePlantelId) {
       setAlumnos([]);
+      setTotalPaginas(0);
+      setTotalAlumnos(0);
+      setLoading(false);
       return;
     }
 
+    setLoading(true);
+
     try {
-      const response = await fetchPersonasByPlantelAndRol(
+      const response = await fetchPersonasPaginadas(
         activePlantelId,
         'ALUMNO',
+        paginaActual -1,
+        ITEMS_POR_PAGINA,
       );
 
-      setAlumnos((response.data ?? []) as PersonaRecord[]);
+      setAlumnos(response.data.content);
+      setTotalPaginas(response.data.totalPages);
+      setTotalAlumnos(response.data.totalElements);
       setFetchError(null);
     } catch {
       setAlumnos([]);
-      setFetchError(
-        'No se pudieron cargar los alumnos. Intenta recargar la página.',
-      );
+      setTotalPaginas(0);
+      setTotalAlumnos(0);
+      setFetchError('No se pudieron cargar los alumnos. Intenta recargar la página.',);
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -171,15 +193,7 @@ export default function CatalogoAlumnos() {
 
   useEffect(() => {
     void loadAlumnos();
-  }, [activePlantelId]);
-
-  useEffect(() => {
-    if (!toast) return;
-
-    const id = window.setTimeout(() => setToast(null), 2600);
-
-    return () => window.clearTimeout(id);
-  }, [toast]);
+  }, [activePlantelId,paginaActual]);
 
   function openCreateModal() {
     setEditingId(null);
@@ -199,9 +213,6 @@ export default function CatalogoAlumnos() {
     if (alumno.activo === false) return;
 
     setEditingId(alumno.id);
-    console.log('Alumno seleccionado:', alumno);
-    console.log('Nombre tutor:', alumno.nombreTutor);
-    console.log('Teléfono tutor:', alumno.numeroTutor);
     setForm({
       nombre: alumno.nombre ?? '',
       apellidoPaterno: alumno.apellidoPaterno ?? '',
@@ -324,26 +335,26 @@ export default function CatalogoAlumnos() {
       };
 
       if (editingId) {
-        const response = await updatePersona(editingId, payload);
-        const updated = response.data as PersonaRecord;
 
-        setAlumnos((prev) =>
-          prev.map((item) => (item.id === editingId ? updated : item)),
-        );
+        await updatePersona(editingId,payload);
+        await loadAlumnos();
 
-        setToast('Alumno actualizado correctamente.');
+        setToast({
+          mensaje:'Alumno actualizado correctamente.',
+          tipo:'exito',});
       } else {
-        const response = await createPersona({
+        await createPersona({
           id: crypto.randomUUID(),
           ...payload,
           activo: true,
           password,
         });
 
-        const created = response.data as PersonaRecord;
 
-        setAlumnos((prev) => [created, ...prev]);
-        setToast('Alumno creado correctamente.');
+        await loadAlumnos();
+        setToast({
+          mensaje:'Alumno creado correctamente.',
+          tipo:'exito',});
       }
 
       closeModal();
@@ -360,17 +371,18 @@ export default function CatalogoAlumnos() {
     setLoading(true);
 
     try {
-      const response = await updatePersona(alumno.id, { activo: false });
-      const updated = response.data as PersonaRecord;
-
-      setAlumnos((prev) =>
-        prev.map((item) => (item.id === alumno.id ? updated : item)),
-      );
+      await(updatePersona(alumno.id,{activo: false}));
+      await loadAlumnos();
 
       setConfirmDeactivate(null);
-      setToast('Alumno desactivado correctamente.');
+
+      setToast({
+        mensaje:'Alumno desactivado correctamente.',
+        tipo:'exito'});
     } catch {
-      setToast('No se pudo desactivar el alumno.');
+      setToast({
+        mensaje:'No se pudo desactivar el alumno.',
+        tipo:'error'});
     } finally {
       setLoading(false);
     }
@@ -380,42 +392,32 @@ export default function CatalogoAlumnos() {
     setLoading(true);
 
     try {
-      const response = await updatePersona(alumno.id, { activo: true });
-      const updated = response.data as PersonaRecord;
+      await(updatePersona(alumno.id,{activo: true}));
+      await loadAlumnos();
 
-      setAlumnos((prev) =>
-        prev.map((item) => (item.id === alumno.id ? updated : item)),
-      );
 
-      setToast('Alumno reactivado correctamente.');
+      setConfirmActivate(null);
+      setToast({
+        mensaje:'Alumno reactivado correctamente.',
+        tipo:'exito',});
     } catch {
-      setToast('No se pudo reactivar el alumno.');
+      setToast({
+        mensaje:'No se pudo reactivar el alumno.',
+        tipo:'error'});
     } finally {
       setLoading(false);
     }
   }
 
-  const filteredAlumnos = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const {irAPagina} = usePaginacion({
+    paginaActual,
+    totalPaginas,
+    onPageChange:setPaginaActual,
+  });
 
-    if (!query) return alumnos;
-
-    return alumnos.filter((alumno) => {
-      const fullName = getNombreCompleto(alumno).toLowerCase();
-      const alumnoEmail = alumno.email.toLowerCase();
-
-      const plantelNombre =
-        planteles
-          .find((item) => item.id === alumno.plantelId)
-          ?.nombre.toLowerCase() ?? '';
-
-      return (
-        fullName.includes(query) ||
-        alumnoEmail.includes(query) ||
-        plantelNombre.includes(query)
-      );
-    });
-  }, [alumnos, search, planteles]);
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [activePlantelId]);
 
   return (
     <article className="ca-screen">
@@ -475,7 +477,7 @@ export default function CatalogoAlumnos() {
             </thead>
 
             <tbody>
-              {filteredAlumnos.map((alumno) => {
+              {alumnos.map((alumno) => {
                 const plantelNombre =
                   planteles.find((item) => item.id === alumno.plantelId)
                     ?.nombre ?? `Plantel ${alumno.plantelId ?? '-'}`;
@@ -489,7 +491,6 @@ export default function CatalogoAlumnos() {
                       <span className="ca-nombre">
                         {getNombreCompleto(alumno)}
                       </span>
-                      <span className="ca-correo">{alumno.email}</span>
                     </td>
 
                     <td>
@@ -532,7 +533,7 @@ export default function CatalogoAlumnos() {
                         onClick={() =>
                           alumno.activo
                             ? setConfirmDeactivate(alumno)
-                            : void handleActivate(alumno)
+                            : setConfirmActivate(alumno)
                         }
                       >
                         {alumno.activo ? 'Desactivar' : 'Reactivar'}
@@ -544,9 +545,18 @@ export default function CatalogoAlumnos() {
             </tbody>
           </table>
 
-          {filteredAlumnos.length === 0 && !fetchError && (
+          {alumnos.length === 0 && !fetchError && !loading &&(
             <p className="ca-empty">No se encontraron alumnos.</p>
           )}
+
+          <Paginacion
+          paginaActual={paginaActual}
+          totalPaginas={totalPaginas}
+          totalItems={totalAlumnos}
+          itemsPorPagina={ITEMS_POR_PAGINA}
+          onPageChange={irAPagina}
+          />
+
         </article>
       </article>
 
@@ -636,6 +646,7 @@ export default function CatalogoAlumnos() {
                   <button
                     type="button"
                     className="btn btn-danger"
+                    disabled={loading}
                     onClick={() => void handleDeactivate(confirmDeactivate)}
                   >
                     Desactivar
@@ -647,31 +658,78 @@ export default function CatalogoAlumnos() {
           document.body,
         )}
 
-      {toast &&
+        {confirmActivate &&
         createPortal(
           <article
+            className="modal show d-block"
+            tabIndex={-1}
+            role="presentation"
+            onClick={() => setConfirmActivate(null)}
             style={{
-              position: 'fixed',
-              right: 20,
-              bottom: 20,
-              zIndex: 60,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              zIndex: 1055,
             }}
           >
-            <section
-              style={{
-                background: 'var(--ar-profundo)',
-                color: 'var(--seige-superficie)',
-                padding: '10px 14px',
-                borderRadius: 10,
-                boxShadow:
-                  '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)',
-              }}
+            <article
+              className="modal-dialog modal-dialog-centered"
+              role="alertdialog"
+              aria-modal="true"
+              aria-labelledby="ca-activate-title"
+              onClick={(event) => event.stopPropagation()}
             >
-              {toast}
-            </section>
+              <article className="modal-content border-0 shadow rounded-4 overflow-hidden">
+                <header
+                  className="modal-header text-white"
+                  style={{
+                    background:
+                      'linear-gradient(135deg, var(--ar-profundo), var(--ar-azul))',
+                  }}
+                >
+                  <article>
+                    <h5
+                      id="ca-activate-title"
+                      className="modal-title fw-bold text-white"
+                    >
+                      Confirmar reactivación
+                    </h5>
+
+                    <p className="mb-0 small text-white opacity-75">
+                      {getNombreCompleto(confirmActivate)}
+                    </p>
+                  </article>
+                </header>
+
+                <section className="modal-body py-4">
+                  <p className="mb-0">
+                    ¿Desea dar de alta al alumno <strong>{confirmActivate.nombre}</strong>?  Podrá volver a ser asignado a grupos.
+                  </p>
+                </section>
+
+                <footer className="modal-footer border-0 pt-0">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setConfirmActivate(null)}
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    disabled={loading}
+                    onClick={() => void handleActivate(confirmActivate)}
+                  >
+                    Reactivar
+                  </button>
+                </footer>
+              </article>
+            </article>
           </article>,
           document.body,
         )}
+
+      <Toast toast={toast} onCerrar={cerrarToast}/>
     </article>
   );
 }

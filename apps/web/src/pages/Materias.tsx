@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback,useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import ModalMateria, { type DatosMateria } from '../components/modals/ModalMateria.tsx';
@@ -6,6 +6,7 @@ import type { Materia } from '../types/types.ts';
 import { apiClient } from '../services/ApiClient.ts';
 import '../styles/Materias.css';
 import { useAuth } from '../context/AuthContext.tsx';
+import Toast, {type ToastData}  from '../components/common/Toast.tsx'
 
 const normalizar = (s: string) =>
   s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
@@ -21,14 +22,10 @@ export default function Materias() {
   const [modal, setModal] = useState<EstadoModal>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
+  const cerrarToast = useCallback(() => { setToast(null);}, []);
   const {role} = useAuth();
 
-  useEffect(() => {
-    if (!toast) return;
-    const id = window.setTimeout(() => setToast(null), 2600);
-    return () => window.clearTimeout(id);
-  }, [toast]);
 
   function extractErrorMessage(err: unknown, fallback: string): string {
     if (typeof err === 'object' && err !== null) {
@@ -104,7 +101,9 @@ export default function Materias() {
         setMaterias((prev) => prev.map((m) => (m.id === modal.materia.id ? response.data : m)));
         await loadMaterias();
         setModal(null);
-        setToast('Materia guardada correctamente.');
+        setToast({
+          mensaje:'Materia guardada correctamente.',
+          tipo:'exito'});
         return;
       }
 
@@ -131,10 +130,14 @@ export default function Materias() {
       setMaterias((prev) => [materiaResponse.data, ...prev]);
       await loadMaterias();
       setModal(null);
-      setToast('Materia guardada correctamente.');
+      setToast({
+        mensaje:'Materia guardada correctamente.',
+        tipo:'exito'});
     } catch (err) {
       const message = extractErrorMessage(err, 'No se pudo guardar la materia.');
-      setToast(message);
+      setToast({
+        mensaje:message,
+        tipo:'error'});
       setError(message);
     }
   }
@@ -157,7 +160,9 @@ export default function Materias() {
       );
 
       setConfirmDeactivate(null);
-      setToast('Materia desactivada correctamente.');
+      setToast({
+        mensaje:'Materia desactivada correctamente.',
+        tipo:'exito'});
     } catch (err) {
       setError(extractErrorMessage(err, 'No se pudo desactivar la materia.'));
     }
@@ -170,12 +175,16 @@ export default function Materias() {
       });
 
       setConfirmDeactivate(null);
-      setToast('Materia reactivada correctamente.');
+      setToast({
+        mensaje:'Materia reactivada correctamente.',
+        tipo:'exito'});
 
       await loadMaterias();
     } catch (err) {
       const message = extractErrorMessage(err, 'No se pudo reactivar la materia.');
-      setToast(message);
+      setToast({
+         mensaje:message,
+          tipo:'error'});
       setError(message);
     }
   }
@@ -397,26 +406,7 @@ export default function Materias() {
   )}
 
 
-      {toast && createPortal(
-        <article
-          style={{
-            position: 'fixed',
-            right: '1.25rem',
-            bottom: '1.25rem',
-            zIndex: 2000,
-            background: '#111827',
-            color: '#fff',
-            padding: '0.8rem 1rem',
-            borderRadius: '0.75rem',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
-            fontSize: '0.95rem',
-            maxWidth: '30rem',
-          }}
-        >
-          {toast}
-        </article>,
-        document.body,
-      )}
+  <Toast toast={toast} onCerrar={cerrarToast}/>
 
      
     </article>

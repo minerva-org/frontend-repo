@@ -1,7 +1,7 @@
 import { apiClient } from './ApiClient';
 import type { CreatePersonaPayload, PersonaRecord, PersonaRol, UpdatePersonaPayload } from '../types/PersonaTypes.ts';
+import type { PaginaResponse } from '../types/PaginacionTypes.ts';
 
-export type { PersonaRecord, PersonaRol, CreatePersonaPayload, UpdatePersonaPayload } from '../types/PersonaTypes.ts';
 
 export function buildPersonaUsername(email: string, plantelId: number | string): string {
   const base = (email.trim().split('@')[0] ?? 'usuario')
@@ -33,6 +33,18 @@ export async function fetchPersonasByRol(rol: PersonaRol) {
 
 export async function fetchPersonasByPlantelAndRol(plantelId: number, rol: 'ALUMNO' | 'DOCENTE' | 'COORDINADOR') {
   return apiClient.get<PersonaRecord[]>('/api/personas', { params: { plantelId, rol } });
+}
+
+export async function fetchPersonasPaginadas( plantelId: number, rol: PersonaRol, page: number, size: number, activo?: boolean,){
+  return apiClient.get<PaginaResponse<PersonaRecord>>('/api/personas/paginados',{
+    params:{
+      plantelId,
+      rol,
+      page,
+      size,
+      activo,
+    },
+  },);
 }
 
 export async function fetchPersonaByEmail(email: string) {

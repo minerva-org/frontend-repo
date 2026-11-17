@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState, type SubmitEvent } from 'react';
+import { useCallback,useEffect, useMemo, useState, type SubmitEvent } from 'react';
 import { createPortal } from 'react-dom';
 import DirectorPlantelModal, {
   type DirectorFormState,
@@ -10,6 +10,7 @@ import { apiClient } from '../services/ApiClient';
 import { createPersona, updatePersona } from '../services/personaService';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
 import '../styles/CatalogoDirectoresPlantel.css';
+import Toast,{ type ToastData} from '../components/common/Toast.tsx'
 
 interface DirectorPersona {
   id: string;
@@ -60,7 +61,8 @@ export default function DirectoresPlanteles() {
 
   const [confirmDeactivate, setConfirmDeactivate] =
     useState<DirectorPersona | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
+  const cerrarToast = useCallback(() => { setToast(null);}, []);
 
   async function loadDirectores() {
     try {
@@ -102,12 +104,7 @@ export default function DirectoresPlanteles() {
     void loadPlanteles();
   }, []);
 
-  useEffect(() => {
-    if (!toast) return;
 
-    const id = window.setTimeout(() => setToast(null), 2600);
-    return () => window.clearTimeout(id);
-  }, [toast]);
 
   function formatearEmailInstitucional(localPart: string) {
     const limpio = localPart
@@ -265,7 +262,9 @@ export default function DirectoresPlanteles() {
           prev.map((item) => (item.id === editingId ? updated : item)),
         );
 
-        setToast('Director actualizado correctamente.');
+        setToast({
+          mensaje:'Director actualizado correctamente.',
+          tipo:'exito'});
       } else {
         const response = await createPersona({
           id: crypto.randomUUID(),
@@ -277,7 +276,9 @@ export default function DirectoresPlanteles() {
         const created = response.data as DirectorPersona;
 
         setDirectores((prev) => [created, ...prev]);
-        setToast('Director creado correctamente.');
+        setToast({
+          mensaje:'Director creado correctamente.',
+        tipo:'exito'});
       }
 
       closeModal();
@@ -304,9 +305,13 @@ export default function DirectoresPlanteles() {
       );
 
       setConfirmDeactivate(null);
-      setToast('Director desactivado correctamente.');
+      setToast({
+        mensaje:'Director desactivado correctamente.',
+        tipo:'exito'});
     } catch {
-      setToast('No se pudo desactivar el director.');
+      setToast({
+        mensaje:'No se pudo desactivar el director.',
+        tipo:'error'});
     } finally {
       setLoading(false);
     }
@@ -323,9 +328,13 @@ export default function DirectoresPlanteles() {
         prev.map((item) => (item.id === director.id ? updated : item)),
       );
 
-      setToast('Director reactivado correctamente.');
+      setToast({
+        mensaje:'Director reactivado correctamente.',
+        tipo:'exito'});
     } catch {
-      setToast('No se pudo reactivar el director.');
+      setToast({
+        mensaje:'No se pudo reactivar el director.',
+        tipo:'error'});
     } finally {
       setLoading(false);
     }
@@ -571,31 +580,7 @@ export default function DirectoresPlanteles() {
           document.body,
         )}
 
-      {toast &&
-        createPortal(
-          <article
-            style={{
-              position: 'fixed',
-              right: 20,
-              bottom: 20,
-              zIndex: 60,
-            }}
-          >
-            <section
-              style={{
-                background: 'var(--ar-profundo)',
-                color: 'var(--seige-superficie)',
-                padding: '10px 14px',
-                borderRadius: 10,
-                boxShadow:
-                  '0 12px 30px color-mix(in srgb, var(--ar-profundo) 28%, transparent)',
-              }}
-            >
-              {toast}
-            </section>
-          </article>,
-          document.body,
-        )}
+      <Toast toast={toast} onCerrar={cerrarToast}/>
     </article>
   );
 }
