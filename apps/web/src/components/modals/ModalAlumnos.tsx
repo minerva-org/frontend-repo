@@ -1,5 +1,5 @@
 import type { SubmitEvent } from 'react';
-import type { PersonaRecord } from '../../services/personaService';
+import type { PersonaRecord } from '../../types/PersonaTypes';
 import type { PlantelItem } from '../../types/PlantelTypes';
 import type { AlumnoFormState } from '../../types/AlumnoTypes';
 import { useSepomex } from '../../hooks/useSepomex';

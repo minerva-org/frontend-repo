@@ -1,7 +1,7 @@
-export interface UsePaginationProps<T>{
-    data: T[];
-    itemsPorPagina?: number;
-}
+export type UsePaginationProps = Pick<
+    PaginacionProps,
+    'paginaActual' | 'totalPaginas' | 'onPageChange'
+>;
 
 export interface PaginacionProps {
     paginaActual: number;

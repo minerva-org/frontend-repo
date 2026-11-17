@@ -8,8 +8,8 @@ import {
   fetchPersonaByEmail,
   fetchPersonasPaginadas,
   updatePersona,
-  type PersonaRecord,
 } from '../services/personaService.ts';
+import type { PersonaRecord } from '../types/PersonaTypes.ts';
 import '../styles/CatalogoAlumnos.css';
 import type { AlumnoFormState } from '../types/AlumnoTypes.ts';
 import type { PlantelItem } from '../types/PlantelTypes.ts';

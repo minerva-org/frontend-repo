@@ -1,7 +1,8 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 import { apiClient } from '../../services/ApiClient';
 import AutocompleteInput from '.././AutoCompleteInput.tsx';
-import { fetchPersonas,type PersonaRecord}  from '../../services/personaService';
+import { fetchPersonas } from '../../services/personaService';
+import type { PersonaRecord } from '../../types/PersonaTypes';
 import { useAuth } from '../../context/AuthContext.tsx';
 import type { NewGroupData } from '../../types/GrupoTypes.ts';
 import '../../styles/ModalGrupos.css';

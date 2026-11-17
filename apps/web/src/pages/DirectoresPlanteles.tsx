@@ -2,9 +2,9 @@
 import { useCallback,useEffect, useMemo, useState, type SubmitEvent } from 'react';
 import { createPortal } from 'react-dom';
 import DirectorPlantelModal, {
-  type DirectorFormState,
   isStrongPassword,
 } from '../components/modals/DirectorPlantelModal.tsx';
+import type { DirectorFormState } from '../types/DirectorPlantelTypes.ts';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
 import { createPersona, updatePersona } from '../services/personaService';

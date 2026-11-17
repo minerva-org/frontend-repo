@@ -1,4 +1,4 @@
-import type { PersonaRecord } from '../services/personaService';
+import type { PersonaRecord } from './PersonaTypes';
 import type { PlantelItem } from './PlantelTypes';
 import type { SubmitEvent } from 'react';
 

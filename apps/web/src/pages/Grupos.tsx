@@ -6,7 +6,8 @@ import { useSidebar } from '../context/SidebarContext.tsx';
 import CreateGroupModal from '../components/modals/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
-import { fetchPersonas, type PersonaRecord } from '../services/personaService';
+import { fetchPersonas } from '../services/personaService';
+import type { PersonaRecord } from '../types/PersonaTypes';
 import type { GrupoBackend, GrupoListado,NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/Grupos.css';
 

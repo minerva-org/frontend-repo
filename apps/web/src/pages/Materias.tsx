@@ -52,7 +52,7 @@ export default function Materias() {
       const message = extractErrorMessage(err, 'No se pudieron cargar las materias. Intenta recargar la página.');
       setMaterias([]);
       setError(message);
-      setToast(message);
+      setToast({ mensaje: message, tipo: 'error' });
     } finally {
       setCargando(false);
     }
