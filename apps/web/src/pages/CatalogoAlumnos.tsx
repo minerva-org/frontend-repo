@@ -195,14 +195,6 @@ export default function CatalogoAlumnos() {
     void loadAlumnos();
   }, [activePlantelId,paginaActual]);
 
-  useEffect(() => {
-    if (!toast) return;
-
-    const id = window.setTimeout(() => setToast(null), 2600);
-
-    return () => window.clearTimeout(id);
-  }, [toast]);
-
   function openCreateModal() {
     setEditingId(null);
 
