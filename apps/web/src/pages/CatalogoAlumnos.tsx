@@ -152,6 +152,8 @@ export default function CatalogoAlumnos() {
         'ALUMNO',
         paginaActual -1,
         ITEMS_POR_PAGINA,
+        undefined,
+        search.trim(),
       );
 
       setAlumnos(response.data.content);
@@ -194,7 +196,7 @@ export default function CatalogoAlumnos() {
 
   useEffect(() => {
     void loadAlumnos();
-  }, [activePlantelId,paginaActual]);
+  }, [activePlantelId,paginaActual,search]);
 
   function openCreateModal() {
     setEditingId(null);
@@ -416,10 +418,6 @@ export default function CatalogoAlumnos() {
     onPageChange:setPaginaActual,
   });
 
-  useEffect(() => {
-    setPaginaActual(1);
-  }, [activePlantelId]);
-
   return (
     <article className="ca-screen">
       <header className="ca-topbar">
@@ -454,7 +452,10 @@ export default function CatalogoAlumnos() {
               type="text"
               placeholder="Buscar alumno por nombre, correo o plantel..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPaginaActual(1)}
+              }
             />
           </article>
 
