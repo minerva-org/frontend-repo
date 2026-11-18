@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/ApiClient.ts';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import '../styles/MisGrupos.css';
 
 interface GrupoBackend {
@@ -141,7 +142,7 @@ export default function MisGrupos() {
             title="Mostrar u ocultar menú"
             aria-label="Mostrar u ocultar menú"
           >
-            <i className="bi bi-list mg-icon"></i>
+            <SidebarToggleIcon className="mg-icon" />
           </button>
           <span className="mg-topbar-title">Alumno</span>
         </article>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import '../styles/QuizNuevo.css';
 
@@ -528,7 +529,7 @@ export default function QuizNuevo() {
       <article className="qn-screen">
         <header className="qn-topbar">
           <button className="qn-icon-btn" onClick={toggleSidebar} aria-label="Mostrar u ocultar menú">
-            <i className="bi bi-list"></i>
+            <SidebarToggleIcon />
           </button>
           <span className="qn-topbar-title">Docente</span>
         </header>
@@ -543,7 +544,7 @@ export default function QuizNuevo() {
     <article className="qn-screen">
       <header className="qn-topbar">
         <button className="qn-icon-btn" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
-          <i className="bi bi-list"></i>
+          <SidebarToggleIcon />
         </button>
         <span className="qn-topbar-title">Docente</span>
       </header>

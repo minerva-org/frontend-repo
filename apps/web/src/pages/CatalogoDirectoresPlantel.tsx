@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import '../styles/CatalogoDirectoresPlantel.css';
 
 type EstadoDirector = 'Activo' | 'Inactivo';
@@ -84,7 +85,7 @@ export default function CatalogoDirectoresPlantel() {
           title="Mostrar u ocultar menú"
           aria-label="Mostrar u ocultar menú"
         >
-          <i className="bi bi-list"></i>
+          <SidebarToggleIcon />
         </button>
         <span className="dp-topbar-title">Directores</span>
       </header>
