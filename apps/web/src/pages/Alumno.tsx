@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import type { GrupoAlumnoBackend, QuizAlumnoBackend} from '../types/AlumnoTypes';
 
@@ -139,7 +140,7 @@ export default function AlumnoInicio() {
       <header className="al-topbar">
         <article className="al-topbar-side">
           <button className="al-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
-            <i className="bi bi-list al-icon"></i>
+            <SidebarToggleIcon className="al-icon" />
           </button>
           <span className="al-topbar-title">Alumno</span>
         </article>

@@ -9,7 +9,7 @@ export function clearAuthSession() {
 }
 
 export const apiClient = axios.create({
-  baseURL: 'http://localhost:5173',
+  baseURL: '',
   headers: {
     'Content-Type': 'application/json',
   },

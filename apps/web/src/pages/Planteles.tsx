@@ -1,6 +1,7 @@
 import { useCallback,useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchInstituciones } from '../services/institucionService';
 import { PlantelModal }from '../components/modals/ModalPlantel.tsx'
@@ -336,7 +337,7 @@ export default function Planteles() {
           aria-label="Mostrar u ocultar menú"
           className="pl-icon-btn"
         >
-          <i className="bi bi-list" />
+          <SidebarToggleIcon />
         </button>
         <span className="pl-topbar-title">Planteles</span>
       </header>

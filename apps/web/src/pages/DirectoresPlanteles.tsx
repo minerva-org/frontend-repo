@@ -2,10 +2,11 @@
 import { useCallback,useEffect, useMemo, useState, type SubmitEvent } from 'react';
 import { createPortal } from 'react-dom';
 import DirectorPlantelModal, {
-  type DirectorFormState,
   isStrongPassword,
 } from '../components/modals/DirectorPlantelModal.tsx';
+import type { DirectorFormState } from '../types/DirectorPlantelTypes.ts';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import { createPersona, updatePersona } from '../services/personaService';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
@@ -250,7 +251,7 @@ export default function DirectoresPlanteles() {
         municipio: form.municipio.trim(),
         estado: form.estado.trim(),
         codigoPostal: form.codigoPostal.trim(),
-        rol: 'DIRECTOR_PLANTEL',
+        rol: 'DIRECTOR_PLANTEL' as const,
         plantelId,
       };
 
@@ -369,7 +370,7 @@ export default function DirectoresPlanteles() {
           aria-label="Mostrar u ocultar menú"
           className="dp-icon-btn"
         >
-          <i className="bi bi-list" />
+          <SidebarToggleIcon />
         </button>
         <span className="dp-topbar-title">Directores de Plantel</span>
       </header>

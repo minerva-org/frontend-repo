@@ -2,14 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import {
   createPersona,
   fetchPersonaByEmail,
   fetchPersonasPaginadas,
   updatePersona,
-  type PersonaRecord,
 } from '../services/personaService.ts';
+import type { PersonaRecord } from '../types/PersonaTypes.ts';
 import '../styles/CatalogoAlumnos.css';
 import type { AlumnoFormState } from '../types/AlumnoTypes.ts';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
@@ -428,7 +429,7 @@ export default function CatalogoAlumnos() {
           title="Mostrar u ocultar menú"
           aria-label="Mostrar u ocultar menú"
         >
-          <i className="bi bi-list"></i>
+          <SidebarToggleIcon />
         </button>
 
         <span className="ca-topbar-title">Alumnos</span>

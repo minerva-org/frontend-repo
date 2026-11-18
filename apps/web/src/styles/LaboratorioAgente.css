@@ -1,0 +1,87 @@
+/* Keep the login page's global root minimum from widening this workspace. */
+#root:has(.agent-lab) {
+  min-width: 0;
+}
+
+.agent-lab {
+  padding: 24px;
+  max-width: 1800px;
+  margin: 0 auto;
+}
+
+.agent-lab-modes,
+.agent-lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.agent-lab-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.agent-lab-columns > *,
+.agent-lab fieldset {
+  min-width: 0;
+}
+
+.agent-lab label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.agent-lab-layer {
+  margin-bottom: 16px;
+}
+
+.agent-lab textarea,
+.agent-lab pre {
+  font-family: ui-monospace, monospace;
+  font-size: 0.875rem;
+}
+
+.agent-lab textarea {
+  resize: vertical;
+}
+
+.agent-lab-help {
+  font-size: 0.875rem;
+  margin-top: 8px;
+}
+
+.agent-lab-output {
+  border: 1px solid #ced4da;
+  border-radius: 8px;
+  padding: 20px;
+  overflow-wrap: anywhere;
+}
+
+.agent-lab pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 600px;
+  overflow: auto;
+  padding: 12px;
+  background: #f4f6f8;
+  color: #17212b;
+  border-radius: 6px;
+}
+
+.agent-lab details {
+  margin: 8px 0;
+}
+
+.agent-lab details details {
+  margin-left: 18px;
+}
+
+@media (max-width: 1000px) {
+  .agent-lab-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

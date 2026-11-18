@@ -4,13 +4,13 @@ import { apiClient } from './ApiClient';
 
 export interface LoginResponse {
   token: string;
-  role: string | null;
+  role: UserRole | null;
   personaId: string;
 }
 
 interface LoginResponseBackend {
   token: string;
-  role?: string | null;
+  role?: UserRole | null;
   personaId: string;
 }
 

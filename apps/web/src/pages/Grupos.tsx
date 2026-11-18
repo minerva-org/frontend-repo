@@ -3,10 +3,12 @@ import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import CreateGroupModal from '../components/modals/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
-import { fetchPersonas, type PersonaRecord } from '../services/personaService';
+import { fetchPersonas } from '../services/personaService';
+import type { PersonaRecord } from '../types/PersonaTypes';
 import type { GrupoBackend, GrupoListado,NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/Grupos.css';
 
@@ -86,7 +88,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
 
       setGroups(
         grupos.map((grupo) => {
-          const persona = personaMap.get(grupo.docenteId);
+          const persona = grupo.docenteId != null ? personaMap.get(grupo.docenteId) : undefined;
           return {
             ...grupo,
             docenteNombre: persona ? `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar',
@@ -244,7 +246,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       <header className="groups-topbar">
         <article className="groups-topbar-left">
           <button className="groups-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
-            <i className="bi bi-list groups-icon-button"></i>
+            <SidebarToggleIcon className="groups-icon-button" />
           </button>
           <span className="groups-topbar-title">Grupos</span>
         </article>

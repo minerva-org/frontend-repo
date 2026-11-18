@@ -24,7 +24,8 @@ export default function QuizResolve() {
     const [intentoId, setIntentoId] = useState('');
     const [preguntaActual, setPreguntaActual] = useState<PreguntaAlumno | null>(null);
     const [opcionSeleccionada, setOpcionSeleccionada] = useState('');
-    const [preguntasRespondidas, setPreguntasRespondidas] = useState(0);
+    //Se mantuvo esto para conservar el rerender pero se debe reconsiderar esta implementacion
+    const [, setPreguntasRespondidas] = useState(0);
     const [preguntasVisitadas, setPreguntasVisitadas] = useState<PreguntaAlumno[]>([]);
     const [respuestasLocales, setRespuestasLocales] = useState<Record<string, string>>({});
     const [indiceActual, setIndiceActual] = useState(0);

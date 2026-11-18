@@ -1,6 +1,7 @@
 import { useCallback,useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import ModalMateria, { type DatosMateria } from '../components/modals/ModalMateria.tsx';
 import type { Materia } from '../types/types.ts';
 import { apiClient } from '../services/ApiClient.ts';
@@ -52,7 +53,7 @@ export default function Materias() {
       const message = extractErrorMessage(err, 'No se pudieron cargar las materias. Intenta recargar la página.');
       setMaterias([]);
       setError(message);
-      setToast(message);
+      setToast({ mensaje: message, tipo: 'error' });
     } finally {
       setCargando(false);
     }
@@ -170,7 +171,7 @@ export default function Materias() {
 
   async function handleActivate(materia: Materia) {
     try {
-      const response = await apiClient.patch(`/api/materias/${materia.id}`, {
+      await apiClient.patch(`/api/materias/${materia.id}`, {
         activo: true,
       });
 
@@ -198,7 +199,7 @@ export default function Materias() {
       <header className="mat-topbar">
         <article className="mat-topbar-side">
           <button className="mat-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
-            <i className="bi bi-list mat-icon"></i>
+            <SidebarToggleIcon className="mat-icon" />
           </button>
           <span className="mat-topbar-title">Materias</span>
         </article>

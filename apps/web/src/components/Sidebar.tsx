@@ -113,7 +113,7 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
   return (
     <aside className={`sd-sidebar ${collapsed ? 'sd-sidebar-collapsed' : ''}`}>
       <article className="sd-brand">
-        <span className="sd-brand-logo">
+        <span className="sd-brand-logo" title="Preparatoria Chapala">
           <img src={logo} alt="Logo Preparatoria Chapala" className="sd-brand-logo-img" />
         </span>
         <article className="sd-brand-text">
@@ -136,6 +136,8 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
                   to={item.to}
                   end={item.end ?? true}
                   className={({ isActive }) => `sd-nav-link ${isActive ? 'active' : ''}`}
+                  title={item.label}
+                  aria-label={item.label}
                 >
                   <i className={`bi ${item.icon}`}></i>
                   <span>{item.label}</span>

@@ -1,3 +1,24 @@
+# Laboratorio de pruebas de agente
+
+Con sesion iniciada como `dev`, abre `/laboratorio-agente` directamente.
+La ruta no tiene enlace en el menu y tambien esta protegida por DEV en la API.
+
+- Extraccion habilitada; generacion de quiz y analisis estadistico se muestran
+  deshabilitados para una etapa posterior.
+- Selecciona Plan de estudio o Material fuente y un PDF con texto seleccionable
+  de hasta 10 MiB (sin OCR).
+- Las tres capas se cargan desde AI-Service. Puedes editarlas para una prueba o
+  restaurar los valores iniciales; no se guardan al recargar.
+- El panel derecho muestra modelo, duracion, arbol, JSON validado y salida
+  original. HTTP 422 muestra diagnosticos, nunca un arbol presentado como valido.
+- El esquema fijo es `units -> topics -> concepts`, con `name` en cada nodo.
+  Editar el prompt de formato no cambia ese contrato.
+
+Se usa la API del mismo origen bajo `/api/ai/laboratory/documents`; funcionan
+el proxy Vite existente y Caddy sin rutas adicionales. El navegador no llama
+directamente a AI-Service ni recibe su clave. La prueba espera hasta 260 s.
+No se guardan documentos, prompts editados ni resultados academicos.
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
