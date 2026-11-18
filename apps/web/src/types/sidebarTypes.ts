@@ -1,9 +1,3 @@
-export interface SidebarNavItem {
-  to: string;
-  label: string;
-  icon: string; 
-}
-
 export interface SidebarNavGroup {
   label?: string;
   items: SidebarNavItem[];
@@ -20,4 +14,17 @@ export interface SidebarNavItem {
   label: string;
   icon: string;
   end?: boolean;
+}
+
+export interface ContextSidebarNavItem {
+  to: string;
+  label: string;
+  icon: string;
+  end?: boolean;
+}
+
+export interface ContextSidebarConfig {
+  mode: 'none' | 'planteles' | 'activeGroups';
+  title: string;
+  detailItems?: ContextSidebarNavItem[];
 }

@@ -204,8 +204,6 @@ export default function Materias() {
           <span className="mat-topbar-title">Materias</span>
         </article>
         <article className="mat-topbar-side">
-          <i className="bi bi-bell mat-icon"></i>
-          <i className="bi bi-person-circle mat-icon"></i>
         </article>
       </header>
 

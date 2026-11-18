@@ -21,7 +21,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   const [personas, setPersonas] = useState<PersonaRecord[]>([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { role, email, user, selectedPlantel, setSelectedPlantel } = useAuth();
+  const { role, email, user, selectedPlantel } = useAuth();
   const { toggleSidebar } = useSidebar();
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -37,12 +37,6 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   const [showArchived, setShowArchived] = useState(false);
 
 
-
-  useEffect(() => {
-    if (urlPlantelId && selectedPlantel?.id !== urlPlantelId) {
-      setSelectedPlantel({ id: urlPlantelId, nombre: selectedPlantel?.nombre ?? `Plantel ${urlPlantelId}` });
-    }
-  }, [urlPlantelId, selectedPlantel, setSelectedPlantel]);
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
@@ -183,7 +177,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   setCreateGroupError(false);
   setCreatedGroupName(null);
 
-  const plantelId = data.plantelId ?? selectedPlantel?.id;
+  const plantelId = data.plantelId ?? urlPlantelId ?? selectedPlantel?.id;
 
   if (plantelId == null) {
     setCreateGroupError(true);

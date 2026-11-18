@@ -1,4 +1,4 @@
-import type { SidebarConfig } from '../types/sidebarTypes.ts';
+import type { ContextSidebarConfig, SidebarConfig } from '../types/sidebarTypes.ts';
 
 export const sidebarConfigByRole: Record<string, SidebarConfig> = {
   admin: {
@@ -141,4 +141,32 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
     },
   ],
 },
+};
+
+export const contextSidebarConfigByRole: Record<string, ContextSidebarConfig> = {
+directorGeneral: {
+  mode: 'planteles',
+  title: 'Detalle Planteles',
+  detailItems: [
+    { to: '/catalogo-grupos?plantelId={plantelId}', label: 'Grupos', icon: 'bi-grid-3x3-gap' },
+    { to: '/catalogo-docentes?plantelId={plantelId}', label: 'Docentes', icon: 'bi-people' },
+    { to: '/catalogo-alumnos?plantelId={plantelId}', label: 'Alumnos', icon: 'bi-mortarboard' },
+    { to: '/plantel/dashboard?plantelId={plantelId}', label: 'Métricas', icon: 'bi-bar-chart-line' },
+  ],
+},
+directorPlantel: {
+  mode: 'activeGroups',
+  title: 'Grupos Activos',
+},
+coordinador: {
+  mode: 'activeGroups',
+  title: 'Mis Grupos',
+},
+docente: {
+  mode: 'activeGroups',
+  title: 'Mis Grupos',
+},
+admin: { mode: 'none', title: '' },
+dev: { mode: 'none', title: '' },
+alumno: { mode: 'none', title: '' },
 };
