@@ -2,10 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
-import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
-import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updatePersona } from '../services/personaService';
-import type { PersonaRecord } from '../types/PersonaTypes';
+import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/DirectorioDocentes.css';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
 import { DocenteModal } from '../components/modals/ModalDocentes.tsx';
@@ -376,7 +374,7 @@ console.table({
           title="Mostrar u ocultar menú"
           aria-label="Mostrar u ocultar menú"
         >
-          <SidebarToggleIcon />
+          <i className="bi bi-list"></i>
         </button>
         <span className="dd-topbar-title">Docentes</span>
       </header>

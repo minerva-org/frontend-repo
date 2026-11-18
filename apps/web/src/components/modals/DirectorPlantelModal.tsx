@@ -1,6 +1,6 @@
 
 import { createPortal } from 'react-dom';
-import type { SubmitEvent } from 'react';
+import  {type SubmitEvent } from 'react';
 import { useSepomex } from '../../hooks/useSepomex';
 import type{ DirectorFormState, PlantelItem} from '../../types/DirectorPlantelTypes.ts'
 
