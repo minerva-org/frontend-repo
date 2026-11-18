@@ -6,6 +6,7 @@ export function Paginacion({
     totalItems,
     itemsPorPagina,
     onPageChange,
+    nombreItems = 'registros',
 }: PaginacionProps){
     if (totalItems === 0 )return null;
 
@@ -14,7 +15,7 @@ export function Paginacion({
 
     return (
         <article className="d-flex justify-content-between align-ites-center mt-3 flex-wrap gap-2">
-            <span className="text-muted small">Mostrando {primerItem} -{ultimoItem} de {totalItems} alumnos </span>
+            <span className="text-muted small">Mostrando {primerItem} -{ultimoItem} de {totalItems} {nombreItems} </span>
         
             <article className="d-flex align-items-center gap-2">
                 <button 
