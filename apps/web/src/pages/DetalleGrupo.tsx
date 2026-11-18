@@ -1,6 +1,7 @@
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import GrupoDetalleAlumno from '../components/grupos/GrupoDetalleAlumno.tsx';
 import GrupoDetalleDocente from '../components/grupos/GrupoDetalleDocente.tsx';
 import '../styles/DetalleGrupo.css';
@@ -20,7 +21,7 @@ export default function GroupDetail() {
       <header className="gd-topbar">
         <article className="gd-topbar-side">
           <button className="gd-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
-            <i className="bi bi-list gd-icon"></i>
+            <SidebarToggleIcon className="gd-icon" />
           </button>
           <span className="gd-topbar-title">{isStudent ? 'Alumno' : 'Docente'}</span>
         </article>

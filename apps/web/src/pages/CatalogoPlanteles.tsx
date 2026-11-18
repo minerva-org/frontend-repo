@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from 'react';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import AutocompleteInput from '../components/AutoCompleteInput.tsx';
 import '../styles/CatalogoPlanteles.css';
 
@@ -88,7 +89,7 @@ export default function CatalogoPlanteles() {
           title="Mostrar u ocultar menú"
           aria-label="Mostrar u ocultar menú"
         >
-          <i className="bi bi-list"></i>
+          <SidebarToggleIcon />
         </button>
         <span className="pl-topbar-title">Planteles</span>
       </header>
