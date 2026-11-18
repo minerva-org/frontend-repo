@@ -1,15 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
-import { createPersona, fetchPersonaByEmail, fetchPersonasByPlantelAndRol, updatePersona, type PersonaRecord } from '../services/personaService';
+import { createPersona, fetchPersonaByEmail, fetchPersonasPaginadas, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/DirectorioDocentes.css';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
 import { DocenteModal } from '../components/modals/ModalDocentes.tsx';
 import type { DocenteFormState } from '../types/DocenteTypes.ts';
 import type { SubmitEvent } from 'react';
 import Toast, {type ToastData} from '../components/common/Toast.tsx';
+import { Paginacion } from '../components/common/Paginacion.tsx';
 
 
 const SAFE_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
@@ -61,7 +62,6 @@ export default function DirectorioDocentes() {
   const { toggleSidebar } = useSidebar();
   const canChoosePlantel = role === 'directorGeneral';
   const [docentes, setDocentes] = useState<PersonaRecord[]>([]);
-  const [coordinadores, setCoordinadores] = useState<PersonaRecord[]>([]);
   const [planteles, setPlanteles] = useState<PlantelItem[]>([]);
   const [ownPlantelId, setOwnPlantelId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
@@ -77,6 +77,12 @@ export default function DirectorioDocentes() {
   const activePlantelId = canChoosePlantel
     ? (selectedPlantel?.id ?? planteles[0]?.id ?? null)
     : ownPlantelId;
+
+  const [paginaActual,setPaginaActual] = useState(1);
+  const [totalPaginas,setTotalPaginas] = useState(0);
+  const [totalDocentes,setTotalDocentes] = useState(0);
+
+  const ITEMS_POR_PAGINA = 10;
 
   useEffect(() => {
     let cancelled = false;
@@ -109,27 +115,40 @@ export default function DirectorioDocentes() {
   async function loadDocentes() {
     if (activePlantelId == null) {
       setDocentes([]);
-      setCoordinadores([]);
+      setTotalDocentes(0);
+      setTotalPaginas(0);
       setFetchError(null);
+      setLoading(false);
       return;
     }
 
+    setLoading(true);
+    
     try {
-      const [docentesResponse, coordinadoresResponse] = await Promise.all([
-        fetchPersonasByPlantelAndRol(activePlantelId, 'DOCENTE'),
-        fetchPersonasByPlantelAndRol(activePlantelId, 'COORDINADOR'),
-      ]);
-      setDocentes(docentesResponse.data);
-      setCoordinadores(coordinadoresResponse.data);
+      const response = await fetchPersonasPaginadas(
+        activePlantelId,
+        ['DOCENTE','COORDINADOR'],
+        paginaActual - 1,
+        ITEMS_POR_PAGINA,
+        undefined,
+        search.trim(),
+      );
+
+      setDocentes(response.data.content);
+      setTotalPaginas(response.data.totalPages);
+      setTotalDocentes(response.data.totalElements);
       setFetchError(null);
     } catch {
       setDocentes([]);
-      setCoordinadores([]);
-      setFetchError('No se pudieron cargar los docentes. Intenta recargar la página.');
+      setTotalPaginas(0);
+      setTotalDocentes(0);
+      setFetchError('No se pudieron cargar los Docentes. Intenta recargar la página.',);
+    } finally {
+      setLoading(false)
     }
   }
 
-  const todosDocentes = useMemo(() => [...docentes, ...coordinadores], [docentes, coordinadores]);
+  
 
   async function loadPlanteles() {
     try {
@@ -151,7 +170,7 @@ export default function DirectorioDocentes() {
 
   useEffect(() => {
     void loadDocentes();
-  }, [activePlantelId]);
+  }, [activePlantelId,paginaActual,search]);
 
 
   function openCreateModal() {
@@ -283,27 +302,28 @@ console.table({
       };
 
       if (editingId) {
-        const response = await updatePersona(editingId, payload);
-        const updated = response.data as PersonaRecord;
-        actualizarEnListas(updated);
-        setToast({mensaje: 'Docente actualizado correctamente.', tipo: 'exito',});
+        await updatePersona(editingId,payload)
+
+        setToast({
+          mensaje: 'Docente actualizado correctamente',
+          tipo:'exito'
+        })
       } else {
-        const response = await createPersona({
+         await createPersona({
           id: crypto.randomUUID(),
           ...payload,
           activo: true,
           password,
         });
-        const created = response.data as PersonaRecord;
-        if (created.rol === 'COORDINADOR') {
-          setCoordinadores((prev) => [created, ...prev]);
-        } else{
-        setDocentes((prev) => [created, ...prev]);
-        }
-        setToast({mensaje: 'Docente creado exitosamente.', tipo: 'exito',});
+
+        setToast({
+          mensaje: 'Docente creado correctamente',
+          tipo:'exito'
+        });
       }
 
       closeModal();
+      await loadDocentes();
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'No se pudo guardar el docente.');
     } finally {
@@ -311,26 +331,21 @@ console.table({
     }
   }
 
-  function actualizarEnListas(updated: PersonaRecord) {
-    setCoordinadores((prev) =>
-      prev.map((item) => item.id === updated.id ? updated : item)
-    );
-    setDocentes((prev) =>
-      prev.map((item) => item.id === updated.id ? updated : item)
-    );
-}
 
   async function handleDeactivate(docente: PersonaRecord) {
     setLoading(true);
     try {
-      const response = await updatePersona(docente.id, { activo: false });
-      const updated = response.data as PersonaRecord;
-      actualizarEnListas(updated);
+      await updatePersona(docente.id, {activo:false});
+
       setConfirmDeactivate(null);
-      setToast({mensaje: 'Docente desactivado correctamente.',tipo: 'exito',});
+      setToast({
+        mensaje: 'Docente desactivado correctamente.',
+        tipo: 'exito',});
+      await loadDocentes();
     } catch {
-      setToast({mensaje: 'No se pudo desactivar el docente.',
-  tipo: 'error',});
+      setToast({
+        mensaje: 'No se pudo desactivar el docente.',
+        tipo: 'error',});
     } finally {
       setLoading(false);
     }
@@ -340,30 +355,30 @@ console.table({
     setLoading(true);
 
     try {
-      const response = await updatePersona(docente.id, { activo: true });
-      const updated = response.data as PersonaRecord;
+      await updatePersona(docente.id, {activo:true});
 
-      actualizarEnListas(updated);
-
-      setToast({mensaje: 'Docente reactivado correctamente.',tipo: 'exito',});
+      setToast({
+        mensaje: 'Docente reactivado correctamente.',
+        tipo: 'exito',
+      });
+      await loadDocentes();
     } catch {
-      setToast({mensaje: 'No se pudo reactivar el docente',
-  tipo: 'error',});
+      setToast({
+        mensaje: 'No se pudo reactivar el docente',
+        tipo: 'error',
+      });
     } finally {
       setLoading(false);
     }
 }
 
-  const filteredDocentes = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return todosDocentes;
+function irAPagina(nuevaPagina: number) {
+  setPaginaActual(nuevaPagina);
+}
 
-    return todosDocentes.filter((docente) => {
-      const fullName = getNombreCompleto(docente).toLowerCase();
-      const plantelNombre = planteles.find((item) => item.id === docente.plantelId)?.nombre.toLowerCase() ?? '';
-      return fullName.includes(query) || docente.email.toLowerCase().includes(query) || plantelNombre.includes(query);
-    });
-  }, [todosDocentes, search, planteles]);
+useEffect(() => {
+  setPaginaActual(1);
+}, [ activePlantelId])
 
   return (
     <article className="dd-screen">
@@ -393,9 +408,12 @@ console.table({
             <input
               className="dd-search-input"
               type="text"
-              placeholder="Buscar docente por nombre, correo o plantel..."
+              placeholder="Buscar docente por nombre o correo"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setPaginaActual(1);
+              }}
             />
           </article>
           <button className="dd-new-button" onClick={openCreateModal}>
@@ -417,7 +435,7 @@ console.table({
               </tr>
             </thead>
             <tbody>
-              {filteredDocentes.map((docente) => {
+              {docentes.map((docente) => {
                 const plantelNombre = planteles.find((item) => item.id === docente.plantelId)?.nombre ?? `Plantel ${docente.plantelId ?? '-'}`;
                 return (
                   <tr key={docente.id} className={docente.activo ? '' : 'dd-row-inactivo'}>
@@ -462,14 +480,25 @@ console.table({
               })}
             </tbody>
           </table>
-          {filteredDocentes.length === 0 && !fetchError && <p className="dd-empty">No se encontraron docentes.</p>}
+          {docentes.length === 0 && !fetchError && <p className="dd-empty">No se encontraron docentes.</p>}
+
+          <Paginacion
+            paginaActual={paginaActual}
+            totalPaginas={totalPaginas}
+            totalItems={totalDocentes}
+            itemsPorPagina={ITEMS_POR_PAGINA}
+            onPageChange={irAPagina}
+            nombreItems='docentes'
+          />
         </article>
       </article>
+
+      
 
       {isModalOpen && createPortal(
         <DocenteModal
           planteles={planteles}
-          docente={editingId ? todosDocentes.find((item) => item.id === editingId) ?? null : null}
+          docente={editingId ? docentes.find((item) => item.id === editingId) ?? null : null}
           loading={loading}
           form={form}
           formError={formError}

@@ -9,6 +9,7 @@ export interface PaginacionProps {
     totalItems: number;
     itemsPorPagina: number;
     onPageChange: (page: number) => void;
+    nombreItems?:string;
 }
 
 export interface UsePaginacionReturn{

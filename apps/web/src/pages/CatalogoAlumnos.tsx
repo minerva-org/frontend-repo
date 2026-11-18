@@ -140,6 +140,7 @@ export default function CatalogoAlumnos() {
       setAlumnos([]);
       setTotalPaginas(0);
       setTotalAlumnos(0);
+      setFetchError(null);
       setLoading(false);
       return;
     }
@@ -361,6 +362,7 @@ export default function CatalogoAlumnos() {
       }
 
       closeModal();
+      await loadAlumnos();
     } catch (err) {
       setFormError(
         err instanceof Error ? err.message : 'No se pudo guardar el alumno.',
@@ -375,13 +377,14 @@ export default function CatalogoAlumnos() {
 
     try {
       await(updatePersona(alumno.id,{activo: false}));
-      await loadAlumnos();
+      
 
       setConfirmDeactivate(null);
 
       setToast({
         mensaje:'Alumno desactivado correctamente.',
         tipo:'exito'});
+      await loadAlumnos();
     } catch {
       setToast({
         mensaje:'No se pudo desactivar el alumno.',
@@ -396,13 +399,13 @@ export default function CatalogoAlumnos() {
 
     try {
       await(updatePersona(alumno.id,{activo: true}));
-      await loadAlumnos();
 
 
       setConfirmActivate(null);
       setToast({
         mensaje:'Alumno reactivado correctamente.',
         tipo:'exito',});
+      await loadAlumnos();
     } catch {
       setToast({
         mensaje:'No se pudo reactivar el alumno.',
@@ -450,7 +453,7 @@ export default function CatalogoAlumnos() {
             <input
               className="ca-search-input"
               type="text"
-              placeholder="Buscar alumno por nombre, correo o plantel..."
+              placeholder="Buscar alumno por nombre o correo"
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
@@ -557,6 +560,7 @@ export default function CatalogoAlumnos() {
           totalItems={totalAlumnos}
           itemsPorPagina={ITEMS_POR_PAGINA}
           onPageChange={irAPagina}
+          nombreItems='alumnos'
           />
 
         </article>

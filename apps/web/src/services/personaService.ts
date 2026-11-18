@@ -36,15 +36,19 @@ export async function fetchPersonasByPlantelAndRol(plantelId: number, rol: 'ALUM
   return apiClient.get<PersonaRecord[]>('/api/personas', { params: { plantelId, rol } });
 }
 
-export async function fetchPersonasPaginadas( plantelId: number, rol: PersonaRol,  page: number, size: number, activo?: boolean,search?: string){
+export async function fetchPersonasPaginadas( plantelId: number, roles: PersonaRol |PersonaRol[],  page: number, size: number, activo?: boolean,search?: string){
+  const rolesArray = Array.isArray(roles) ? roles : [roles]; //Esto es pa cuando se envien docentes y coordinadores, como son roles distintos ps no se podria sin esto
   return apiClient.get<PaginaResponse<PersonaRecord>>('/api/personas/paginados',{
     params:{
       plantelId,
-      rol,
+      roles: rolesArray,
       page,
       size,
       activo,
       search
+    },
+    paramsSerializer:{
+      indexes: null,
     },
   },);
 }
