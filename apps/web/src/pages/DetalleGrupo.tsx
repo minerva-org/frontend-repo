@@ -4,7 +4,6 @@ import { useSidebar } from '../context/SidebarContext.tsx';
 import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import GrupoDetalleAlumno from '../components/grupos/GrupoDetalleAlumno.tsx';
 import GrupoDetalleDocente from '../components/grupos/GrupoDetalleDocente.tsx';
-import '../styles/DetalleGrupo.css';
 
 export default function GroupDetail() {
   const { role } = useAuth();
@@ -13,21 +12,21 @@ export default function GroupDetail() {
   const isStudent = role === 'alumno';
 
   if (!code) {
-    return <p className="gd-empty">Código de grupo no especificado.</p>;
+    return <p className="text-center text-secondary p-3 mb-0">Código de grupo no especificado.</p>;
   }
 
   return (
-    <article className="gd-screen">
-      <header className="gd-topbar">
-        <article className="gd-topbar-side">
-          <button className="gd-icon-btn-plain" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
-            <SidebarToggleIcon className="gd-icon" />
+    <article className="min-vh-100 bg-body text-body">
+      <header className="sticky-top d-flex align-items-center px-3 px-md-4 py-3 bg-primary bg-gradient text-light shadow-sm">
+        <article className="d-flex align-items-center gap-3">
+          <button className="btn btn-link text-light p-0 text-decoration-none" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
+            <SidebarToggleIcon className="fs-4" />
           </button>
-          <span className="gd-topbar-title">{isStudent ? 'Alumno' : 'Docente'}</span>
+          <span className="fs-5 fw-bold">{isStudent ? 'Alumno' : 'Docente'}</span>
         </article>
       </header>
 
-      <main className="gd-content">
+      <main className="container-xl d-flex flex-column gap-3 px-3 px-md-4 py-3 py-md-4">
         {isStudent ? <GrupoDetalleAlumno code={code} /> : <GrupoDetalleDocente code={code} />}
       </main>
     </article>

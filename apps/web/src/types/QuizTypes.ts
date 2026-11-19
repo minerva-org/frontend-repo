@@ -11,6 +11,7 @@ export interface QuestionQuiz {
 
 export interface QuizData {
   titulo: string;
+  tipoQuiz: string;
   inicio: string;
   fin: string;
   preguntas: QuestionQuiz[];

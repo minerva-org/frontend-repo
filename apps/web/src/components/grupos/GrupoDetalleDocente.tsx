@@ -358,8 +358,8 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     }
   }
 
-  if (loading) return <p className="gd-empty">Cargando grupo...</p>;
-  if (!grupo) return <p className="gd-empty">Grupo no encontrado.</p>;
+  if (loading) return <p className="text-center text-secondary py-4 mb-0">Cargando grupo...</p>;
+  if (!grupo) return <p className="text-center text-secondary py-4 mb-0">Grupo no encontrado.</p>;
 
   return (
     <>
@@ -373,17 +373,15 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         >
           <article className="modal-dialog modal-dialog-centered">
             <article className="modal-content border-0 shadow">
-
               <article className="modal-header">
-                <h5 className="modal-title fw-bold">
-                  Asignar docente
-                </h5>
+                <h5 className="modal-title fw-bold">Asignar docente</h5>
 
                 <button
                   type="button"
                   className="btn-close"
                   onClick={() => setModalAsignarDocente(false)}
                   disabled={asignandoDocente}
+                  aria-label="Cerrar"
                 />
               </article>
 
@@ -395,9 +393,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                 <select
                   className="form-select"
                   value={docenteSeleccionado}
-                  onChange={(event) =>
-                    setDocenteSeleccionado(event.target.value)
-                  }
+                  onChange={(event) => setDocenteSeleccionado(event.target.value)}
                 >
                   <option value="">Selecciona un docente</option>
 
@@ -435,7 +431,6 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                   {asignandoDocente ? 'Asignando...' : 'Asignar docente'}
                 </button>
               </article>
-
             </article>
           </article>
         </article>
@@ -452,10 +447,9 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         >
           <article className="modal-dialog modal-dialog-centered">
             <article className="modal-content border-0 shadow">
-
               <article className="modal-body text-center p-4">
                 <article className="mb-3">
-                  <i className="bi bi-trash3 text-danger fs-1"></i>
+                  <i className="bi bi-trash3 text-danger fs-1" />
                 </article>
 
                 <h5 className="modal-title fw-bold mb-3" id="gd-delete-title">
@@ -484,13 +478,14 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                     onClick={confirmarBorrarQuiz}
                     disabled={quizEliminando || segundosRestantes > 0}
                   >
-                    {quizEliminando ? 'Eliminando...' :
-                    segundosRestantes > 0 ? `Eliminar (${segundosRestantes})`
-                    : 'Eliminar'}
+                    {quizEliminando
+                      ? 'Eliminando...'
+                      : segundosRestantes > 0
+                        ? `Eliminar (${segundosRestantes})`
+                        : 'Eliminar'}
                   </button>
                 </article>
               </article>
-
             </article>
           </article>
         </article>
@@ -507,149 +502,286 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         />
       )}
 
-      <section className="gd-hero">
-        <article className="gd-hero-row">
-          <h1 className="gd-hero-title">{grupo.nombre}</h1>
-          <span className="gd-hero-cycle">Ciclo: {grupo.semestre}</span>
+      {/* Encabezado del grupo */}
+      <section className="bg-primary bg-gradient text-white rounded-4 shadow-sm p-4 p-md-4">
+        <article className="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3">
+          <article className="min-w-0">
+            <span className="badge bg-white bg-opacity-25 text-white mb-2">
+              <i className="bi bi-people-fill me-1" />
+              Grupo
+            </span>
+
+            <h1 className="fs-3 fw-bold mb-1 text-break">
+              {grupo.nombre}
+            </h1>
+
+            <p className="mb-0 text-white-50">
+              Ciclo: {grupo.semestre}
+            </p>
+          </article>
+
+          <span className="badge bg-white bg-opacity-25 text-white fs-6 px-3 py-2">
+            {grupo.claveGrupo}
+          </span>
         </article>
       </section>
 
-      <section className="gd-info">
-        <article className="gd-meta">
-          <span className="gd-meta-item"><strong className="gd-meta-label">Grupo:</strong> {grupo.nombre}</span>
-          <span className="gd-meta-item">
-            <strong className="gd-meta-label">Docente:</strong>
+      {/* Información y navegación */}
+      <section className="bg-white border rounded-4 shadow-sm p-3 p-md-4">
+        <article className="d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+          <article className="d-flex flex-column flex-sm-row flex-wrap gap-3">
+            <article>
+              <small className="text-secondary d-block">Grupo</small>
+              <span className="fw-semibold">{grupo.nombre}</span>
+            </article>
 
-            {grupo.docenteId ? (
-              docenteNombre
-            ) : (
-              <>
+            <article>
+              <small className="text-secondary d-block">Docente</small>
+
+              <article className="d-flex flex-wrap align-items-center gap-2">
                 <span className="fw-semibold">
-                  Pendiente por asignar
+                  {grupo.docenteId ? docenteNombre : 'Pendiente por asignar'}
+                </span>
+
+                {!grupo.docenteId && (
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => setModalAsignarDocente(true)}
+                    disabled={docentesDisponibles.length === 0}
+                  >
+                    <i className="bi bi-person-plus me-1" />
+                    Agregar docente
+                  </button>
+                )}
+              </article>
+            </article>
+
+            <article>
+              <small className="text-secondary d-block">Clave del grupo</small>
+
+              <article className="d-flex align-items-center gap-2">
+                <span className="fw-semibold font-monospace">
+                  {grupo.claveGrupo}
                 </span>
 
                 <button
                   type="button"
-                  className="gd-btn"
-                  onClick={() => setModalAsignarDocente(true)}
-                  disabled={docentesDisponibles.length === 0}
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleCopiarCodigo}
+                  title="Copiar clave"
+                  aria-label="Copiar clave del grupo"
                 >
-                  <i className="bi bi-person-plus"></i> Agregar docente
+                  <i className={`bi ${copiado ? 'bi-check-lg text-success' : 'bi-clipboard'}`} />
                 </button>
-              </>
-            )}
-          </span>
-          <span className="gd-meta-item">
-            <strong className="gd-meta-label">Clave:</strong>
-            <span className="gd-code">
-              {grupo.claveGrupo}
-              <i
-                className={`bi ${copiado ? 'bi-check-lg' : 'bi-clipboard'}`}
-                onClick={handleCopiarCodigo}
-                title="Copiar clave"
-              ></i>
-            </span>
-          </span>
-        </article>
 
-        <article className="gd-tabs">
-          <button className={`gd-tab ${tab === 'general' ? 'active' : ''}`} onClick={() => setTab('general')}>
-            <i className="bi bi-card-list"></i> General
-          </button>
-          <button className={`gd-tab ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>
-            <i className="bi bi-gear"></i> Settings de Grupo y Examen
-          </button>
+
+                {copiado && (
+                  <small className="text-success">Copiado</small>
+                )}
+
+                
+              </article>
+            </article>
+          </article>
+           <nav className="nav nav-pills gap-2 bg-body-secondary rounded-3 p-1 overflow-x-auto">
+              <button
+                type="button"
+                className={`nav-link d-inline-flex align-items-center gap-2 text-nowrap ${tab === 'general' ? 'active' : 'text-body'}`}
+                onClick={() => setTab('general')}
+              >
+                <i className="bi bi-card-list" />
+                General
+              </button>
+
+              <button
+                type="button"
+                className={`nav-link d-inline-flex align-items-center gap-2 text-nowrap ${tab === 'settings' ? 'active' : 'text-body'}`}
+                onClick={() => setTab('settings')}
+              >
+                <i className="bi bi-gear" />
+                Settings de Grupo y Examen
+              </button>
+            </nav>
         </article>
       </section>
 
       {tab === 'settings' ? (
-        <section className="gd-card">
-          <p className="gd-empty">Settings de grupo y examen — en construcción.</p>
+        <section className="bg-white border rounded-4 shadow-sm p-4">
+          <article className="text-center py-4">
+            <i className="bi bi-gear fs-1 text-secondary d-block mb-3" />
+            <p className="text-secondary mb-0">
+              Settings de grupo y examen — en construcción.
+            </p>
+          </article>
         </section>
       ) : (
-        <article className="gd-grid">
-          <section className="gd-card">
-            <article className="gd-card-header">
-              <span className="gd-card-title"><i className="bi bi-journal-text"></i> Gestión de Quizzes</span>
+        <article className="row g-3 align-items-start">
+          {/* Gestión de quizzes*/}
+          <article className="col-12 col-lg-8">
+            <section className="bg-white border rounded-4 shadow-sm p-3 p-md-4 h-100">
+              <article className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h2 className="fs-5 fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i className="bi bi-journal-text text-primary" />
+                  Gestión de Quizzes
+                </h2>
 
-              {PuedeManejar && (
-                <button className="gd-btn gd-btn-primary" onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}>
-                  <i className="bi bi-plus-lg"></i> Nuevo Quiz
-                </button>
-              )}
-            </article>
-
-            <article className="gd-quiz-tabs">
-              <button
-                type="button"
-                className={`gd-quiz-tab ${quizTab === 'proximos' ? 'active' : ''}`}
-                onClick={() => setQuizTab('proximos')}
-              >
-                Próximos
-              </button>
-              <button
-                type="button"
-                className={`gd-quiz-tab ${quizTab === 'pasados' ? 'active' : ''}`}
-                onClick={() => setQuizTab('pasados')}
-              >
-                Pasados
-              </button>
-            </article>
-
-            {quizLoading ? (
-              <p className="gd-empty">Cargando quizzes del grupo...</p>
-            ) : quizError ? (
-              <p className="gd-empty">{quizError}</p>
-            ) : (quizTab === 'proximos' ? quizzesProximos : quizzesPasados).length === 0 ? (
-              <p className="gd-empty">
-                {quizTab === 'proximos' ? 'No hay quizzes próximos para este grupo.' : 'No hay quizzes pasados para este grupo.'}
-              </p>
-            ) : (
-              <article className="gd-quiz-list">
-                {(quizTab === 'proximos' ? quizzesProximos : quizzesPasados).map((quiz) => (
-                  <QuizCatalogCard
-                    key={quiz.id}
-                    quiz={quiz}
-                    expanded={expandedQuizId === quiz.id}
-                    onToggleExpand={(quizId) => setExpandedQuizId((current) => current === quizId ? null : quizId)}
-                    onEdit={(quizId) => navigate(`/grupos/${code}/quizzes/${quizId}/editar`)}
-                    onDelete={handleBorrarQuiz}
-                    PuedeManejar={PuedeManejar}
-                  />
-                ))}
+                {PuedeManejar && (
+                  <button
+                    type="button"
+                    className="btn bg-secondary text-light btn-sm"
+                    onClick={() => navigate(`/grupos/${code}/quizzes/nuevo`)}
+                  >
+                    <i className="bi bi-plus-lg me-1" />
+                    Nuevo Quiz
+                  </button>
+                )}
               </article>
-            )}
-          </section>
 
-          <section className="gd-card">
-            <article className="gd-card-header">
-              <span className="gd-card-title"><i className="bi bi-people"></i> Lista de Alumnos ({alumnos.length})</span>
-              <button className="gd-btn" onClick={() => setModalAgregarAlumnos(true)}>
-                <i className="bi bi-plus-lg"></i> Agregar
-              </button>
-            </article>
+              <nav className="nav nav-pills nav-fill gap-2 bg-body-secondary rounded-3 p-1 mb-3">
+                <button
+                  type="button"
+                  className={` nav-link ${quizTab === 'proximos' ? 'active bg-secondary' : 'text-body'}` }
+                  onClick={() => setQuizTab('proximos')}
+                >
+                  Próximos
+                  <span className="badge bg-white bg-opacity-25 ms-2">
+                    {quizzesProximos.length}
+                  </span>
+                </button>
 
-            {alumnos.map((a) =>
-              a.estado === 'pendiente' ? (
-                <article key={a.id} className="gd-student gd-student-pending">
-                  <span>{a.nombre} <em>(Solicitud)</em></span>
-                  <article className="gd-student-actions">
-                    <button className="gd-icon-btn approve" onClick={() => handleAprove(a.id)} title="Aprobar">
-                      <i className="bi bi-check-lg"></i>
-                    </button>
-                    <button className="gd-icon-btn reject" onClick={() => handleReject(a.id)} title="Rechazar">
-                      <i className="bi bi-x-lg"></i>
-                    </button>
-                  </article>
+                <button
+                  type="button"
+                  className={`nav-link ${quizTab === 'pasados' ? 'active bg-secondary' : 'text-body'}`}
+                  onClick={() => setQuizTab('pasados')} >
+                  Pasados
+                  <span className="badge bg-white bg-opacity-25 ms-2">
+                    {quizzesPasados.length}
+                  </span>
+                </button>
+              </nav>
+
+              {quizLoading ? (
+                <article className="text-center text-secondary py-5">
+                  <article className="spinner-border spinner-border-sm me-2" role="status" />
+                  Cargando quizzes del grupo...
+                </article>
+              ) : quizError ? (
+                <article className="alert alert-danger mb-0" role="alert">
+                  <i className="bi bi-exclamation-circle me-2" />
+                  {quizError}
+                </article>
+              ) : (quizTab === 'proximos' ? quizzesProximos : quizzesPasados).length === 0 ? (
+                <article className="text-center text-secondary py-5">
+                  <i className="bi bi-journal-x fs-1 d-block mb-3" />
+                  <p className="mb-0">
+                    {quizTab === 'proximos'
+                      ? 'No hay quizzes próximos para este grupo.'
+                      : 'No hay quizzes pasados para este grupo.'}
+                  </p>
                 </article>
               ) : (
-                <article key={a.id} className="gd-student">
-                  <span>{a.nombre}</span>
+                <article className="d-flex flex-column gap-3">
+                  {(quizTab === 'proximos' ? quizzesProximos : quizzesPasados).map((quiz) => (
+                    <QuizCatalogCard
+                      key={quiz.id}
+                      quiz={quiz}
+                      expanded={expandedQuizId === quiz.id}
+                      onToggleExpand={(quizId) =>
+                        setExpandedQuizId((current) => current === quizId ? null : quizId)
+                      }
+                      onEdit={(quizId) =>
+                        navigate(`/grupos/${code}/quizzes/${quizId}/editar`)
+                      }
+                      onDelete={handleBorrarQuiz}
+                      PuedeManejar={PuedeManejar}
+                    />
+                  ))}
                 </article>
-              )
-            )}
-            {alumnos.length === 0 && <p className="gd-empty">Sin alumnos inscritos.</p>}
-          </section>
+              )}
+            </section>
+          </article>
+
+          {/* Lista de alumnos */}
+          <article className="col-12 col-lg-4">
+            <section className="bg-white border rounded-4 shadow-sm p-3 p-md-4 h-100">
+              <article className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                <h2 className="fs-5 fw-bold mb-0 d-flex align-items-center gap-2">
+                  <i className="bi bi-people text-primary" />
+                  Alumnos
+                  <span className="badge bg-primary rounded-pill">
+                    {alumnos.length}
+                  </span>
+                </h2>
+
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm"
+                  onClick={() => setModalAgregarAlumnos(true)}
+                >
+                  <i className="bi bi-plus-lg me-1" />
+                  Agregar
+                </button>
+              </article>
+
+              {alumnos.length > 0 ? (
+                <article className="list-group list-group-flush">
+                  {alumnos.map((a) =>
+                    a.estado === 'pendiente' ? (
+                      <article
+                        key={a.id}
+                        className="list-group-item px-2 py-3 bg-warning bg-opacity-10 rounded-3 mb-2 border"
+                      >
+                        <article className="d-flex align-items-center justify-content-between gap-2">
+                          <article className="min-w-0">
+                            <span className="fw-semibold text-break">{a.nombre}</span>
+                            <small className="text-warning-emphasis d-block">
+                              Solicitud pendiente
+                            </small>
+                          </article>
+
+                          <article className="d-flex gap-1 flex-shrink-0">
+                            <button
+                              type="button"
+                              className="btn btn-success btn-sm"
+                              onClick={() => handleAprove(a.id)}
+                              title="Aprobar"
+                              aria-label={`Aprobar solicitud de ${a.nombre}`}
+                            >
+                              <i className="bi bi-check-lg" />
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn btn-danger btn-sm"
+                              onClick={() => handleReject(a.id)}
+                              title="Rechazar"
+                              aria-label={`Rechazar solicitud de ${a.nombre}`}
+                            >
+                              <i className="bi bi-x-lg" />
+                            </button>
+                          </article>
+                        </article>
+                      </article>
+                    ) : (
+                      <article
+                        key={a.id}
+                        className="list-group-item d-flex align-items-center gap-2 px-2 py-3"
+                      >
+                        <i className="bi bi-person-circle text-secondary fs-5" />
+                        <span className="text-break">{a.nombre}</span>
+                      </article>
+                    )
+                  )}
+                </article>
+              ) : (
+                <article className="text-center text-secondary py-5">
+                  <i className="bi bi-person-x fs-1 d-block mb-3" />
+                  <p className="mb-0">Sin alumnos inscritos.</p>
+                </article>
+              )}
+            </section>
+          </article>
         </article>
       )}
     </>

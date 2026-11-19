@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
-import '../styles/Login.css';
 import logo from '../assets/logo.webp';
 
 export default function Login() {
@@ -70,92 +69,158 @@ export default function Login() {
     setModalMessage(null);
   }
 
-  return (
-    <article className="login-screen">
-      <aside className="login-brand">
-        <article className="login-brand-header">
-          <span className="login-logo-wrap">
-            <img className="login-logo" src={logo} alt="Logo Seige" />
-          </span>
-          <article>
-            <p className="login-brand-name">Preparatoria Chapala Gutiérrez</p>
-            <p className="login-brand-platform">Plataforma SeigeTEC</p>
-          </article>
-        </article>
+   return (
+    <article className="container-fluid min-vh-100 p-0">
+      <article className="row g-0 min-vh-100">
 
-        <article className="login-brand-hero">
-          <p className="login-brand-headline">Diagnóstico y evaluación al ritmo de tu aula.</p>
-          <p className="login-brand-text">
-            Plataforma para planeación didáctica, quizzes y seguimiento académico de tu institución.
-          </p>
-        </article>
+        <aside className="col-12 col-lg-6 d-flex flex-column justify-content-between gap-5 bg-primary text-light p-4 p-md-5">
 
-        <p className="login-brand-footnote">
-          Las cuentas son creadas por tu institución. No hay registro abierto.
-        </p>
-      </aside>
-
-      <main className="login-panel">
-        <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <h1 className="login-title">Iniciar sesión</h1>
-          <p className="login-subtitle">Usa tu usuario institucional.</p>
-
-          <label className="login-field">
-            <span className="login-field-label">Usuario</span>
-            <input
-              className="login-input"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Tu usuario "
-              autoComplete="username"
-              required
+          <article className="d-flex align-items-center gap-3">
+            <img
+              src={logo}
+              alt="Logo Seige"
+              width={48}
+              height={48}
+              className="object-fit-contain rounded-3 bg-light p-1 flex-shrink-0"
             />
-          </label>
 
-          <article className="login-field">
-            <label className="login-field-label" htmlFor="password">Contraseña</label>
-            <article className="login-password-row">
-              <input
-                id="password"
-                className="login-input"
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Tu contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-              />
-              <button
-                type="button"
-                className="login-toggle"
-                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                aria-pressed={showPassword}
-                onClick={() => setShowPassword((prev) => !prev)}
-              >
-                <i className={showPassword ? 'bi bi-eye-slash' : 'bi bi-eye'} aria-hidden="true"></i>
-              </button>
+            <article>
+              <p className="fw-bold mb-0">
+                Preparatoria Chapala Gutiérrez
+              </p>
+              <p className="text-white-50 mb-0">
+                Plataforma SeigeTEC
+              </p>
             </article>
           </article>
 
-          <button className="login-submit" type="submit" disabled={loading}>
-            {loading ? 'Ingresando...' : 'Entrar'}
-          </button>
+          <article>
+            <p className="display-6 fw-bold mb-3">
+              Diagnóstico y evaluación al ritmo de tu aula.
+            </p>
 
-          
-        </form>
-      </main>
+            <p className="text-white-50 fs-5 mb-0">
+              Plataforma para planeación didáctica, quizzes y seguimiento académico de tu institución.
+            </p>
+          </article>
+
+          <p className="small text-white-50 mb-0">
+            Las cuentas son creadas por tu institución. No hay registro abierto.
+          </p>
+        </aside>
+
+        <main className="col-12 col-lg-6 d-flex align-items-center justify-content-center bg-light p-4 p-md-5">
+
+          <form
+            className="w-100 bg-white border rounded-4 shadow p-4 p-md-5"
+            onSubmit={handleSubmit}
+            noValidate
+          >
+            <h1 className="h2 fw-bold mb-2">
+              Iniciar sesión
+            </h1>
+
+            <p className="text-secondary mb-4">
+              Usa tu usuario institucional.
+            </p>
+
+            <article className="mb-3">
+              <label htmlFor="username" className="form-label fw-semibold">
+                Usuario
+              </label>
+
+              <input
+                id="username"
+                className="form-control form-control-lg"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Tu usuario"
+                autoComplete="username"
+                required
+              />
+            </article>
+
+            <article className="mb-4">
+              <label htmlFor="password" className="form-label fw-semibold">
+                Contraseña
+              </label>
+
+              <article className="input-group input-group-lg">
+                <input
+                  id="password"
+                  className="form-control"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Tu contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
+                  required
+                />
+
+                <button
+                  type="button"
+                  className="btn bg-secondary border-0"
+                  aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  aria-pressed={showPassword}
+                  title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  onClick={() => setShowPassword((prev) => !prev)}
+                >
+                  <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'} text-white`} 
+                    aria-hidden="true"
+                  />
+                </button>
+              </article>
+            </article>
+
+            <button
+              className="btn bg-secondary text-white btn-lg w-100"
+              type="submit"
+              disabled={loading}
+            >
+              {loading ? 'Ingresando...' : 'Entrar'}
+            </button>
+          </form>
+        </main>
+      </article>
 
       {modalMessage && (
-        <article className="login-modal-error">
-          <article className="login-modal">
-            <h2 className="login-modal-title">No se pudo iniciar sesión</h2>
-            <p className="login-modal-message">{modalMessage}</p>
-            <button ref={btnAceptar} className="login-modal-button" onClick={closeModal}>
-              Aceptar
-            </button>
+        <>
+          <article
+            className="modal d-block"
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-error-title"
+          >
+            <article className="modal-dialog modal-dialog-centered">
+              <article className="modal-content shadow">
+                <article className="modal-header">
+                  <h2 className="modal-title fs-5" id="login-error-title">
+                    No se pudo iniciar sesión
+                  </h2>
+                </article>
+
+                <article className="modal-body">
+                  <p className="mb-0">{modalMessage}</p>
+                </article>
+
+                <article className="modal-footer">
+                  <button
+                    ref={btnAceptar}
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={closeModal}
+                  >
+                    Aceptar
+                  </button>
+                </article>
+              </article>
+            </article>
           </article>
-        </article>
+
+          <article className="modal-backdrop show" />
+        </>
       )}
     </article>
   );

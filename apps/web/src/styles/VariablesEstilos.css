@@ -1,0 +1,81 @@
+:root {
+  --ar-profundo: #243c4c;
+  --ar-azul: #5289ad;
+  --ar-acero: #698696;
+  --ar-neblina: #accbcf;
+  --ar-nieve: #f4fcfb;
+  --seige-acento: var(--ar-azul);
+  --seige-acento-oscuro: var(--ar-profundo);
+  --seige-fondo: color-mix(in srgb, var(--ar-neblina) 22%, white);
+  --seige-superficie: #fff;
+  --seige-texto: var(--ar-profundo);
+  --seige-texto-secundario: var(--ar-acero);
+  --seige-borde: color-mix(in srgb, var(--ar-neblina) 55%, white);
+  --seige-error-fondo: #fbe9e7;
+  --seige-error-texto: #9a3b2e;
+  --seige-exito: #3f8d5f;
+  --seige-alerta: #b9791f;
+  --seige-fuente: sans-serif;
+
+  --seige-texto-xs: 0.75rem;
+  --seige-texto-sm: 0.875rem;
+  --seige-texto-base: 1rem;
+  --seige-texto-lg: 1.125rem;
+  --seige-texto-xl: 1.5rem;
+
+  --seige-radio-sm: 0.375rem;
+  --seige-radio-md: 0.625rem;
+  --seige-radio-lg: 1rem;
+
+  /*Espaciados*/
+  --seige-espacio-sm: 0.5rem;
+  --seige-espacio-md: 1rem;
+  --seige-espacio-lg: 1.5rem;
+
+  /*Personalizacion de Bootstrap*/
+  --bs-primary: var(--ar-profundo);
+  --bs-primary-rgb: 36, 60, 76;
+
+  --bs-secondary: var(--ar-azul);
+  --bs-secondary-rgb: 82, 137, 173;
+
+  --bs-dark: var(--ar-profundo);
+  --bs-dark-rgb: 36, 60, 76;
+
+  --bs-light: var(--ar-nieve);
+  --bs-light-rgb: 244, 252, 251;
+
+  --bs-body-font-family: var(--seige-fuente);
+  --bs-body-bg: var(--seige-fondo);
+  --bs-body-bg-rgb: 237,244,244;
+  --bs-body-color: var(--seige-texto);
+  --bs-border-color: var(--seige-borde);
+}
+
+  /* Botones principales */
+.btn-primary {
+  --bs-btn-bg: var(--ar-profundo);
+  --bs-btn-border-color: var(--ar-profundo);
+  --bs-btn-hover-bg: var(--ar-azul);
+  --bs-btn-hover-border-color: var(--ar-azul);
+  --bs-btn-active-bg: var(--ar-azul);
+  --bs-btn-active-border-color: var(--ar-azul);
+  --bs-btn-disabled-bg: var(--ar-profundo);
+  --bs-btn-disabled-border-color: var(--ar-profundo);
+}
+
+/* Contornos principales */
+.btn-outline-primary {
+  --bs-btn-color: var(--ar-profundo);
+  --bs-btn-border-color: var(--ar-profundo);
+  --bs-btn-hover-bg: var(--ar-profundo);
+  --bs-btn-hover-border-color: var(--ar-profundo);
+  --bs-btn-hover-color: white;
+  --bs-btn-active-bg: var(--ar-profundo);
+  --bs-btn-active-border-color: var(--ar-profundo);
+}
+
+/* Pestañas activas */
+.nav-pills {
+  --bs-nav-pills-link-active-bg: var(--ar-profundo);
+}

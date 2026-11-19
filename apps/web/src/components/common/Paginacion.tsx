@@ -20,7 +20,7 @@ export function Paginacion({
             <article className="d-flex align-items-center gap-2">
                 <button 
                 disabled={paginaActual === 1}
-                className="btn btn-primary btn-sm"
+                className="btn bg-primary btn-sm text-light"
                 onClick={() => onPageChange(paginaActual-1)} >
                     <i className="bi bi-chevron-left"></i>
                 </button>
@@ -29,7 +29,7 @@ export function Paginacion({
 
                 <button
                 disabled={paginaActual === totalPaginas}
-                className="btn btn-primary btn-sm"
+                className="btn bg-primary btn-sm text-light"
                 onClick={() => onPageChange(paginaActual +1)}>
                     <i className="bi bi-chevron-right"></i>
                 </button>
