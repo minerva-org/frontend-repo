@@ -142,40 +142,47 @@ export default function QuizCatalogCard({ quiz, expanded, onToggleExpand, onEdit
   const fechaFin = formatDate(quiz.fechaFinalizacion);
 
   return (
-    <article className={`gd-quiz ${estado === 'pasado' ? 'gd-quiz-past' : ''}`}>
-      <article className="gd-quiz-row">
-        <article className="gd-quiz-info">
-          <span className="gd-quiz-title">{quiz.nombre}</span>
-          <span className="gd-quiz-meta">
-            {quiz.fechaCreacion ? `Creado: ${formatDate(quiz.fechaCreacion)} · ` : ''}
-            {preguntas.length > 0 ? `${preguntas.length} preguntas` : 'Sin preguntas cargadas'}
+    <article className={`d-flex flex-column  gap-3 p-3 rounded-3  border ${estado === 'pasado' ? 
+                        'bg-body-secondary' : 'bg-white'}`}>
+
+      <article className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+        <article className="d-flex flex-column gap-1 min-w-0">
+          <span className="fw-bold text-break">{quiz.nombre}</span>
+          <span className="text-secondary">
+            {quiz.fechaCreacion ? `Creado: ${formatDate(quiz.fechaCreacion)}` : ''}
           </span>
         </article>
 
-        <article className="gd-quiz-side">
-          <span className={`gd-badge ${estado === 'activo' ? 'gd-badge-ok' : 'gd-badge-fecha'}`}>{estadoLabel}</span>
-          <button type="button" className="gd-btn gd-btn-small" onClick={() => onToggleExpand(quiz.id)}>
+        <article className="d-flex flex-row flex-sm-column align-items-center align-items-sm-end gap-2 flex-shrink-0">
+          <span className={`badge rounded-pill ${estado === 'activo' ?
+                          'bg-success-subtle text-success-emphasis' : estado === 'pasado' ?
+                          'bg-secondary-subtle text-secondary-emphasis' : 'bg-warning-subtle text-warning-emphasis'}`}>
+                            {estadoLabel}
+          </span>
+          <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => onToggleExpand(quiz.id)}>
             {expanded ? 'Ocultar' : 'Ver preguntas'}
           </button>
         </article>
       </article>
 
-      <article className="gd-quiz-meta-grid">
-        <span><strong>Inicio:</strong> {fechaInicio}</span>
-        <span><strong>Cierre:</strong> {fechaFin}</span>
+        {/* Fechas */}
+      <article className="row row-cols-1 row-cols-sm-2 g-2 small text-secondary">
+        <span className='col'><strong className='text-body'>Inicio:</strong> {fechaInicio}</span>
+        <span className='col'><strong className='text-body'>Cierre:</strong> {fechaFin}</span>
       </article>
-
+        
+      {/* Preguntas */}
       {expanded && (
-        <article className="gd-quiz-details">
+        <article className="p-3 rounded-3 border bg-body-tertiary">
           {loadingPreguntas ? (
-            <p className="gd-quiz-empty">Cargando preguntas...</p>
+            <p className="text-secondary small mb-0">Cargando preguntas...</p>
           ) : preguntas.length === 0 ? (
-            <p className="gd-quiz-empty">Este quiz aún no tiene preguntas asociadas.</p>
+            <p className="text-secondary small mb-0">Este quiz aún no tiene preguntas asociadas.</p>
           ) : (
-            <ul className="gd-quiz-question-list">
+            <ul className="d-flex flex-column gap-2 small mb-0 ps-3">
               {preguntas.map((pregunta, index) => (
-                <li key={pregunta.id} className="gd-quiz-question-item">
-                  <span className="gd-quiz-question-number">{index + 1}.</span>
+                <li key={pregunta.id} className="ps-1">
+                  <span className="fw-bold me-1">{index + 1}.</span>
                   <span>{pregunta.descripcion ?? pregunta.enunciado ?? 'Pregunta sin texto'}</span>
                 </li>
               ))}
@@ -185,12 +192,12 @@ export default function QuizCatalogCard({ quiz, expanded, onToggleExpand, onEdit
       )}
 
       {PuedeManejar && (
-        <article className="gd-quiz-actions">
-          <button className="gd-btn" type="button" onClick={() => onEdit(quiz.id)}>
-            <i className="bi bi-pencil"></i> Editar
+        <article className="d-flex flex-wrap gap-2 pt-1 border-top">
+          <button className="btn btn-primary btn-sm" type="button" onClick={() => onEdit(quiz.id)}>
+            <i className="bi bi-pencil me-1"></i> Editar
           </button>
-          <button className="gd-btn gd-btn-danger" type="button" onClick={() => onDelete(quiz.id, quiz.nombre)}>
-            <i className="bi bi-trash"></i> Borrar
+          <button className="btn btn-danger btn-sm" type="button" onClick={() => onDelete(quiz.id, quiz.nombre)}>
+            <i className="bi bi-trash me-1"></i> Borrar
           </button>
         </article>
       )}

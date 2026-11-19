@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../../services/ApiClient';
@@ -84,8 +85,7 @@ export default function GrupoDetalleAlumno({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const [quizTab, setQuizTab] =
-    useState<QuizTab>('activos');
+  const [quizTab, setQuizTab] = useState<QuizTab>('activos');
 
   useEffect(() => {
     let cancelled = false;
@@ -95,15 +95,10 @@ export default function GrupoDetalleAlumno({
         setLoading(true);
         setError(null);
 
-        const [grupoResponse, quizzesResponse] =
-          await Promise.all([
-            apiClient.get<GrupoDetalleBackend>(
-              `/api/grupos/${code}`,
-            ),
-            apiClient.get<QuizBackend[]>(
-              '/api/quizzes',
-            ),
-          ]);
+        const [grupoResponse, quizzesResponse] = await Promise.all([
+          apiClient.get<GrupoDetalleBackend>(`/api/grupos/${code}`),
+          apiClient.get<QuizBackend[]>('/api/quizzes'),
+        ]);
 
         if (cancelled) return;
 
@@ -184,7 +179,7 @@ export default function GrupoDetalleAlumno({
 
   if (loading) {
     return (
-      <p className="gd-empty">
+      <p className="text-center text-secondary py-4 mb-0">
         Cargando información del grupo...
       </p>
     );
@@ -192,7 +187,7 @@ export default function GrupoDetalleAlumno({
 
   if (error || !grupo) {
     return (
-      <p className="gd-empty">
+      <p className="text-center text-secondary py-4 mb-0">
         {error ?? 'No se encontró el grupo.'}
       </p>
     );
@@ -200,47 +195,47 @@ export default function GrupoDetalleAlumno({
 
   return (
     <>
-      <section className="gd-hero">
-
-        <article className="gd-hero-row">
-          <h1 className="gd-hero-title">
-            {grupo.nombre}
-          </h1>
-        </article>
+      <section className="d-flex flex-column gap-2 p-4 rounded-3 text-light bg-primary bg-gradient shadow-sm">
+        <h1 className="fs-3 fw-bold mb-0">
+          {grupo.nombre}
+        </h1>
       </section>
 
-      <section className="gd-info">
-        <article className="gd-meta">
-
-          <span className="gd-meta-item">
-            <strong className="gd-meta-label">
-              Semestre:
-            </strong>{' '}
+      <section className="d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-3 p-3 rounded-3 bg-white border">
+        <article className="d-flex flex-wrap align-items-center gap-3">
+          <span className="d-flex align-items-center gap-2">
+            <strong>Semestre:</strong>
             {grupo.semestre}
           </span>
 
-          <span className="gd-meta-item">
-            <strong className="gd-meta-label">
-              Estado:
-            </strong>{' '}
-            {grupo.activo ? 'Activo' : 'Inactivo'}
+          <span className="d-flex align-items-center gap-2">
+            <strong>Estado:</strong>
+            <span
+              className={`badge ${
+                grupo.activo
+                  ? 'bg-success-subtle text-success-emphasis'
+                  : 'bg-secondary-subtle text-secondary-emphasis'
+              }`}
+            >
+              {grupo.activo ? 'Activo' : 'Inactivo'}
+            </span>
           </span>
         </article>
       </section>
 
-      <section className="gd-card">
-        <article className="gd-card-header">
-          <span className="gd-card-title">
-            <i className="bi bi-journal-text"></i>{' '}
-            Quizzes
-          </span>
+      <section className="d-flex flex-column gap-3 p-3 p-md-4 rounded-3 bg-white border shadow-sm">
+        <article className="d-flex align-items-center gap-2">
+          <i className="bi bi-journal-text fs-5 text-primary"></i>
+          <h2 className="fs-5 fw-bold mb-0">Quizzes</h2>
         </article>
 
-        <article className="gd-quiz-actions">
+        <article className="nav nav-pills nav-fill gap-2">
           <button
             type="button"
-            className={`gd-quiz-tab ${
-              quizTab === 'activos' ? 'active' : ''
+            className={`nav-link ${
+              quizTab === 'activos'
+                ? 'active bg-secondary text-light'
+                : 'text-body'
             }`}
             onClick={() => setQuizTab('activos')}
           >
@@ -249,8 +244,10 @@ export default function GrupoDetalleAlumno({
 
           <button
             type="button"
-            className={`gd-quiz-tab ${
-              quizTab === 'proximos' ? 'active' : ''
+            className={`nav-link ${
+              quizTab === 'proximos'
+                ? 'active bg-secondary text-light'
+                : 'text-body'
             }`}
             onClick={() => setQuizTab('proximos')}
           >
@@ -259,8 +256,10 @@ export default function GrupoDetalleAlumno({
 
           <button
             type="button"
-            className={`gd-quiz-tab ${
-              quizTab === 'pasados' ? 'active' : ''
+            className={`nav-link ${
+              quizTab === 'pasados'
+                ? 'active bg-secondary text-light'
+                : 'text-body'
             }`}
             onClick={() => setQuizTab('pasados')}
           >
@@ -269,7 +268,7 @@ export default function GrupoDetalleAlumno({
         </article>
 
         {quizVisible.length === 0 ? (
-          <p className="gd-empty">
+          <p className="text-center text-secondary py-4 mb-0">
             {quizTab === 'activos'
               ? 'No hay quizzes activos para este grupo.'
               : quizTab === 'proximos'
@@ -277,43 +276,39 @@ export default function GrupoDetalleAlumno({
                 : 'No hay quizzes pasados para este grupo.'}
           </p>
         ) : (
-          <article className="gd-quiz-list">
+          <article className="d-flex flex-column gap-3">
             {quizVisible.map((quiz) => (
               <article
                 key={quiz.id}
-                className={`gd-quiz ${
+                className={`d-flex flex-column gap-3 p-3 rounded-3 border ${
                   quiz.estado === 'pasado'
-                    ? 'gd-quiz-past'
-                    : ''
+                    ? 'bg-body-secondary'
+                    : 'bg-white'
                 }`}
               >
-                <article className="gd-quiz-row">
-                  <article className="gd-quiz-info">
-                    <span className="gd-quiz-title">
+                <article className="d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                  <article className="d-flex flex-column gap-1">
+                    <span className="fw-bold">
                       {quiz.nombre}
                     </span>
 
-                    <span className="gd-quiz-meta">
+                    <span className="small text-secondary">
                       {quiz.estado === 'activo'
-                        ? `Finaliza: ${formatDate(
-                            quiz.fechaFinalizacion,
-                          )}`
+                        ? `Finaliza: ${formatDate(quiz.fechaFinalizacion)}`
                         : quiz.estado === 'proximo'
-                          ? `Inicia: ${formatDate(
-                              quiz.fechaInicio,
-                            )}`
-                          : `Finalizó: ${formatDate(
-                              quiz.fechaFinalizacion,
-                            )}`}
+                          ? `Inicia: ${formatDate(quiz.fechaInicio)}`
+                          : `Finalizó: ${formatDate(quiz.fechaFinalizacion)}`}
                     </span>
                   </article>
 
-                  <article className="gd-quiz-side">
+                  <article className="d-flex flex-row flex-sm-column align-items-center align-items-sm-end gap-2">
                     <span
-                      className={`gd-badge ${
+                      className={`badge ${
                         quiz.estado === 'activo'
-                          ? 'gd-badge-ok'
-                          : 'gd-badge-fecha'
+                          ? 'bg-success-subtle text-success-emphasis'
+                          : quiz.estado === 'proximo'
+                            ? 'bg-warning-subtle text-warning-emphasis'
+                            : 'bg-secondary-subtle text-secondary-emphasis'
                       }`}
                     >
                       {quiz.estado === 'activo'
@@ -326,18 +321,17 @@ export default function GrupoDetalleAlumno({
                     {quiz.estado === 'activo' && (
                       <button
                         type="button"
-                        className="gd-btn gd-btn-small"
+                        className="btn btn-primary btn-sm"
                         onClick={() =>
                           navigate(
                             `/grupos/${code}/quizzes/${quiz.id}/resolver`,
                           )
                         }
                       >
+                        <i className="bi bi-pencil-square me-1"></i>
                         Resolver
                       </button>
                     )}
-
-                    
                   </article>
                 </article>
               </article>

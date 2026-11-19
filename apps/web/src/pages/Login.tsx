@@ -166,8 +166,7 @@ export default function Login() {
                   title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                   onClick={() => setShowPassword((prev) => !prev)}
                 >
-                  <i
-                    className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'} text-white`} 
+                  <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'} text-white`} 
                     aria-hidden="true"
                   />
                 </button>

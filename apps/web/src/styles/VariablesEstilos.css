@@ -47,6 +47,35 @@
 
   --bs-body-font-family: var(--seige-fuente);
   --bs-body-bg: var(--seige-fondo);
+  --bs-body-bg-rgb: 237,244,244;
   --bs-body-color: var(--seige-texto);
   --bs-border-color: var(--seige-borde);
+}
+
+  /* Botones principales */
+.btn-primary {
+  --bs-btn-bg: var(--ar-profundo);
+  --bs-btn-border-color: var(--ar-profundo);
+  --bs-btn-hover-bg: var(--ar-azul);
+  --bs-btn-hover-border-color: var(--ar-azul);
+  --bs-btn-active-bg: var(--ar-azul);
+  --bs-btn-active-border-color: var(--ar-azul);
+  --bs-btn-disabled-bg: var(--ar-profundo);
+  --bs-btn-disabled-border-color: var(--ar-profundo);
+}
+
+/* Contornos principales */
+.btn-outline-primary {
+  --bs-btn-color: var(--ar-profundo);
+  --bs-btn-border-color: var(--ar-profundo);
+  --bs-btn-hover-bg: var(--ar-profundo);
+  --bs-btn-hover-border-color: var(--ar-profundo);
+  --bs-btn-hover-color: white;
+  --bs-btn-active-bg: var(--ar-profundo);
+  --bs-btn-active-border-color: var(--ar-profundo);
+}
+
+/* Pestañas activas */
+.nav-pills {
+  --bs-nav-pills-link-active-bg: var(--ar-profundo);
 }
