@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type SubmitEvent } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import logo from '../assets/logo.webp';
 
@@ -70,76 +70,62 @@ export default function Login() {
   }
 
    return (
-    <article className="container-fluid min-vh-100 p-0">
+    <article className="container-fluid min-vh-100 p-0 position-relative">
       <article className="row g-0 min-vh-100">
 
         <aside className="col-12 col-lg-6 d-flex flex-column justify-content-between gap-5 bg-primary text-light p-4 p-md-5">
 
-          <article className="d-flex align-items-center gap-3">
-            <img
-              src={logo}
-              alt="Logo Seige"
-              width={48}
-              height={48}
-              className="object-fit-contain rounded-3 bg-light p-1 flex-shrink-0"
-            />
-
-            <article>
-              <p className="fw-bold mb-0">
-                Preparatoria Chapala Gutiérrez
-              </p>
-              <p className="text-white-50 mb-0">
-                Plataforma SeigeTEC
-              </p>
-            </article>
-          </article>
-
-          <article>
-            <p className="display-6 fw-bold mb-3">
-              Diagnóstico y evaluación al ritmo de tu aula.
-            </p>
-
-            <p className="text-white-50 fs-5 mb-0">
-              Plataforma para planeación didáctica, quizzes y seguimiento académico de tu institución.
-            </p>
-          </article>
-
-          <p className="small text-white-50 mb-0">
-            Las cuentas son creadas por tu institución. No hay registro abierto.
-          </p>
         </aside>
 
-        <main className="col-12 col-lg-6 d-flex align-items-center justify-content-center bg-light p-4 p-md-5">
 
-          <form
-            className="w-100 bg-white border rounded-4 shadow p-4 p-md-5"
+        <form
+            className="position-absolute top-50 start-50 translate-middle w-100 bg-white border rounded-4 shadow p-4 p-md-5"
+            style={{ maxWidth :'520px', zIndex:1 }}
             onSubmit={handleSubmit}
             noValidate
           >
-            <h1 className="h2 fw-bold mb-2">
-              Iniciar sesión
-            </h1>
+            <article>
+              <article className="d-flex flex-column align-items-center gap-3 mb-4">
+                <img
+                  src={logo}
+                  alt="Logo Seige"
+                  width={220}
+                  height={220}
+                  className="object-fit-contain rounded-3 bg-light p-1 flex-shrink-0 "
+                />
 
-            <p className="text-secondary mb-4">
-              Usa tu usuario institucional.
-            </p>
-
-            <article className="mb-3">
-              <label htmlFor="username" className="form-label fw-semibold">
-                Usuario
-              </label>
-
-              <input
-                id="username"
-                className="form-control form-control-lg"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Tu usuario"
-                autoComplete="username"
-                required
-              />
+                <article>
+                  <h1 className=" display-6 mb-0 fw-bold pt-2">
+                    SeigeTEC
+                  </h1>
+                </article>
+              </article>
             </article>
+
+              <p className="h2 fw-bold mb-2 text-center pt-3">
+                Inicio de sesión
+              </p>
+
+              <p className=" fw-bold mb-4 text-center">
+                Bienvenido, usa tus credenciales para ingresar a la plataforma.
+              </p>
+
+              <article className="mb-3">
+                <label htmlFor="username" className="form-label fw-semibold">
+                  Correo
+                </label>
+
+                <input
+                  id="username"
+                  className="form-control form-control-lg"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Tu correo"
+                  autoComplete="username"
+                  required
+                />
+              </article>
 
             <article className="mb-4">
               <label htmlFor="password" className="form-label fw-semibold">
@@ -178,10 +164,12 @@ export default function Login() {
               type="submit"
               disabled={loading}
             >
-              {loading ? 'Ingresando...' : 'Entrar'}
+              {loading ? 'Ingresando...' : 'Inciar sesión'}
             </button>
+
+            <NavLink to="/"  className="d-block text-center mt-3">¿Olvidaste tu contraseña?</NavLink>
           </form>
-        </main>
+
       </article>
 
       {modalMessage && (
@@ -194,9 +182,9 @@ export default function Login() {
             aria-labelledby="login-error-title"
           >
             <article className="modal-dialog modal-dialog-centered">
-              <article className="modal-content shadow">
-                <article className="modal-header">
-                  <h2 className="modal-title fs-5" id="login-error-title">
+              <article className="modal-content shadow rounded-4">
+                <article className="modal-header bg-primary text-light">
+                  <h2 className="modal-title fs-5 fw-bold text-center" id="login-error-title">
                     No se pudo iniciar sesión
                   </h2>
                 </article>
