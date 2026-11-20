@@ -29,6 +29,9 @@ export interface Materia {
   nombre: string;
   prefijo: string;
   planEstudioId: string;
+  plantelId?: number | null;
+  documentoMateriaId?: string | null;
+  documentoMateriaNombre?: string | null;
   unidades?: Unidad[];
   activo?: boolean;
 }

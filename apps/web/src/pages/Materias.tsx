@@ -7,7 +7,9 @@ import type { Materia } from '../types/types.ts';
 import { apiClient } from '../services/ApiClient.ts';
 import '../styles/Materias.css';
 import { useAuth } from '../context/AuthContext.tsx';
+import { deleteArchivoTemporal, uploadArchivoTemporal } from '../services/materiaDocumentoService.ts';
 import Toast, {type ToastData}  from '../components/common/Toast.tsx'
+import { nombreVisibleMateria, puedeCambiarEstadoMateria } from '../utils/materiaPermisos.ts';
 
 const normalizar = (s: string) =>
   s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
@@ -25,7 +27,7 @@ export default function Materias() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState<ToastData | null>(null);
   const cerrarToast = useCallback(() => { setToast(null);}, []);
-  const {role} = useAuth();
+  const { role, selectedPlantel } = useAuth();
 
 
   function extractErrorMessage(err: unknown, fallback: string): string {
@@ -46,7 +48,14 @@ export default function Materias() {
     setError('');
 
     try {
-      const response = await apiClient.get<Materia[]>('/api/materias');
+      const plantelId = role === 'directorPlantel' || role === 'coordinador' || role === 'directorGeneral'
+        ? selectedPlantel?.id ?? null
+        : null;
+      const response = await apiClient.get<Materia[]>(
+        plantelId != null
+          ? `/api/materias?plantelId=${encodeURIComponent(plantelId)}`
+          : '/api/materias',
+      );
 
       setMaterias(response.data ?? []);
     } catch (err) {
@@ -71,18 +80,32 @@ export default function Materias() {
         normalizar(m.id).includes(q) ||
         normalizar(m.nombre).includes(q) ||
         normalizar(m.prefijo).includes(q) ||
-        normalizar(m.planEstudioId).includes(q),
+        normalizar(nombreVisibleMateria(m)).includes(q),
     );
   }, [materias, busqueda]);
 
   async function handleGuardar(datos: DatosMateria) {
+    let documentoTemporalId: string | null = null;
+    let materiaPersistida = false;
+
     try {
+      let documentoMateriaId: string | null = null;
+      if (datos.archivo) {
+        const archivoSubido = await uploadArchivoTemporal(datos.archivo);
+        documentoMateriaId = archivoSubido.fileId;
+        documentoTemporalId = archivoSubido.fileId;
+      }
+
       if (modal?.tipo === 'editar') {
         const payload = {
           id: modal.materia.id,
           nombre: datos.nombre,
           prefijo: datos.prefijo,
           planEstudioId: null,
+          documentoMateriaId,
+          plantelId: role === 'directorPlantel' || role === 'coordinador'
+            ? selectedPlantel?.id ?? null
+            : modal.materia.plantelId ?? null,
           unidades: (datos.unidades ?? []).map((unidad) => ({
             id: unidad.id,
             nombre: unidad.nombre.trim(),
@@ -97,8 +120,14 @@ export default function Materias() {
           })),
         };
 
-        const response = await apiClient.patch<Materia>(`/api/materias/${modal.materia.id}`, payload);
-
+        const plantelQuery = role === 'directorPlantel' || role === 'coordinador'
+          ? `?plantelId=${encodeURIComponent(selectedPlantel?.id ?? '')}`
+          : '';
+        const response = await apiClient.patch<Materia>(
+          `/api/materias/${modal.materia.id}${plantelQuery}`,
+          payload,
+        );
+        materiaPersistida = true;
         setMaterias((prev) => prev.map((m) => (m.id === modal.materia.id ? response.data : m)));
         await loadMaterias();
         setModal(null);
@@ -113,6 +142,10 @@ export default function Materias() {
         nombre: datos.nombre,
         prefijo: datos.prefijo,
         planEstudioId: null,
+        documentoMateriaId,
+        plantelId: role === 'directorPlantel' || role === 'coordinador'
+          ? selectedPlantel?.id ?? null
+          : null,
         unidades: (datos.unidades ?? []).map((unidad) => ({
           id: unidad.id,
           nombre: unidad.nombre.trim(),
@@ -128,6 +161,7 @@ export default function Materias() {
       };
 
       const materiaResponse = await apiClient.post<Materia>('/api/materias', payload);
+      materiaPersistida = true;
       setMaterias((prev) => [materiaResponse.data, ...prev]);
       await loadMaterias();
       setModal(null);
@@ -135,11 +169,19 @@ export default function Materias() {
         mensaje:'Materia guardada correctamente.',
         tipo:'exito'});
     } catch (err) {
+      if (documentoTemporalId && !materiaPersistida) {
+        try {
+          await deleteArchivoTemporal(documentoTemporalId);
+        } catch {
+          // La limpieza será segura en el backend si el archivo ya quedó asociado.
+        }
+      }
       const message = extractErrorMessage(err, 'No se pudo guardar la materia.');
       setToast({
         mensaje:message,
         tipo:'error'});
       setError(message);
+      throw err;
     }
   }
 
@@ -147,8 +189,11 @@ export default function Materias() {
 
   async function handleDeactivate(materia: Materia) {
     try {
+      const plantelQuery = role === 'directorPlantel' || role === 'coordinador'
+        ? `?plantelId=${encodeURIComponent(selectedPlantel?.id ?? '')}`
+        : '';
       const response = await apiClient.patch<Materia>(
-        `/api/materias/${materia.id}`,
+        `/api/materias/${materia.id}${plantelQuery}`,
         { activo: false },
       );
 
@@ -171,7 +216,10 @@ export default function Materias() {
 
   async function handleActivate(materia: Materia) {
     try {
-      await apiClient.patch(`/api/materias/${materia.id}`, {
+      const plantelQuery = role === 'directorPlantel' || role === 'coordinador'
+        ? `?plantelId=${encodeURIComponent(selectedPlantel?.id ?? '')}`
+        : '';
+      await apiClient.patch(`/api/materias/${materia.id}${plantelQuery}`, {
         activo: true,
       });
 
@@ -264,6 +312,7 @@ export default function Materias() {
                 <tbody>
                   {filtradas.map((m) => {
                     const estaActiva = m.activo !== false;
+                    const puedeCambiarEstado = puedeCambiarEstadoMateria(role, m);
 
                     return (
                       <tr
@@ -283,7 +332,8 @@ export default function Materias() {
 
                         <td>
                           <span className="mat-plan">
-                            <i className="bi bi-folder2-open"></i> {m.planEstudioId}
+                            <i className="bi bi-folder2-open"></i>{' '}
+                            {nombreVisibleMateria(m)}
                           </span>
                         </td>
 
@@ -299,21 +349,25 @@ export default function Materias() {
                             </button>
 
                             {estaActiva ? (
-                              <button
-                                className="mat-link mat-link-desactivar"
-                                type="button"
-                                onClick={() => abrirConfirmacionEliminacion(m)}
-                              >
-                                Eliminar
-                              </button>
+                              puedeCambiarEstado ? (
+                                <button
+                                  className="mat-link mat-link-desactivar"
+                                  type="button"
+                                  onClick={() => abrirConfirmacionEliminacion(m)}
+                                >
+                                  Eliminar
+                                </button>
+                              ) : null
                             ) : (
-                              <button
-                                className="mat-link mat-link-reactivar"
-                                type="button"
-                                onClick={() => void handleActivate(m)}
-                              >
-                                Reactivar
-                              </button>
+                              puedeCambiarEstado ? (
+                                <button
+                                  className="mat-link mat-link-reactivar"
+                                  type="button"
+                                  onClick={() => void handleActivate(m)}
+                                >
+                                  Reactivar
+                                </button>
+                              ) : null
                             )}
                           </article>
                         </td>
