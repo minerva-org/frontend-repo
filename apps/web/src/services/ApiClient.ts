@@ -16,6 +16,12 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use((config) => {
+  if (config.data instanceof FormData) {
+    const headers = new AxiosHeaders(config.headers);
+    headers.delete('Content-Type');
+    config.headers = headers;
+  }
+
   const token = sessionStorage.getItem('token');
   if (token) {
     const headers = new AxiosHeaders(config.headers);

@@ -1,5 +1,6 @@
 import { useState, type SubmitEvent } from 'react';
 import type { Materia } from '../../types/types.ts';
+import { materiaDocumentoErrorMessage } from '../../services/materiaDocumentoService.ts';
 import '../../styles/ModalMateria.css';
 
 export interface ConceptoForm {
@@ -25,12 +26,13 @@ export interface DatosMateria {
   prefijo: string;
   planEstudioId: string;
   unidades: UnidadForm[];
+  archivo: File | null;
 }
 
 interface Props {
   materia?: Materia | null;
   onCerrar: () => void;
-  onGuardar: (datos: DatosMateria) => void;
+  onGuardar: (datos: DatosMateria) => Promise<void>;
 }
 
 function derivarPrefijo(nombre: string): string {
@@ -99,6 +101,9 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const validate = (): string => {
     if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
     if (!prefijo.trim()) return 'El prefijo de la materia es obligatorio.';
+    if (archivo && (!archivo.name.toLowerCase().endsWith('.pdf') || archivo.size > 10 * 1024 * 1024)) {
+      return 'El plan de estudio debe ser un PDF de hasta 10 MiB.';
+    }
     if (esEdicion) return '';
 
     const unidadesValidas = unidades.filter((unidad) => unidad.nombre.trim() && unidad.temas.some((tema) => tema.nombre.trim() && tema.conceptos.some((concepto) => concepto.nombre.trim())));
@@ -190,7 +195,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
     }));
   };
 
-  const handleSubmit = (e: SubmitEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const msg = validate();
     if (msg) {
@@ -198,32 +203,37 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
       return;
     }
     setError('');
-    onGuardar({
-      id: id.trim(),
-      nombre: nombre.trim(),
-      prefijo:prefijoFinal,
-      planEstudioId: '',
-      unidades: unidades
-        .filter((unidad) => unidad.nombre.trim())
-        .map((unidad) => ({
-          ...unidad,
-          nombre: unidad.nombre.trim(),
-          temas: (unidad.temas ?? [])
-            .filter((tema) => tema.nombre.trim())
-            .map((tema) => ({
-              ...tema,
-              nombre: tema.nombre.trim(),
-              conceptos: (tema.conceptos ?? [])
-                .filter((concepto) => concepto.nombre.trim())
-                .map((concepto) => ({
-                  ...concepto,
-                  nombre: concepto.nombre.trim(),
-                })),
-            }))
-            .filter((tema) => tema.conceptos.length > 0),
-        }))
-        .filter((unidad) => unidad.temas.length > 0),
-    });
+    try {
+      await onGuardar({
+        id: id.trim(),
+        nombre: nombre.trim(),
+        prefijo: prefijoFinal,
+        planEstudioId: '',
+        archivo,
+        unidades: unidades
+          .filter((unidad) => unidad.nombre.trim())
+          .map((unidad) => ({
+            ...unidad,
+            nombre: unidad.nombre.trim(),
+            temas: (unidad.temas ?? [])
+              .filter((tema) => tema.nombre.trim())
+              .map((tema) => ({
+                ...tema,
+                nombre: tema.nombre.trim(),
+                conceptos: (tema.conceptos ?? [])
+                  .filter((concepto) => concepto.nombre.trim())
+                  .map((concepto) => ({
+                    ...concepto,
+                    nombre: concepto.nombre.trim(),
+                  })),
+              }))
+              .filter((tema) => tema.conceptos.length > 0),
+          }))
+          .filter((unidad) => unidad.temas.length > 0),
+      });
+    } catch (error) {
+      setError(materiaDocumentoErrorMessage(error, 'No se pudo guardar la materia.'));
+    }
   };
 
   return (
@@ -314,7 +324,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                   <input
                     id="materia-archivo"
                     type="file"
-                    accept=".pdf,.doc,.docx,.ppt,.pptx"
+                    accept="application/pdf,.pdf"
                     hidden
                     onChange={(e) => {
                       const seleccionado = e.target.files?.[0] ?? null;
