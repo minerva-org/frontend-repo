@@ -1,15 +1,59 @@
-.app-layout {
-  display: flex;
-  min-height: 100dvh;
-}
-.app-layout-content {
-  flex: 1;
-  min-width: 0;
-}
- 
-@media (max-width: 900px) {
-  .app-layout {
-    flex-direction: column;
+/* Teléfono  */
+@media (max-width: 640px) {
+  .login-panel-visual {
+    min-height: auto;
+  }
+
+  .login-panel-form {
+    min-height: 100vh;
+    padding: 1rem !important;
+  }
+
+  .login-form {
+    max-width: 100%;
+  }
+
+  .login-logo {
+    width: 130px;
+    height: 130px;
   }
 }
- 
+
+/* Tablet */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .login-panel-visual {
+    min-height: 35vh;
+  }
+
+  .login-panel-form {
+    min-height: 65vh;
+  }
+
+  .login-form {
+    max-width: 480px;
+  }
+
+  .login-logo {
+    width: 170px;
+    height: 170px;
+  }
+}
+
+/* Computadora */
+@media (min-width: 1025px) {
+  .login-panel-visual,
+  .login-panel-form {
+    flex: 0 0 50%;
+    max-width: 50%;
+    min-height: 100vh;
+  }
+
+  .login-form {
+    max-width: 520px;
+  }
+
+  .login-logo {
+    width: 220px;
+    height: 220px;
+  }
+}

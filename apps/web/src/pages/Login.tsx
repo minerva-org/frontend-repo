@@ -70,17 +70,17 @@ export default function Login() {
   }
 
    return (
-    <article className="container-fluid min-vh-100 p-0 position-relative">
-      <article className="row g-0 min-vh-100">
-
-        <aside className="col-12 col-lg-6 d-flex flex-column justify-content-between gap-5 bg-primary text-light p-4 p-md-5">
-
+    <article className="container-fluid min-vh-100 p-0">
+      <article className="row g-0 min-vh-100 position-relative">
+        <aside className="col-6 bg-primary">
         </aside>
+        <section className="col-6 bg-light">
+        </section>
 
-
-        <form
-            className="position-absolute top-50 start-50 translate-middle w-100 bg-white border rounded-4 shadow p-4 p-md-5"
-            style={{ maxWidth :'520px', zIndex:1 }}
+        <section className="position-absolute top-50 start-50 translate-middle w-100 d-flex justify-content-center px-3">
+          <form
+            className="login-form bg-white border rounded-4 shadow p-3 p-md-4"
+            style={{ width: '100%', maxWidth: '520px' }}
             onSubmit={handleSubmit}
             noValidate
           >
@@ -91,7 +91,7 @@ export default function Login() {
                   alt="Logo Seige"
                   width={220}
                   height={220}
-                  className="object-fit-contain rounded-3 bg-light p-1 flex-shrink-0 "
+                  className="login-logo object-fit-contain rounded-3 bg-light p-1"
                 />
 
                 <article>
@@ -169,6 +169,7 @@ export default function Login() {
 
             <NavLink to="/"  className="d-block text-center mt-3">¿Olvidaste tu contraseña?</NavLink>
           </form>
+        </section>
 
       </article>
 
