@@ -3,6 +3,7 @@ import {
   materiaDocumentoErrorMessage,
   materiaExtraccionErrorMessage,
   validarExtraccionMateria,
+  construirUrlDescargaDocumento,
 } from './materiaDocumentoService.ts';
 
 describe('materiaDocumentoErrorMessage', () => {
@@ -119,5 +120,12 @@ describe('materiaDocumentoErrorMessage', () => {
     };
     expect(materiaExtraccionErrorMessage(error))
       .toBe('El servicio de generación no está disponible.');
+  });
+
+  // Input: documentoMateriaId válido.
+  // Resultado esperado: construir URL codificada del endpoint de descarga.
+  it('construye la URL de descarga del documento', () => {
+    expect(construirUrlDescargaDocumento('DOC 123'))
+      .toBe('/api/files/DOC%20123');
   });
 });

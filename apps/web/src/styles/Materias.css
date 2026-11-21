@@ -170,6 +170,16 @@
 .mat-td-suave { color: var(--mat-suave); }
 
 .mat-plan { display: inline-flex; align-items: center; gap: 0.4rem; }
+.mat-plan-link {
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ar-azul);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.mat-plan-link:hover { color: var(--seige-acento); }
 .mat-plan-vacio { color: var(--mat-suave); font-family: sans-serif; }
 
 .mat-badge {

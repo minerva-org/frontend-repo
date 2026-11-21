@@ -293,3 +293,7 @@ export async function removePlanMateria(materiaId: string): Promise<void> {
 export async function deleteArchivoTemporal(fileId: string): Promise<void> {
   await apiClient.delete(`/api/files/${encodeURIComponent(fileId)}`);
 }
+
+export function construirUrlDescargaDocumento(documentoMateriaId: string): string {
+  return `/api/files/${encodeURIComponent(documentoMateriaId)}`;
+}

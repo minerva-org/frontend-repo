@@ -7,7 +7,11 @@ import type { Materia } from '../types/types.ts';
 import { apiClient } from '../services/ApiClient.ts';
 import '../styles/Materias.css';
 import { useAuth } from '../context/AuthContext.tsx';
-import { deleteArchivoTemporal, uploadArchivoTemporal } from '../services/materiaDocumentoService.ts';
+import {
+  construirUrlDescargaDocumento,
+  deleteArchivoTemporal,
+  uploadArchivoTemporal,
+} from '../services/materiaDocumentoService.ts';
 import Toast, {type ToastData}  from '../components/common/Toast.tsx'
 import { acortarNombreArchivo, nombreVisibleMateria, puedeCambiarEstadoMateria } from '../utils/materiaPermisos.ts';
 
@@ -338,11 +342,20 @@ export default function Materias() {
                         <td>
                           <span className="mat-plan">
                             <i className="bi bi-folder2-open"></i>{' '}
-                            <span
-                              title={nombreVisibleMateria(m)}
-                            >
-                              {acortarNombreArchivo(nombreVisibleMateria(m))}
-                            </span>
+                            {m.documentoMateriaId ? (
+                              <a
+                                href={construirUrlDescargaDocumento(m.documentoMateriaId)}
+                                title={nombreVisibleMateria(m)}
+                                download={nombreVisibleMateria(m)}
+                                className="mat-plan-link"
+                              >
+                                {acortarNombreArchivo(nombreVisibleMateria(m))}
+                              </a>
+                            ) : (
+                              <span title={nombreVisibleMateria(m)}>
+                                {acortarNombreArchivo(nombreVisibleMateria(m))}
+                              </span>
+                            )}
                           </span>
                         </td>
 
