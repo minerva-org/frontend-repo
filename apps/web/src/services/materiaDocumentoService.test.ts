@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { materiaDocumentoErrorMessage } from './materiaDocumentoService.ts';
+import {
+  materiaDocumentoErrorMessage,
+  materiaExtraccionErrorMessage,
+  validarExtraccionMateria,
+} from './materiaDocumentoService.ts';
 
 describe('materiaDocumentoErrorMessage', () => {
   // Input: error 413 sin mensaje backend.
@@ -47,5 +51,73 @@ describe('materiaDocumentoErrorMessage', () => {
   // Resultado esperado: usar fallback descriptivo.
   it('usa fallback para error desconocido', () => {
     expect(materiaDocumentoErrorMessage(undefined, 'Fallo de prueba')).toBe('Fallo de prueba');
+  });
+
+  // Input: árbol válido con unidad, tema y concepto.
+  // Resultado esperado: no se reporta error de estructura.
+  it('valida un árbol académico completo', () => {
+    expect(validarExtraccionMateria({
+      units: [{
+        name: 'Unidad',
+        topics: [{
+          name: 'Tema',
+          concepts: [{ name: 'Concepto' }],
+        }],
+      }],
+    })).toBeNull();
+  });
+
+  // Input: units vacío.
+  // Resultado esperado: informar que no existe jerarquía utilizable.
+  it('rechaza un árbol sin unidades', () => {
+    expect(validarExtraccionMateria({ units: [] }))
+      .toContain('jerarquía');
+  });
+
+  // Input: unidad sin temas.
+  // Resultado esperado: informar el nodo incompleto.
+  it('rechaza una unidad sin temas', () => {
+    expect(validarExtraccionMateria({
+      units: [{ name: 'Unidad', topics: [] }],
+    })).toContain('temas');
+  });
+
+  // Input: tema sin conceptos.
+  // Resultado esperado: informar el nodo incompleto.
+  it('rechaza un tema sin conceptos', () => {
+    expect(validarExtraccionMateria({
+      units: [{
+        name: 'Unidad',
+        topics: [{ name: 'Tema', concepts: [] }],
+      }],
+    })).toContain('conceptos');
+  });
+
+  // Input: respuesta NO_USABLE_HIERARCHY.
+  // Resultado esperado: mensaje específico al usuario.
+  it('describe archivo sin contenido académico', () => {
+    const error = {
+      response: {
+        status: 422,
+        data: { code: 'NO_USABLE_HIERARCHY', message: 'Sin contenido utilizable.' },
+      },
+      isAxiosError: true,
+    };
+    expect(materiaExtraccionErrorMessage(error))
+      .toBe('El archivo no contiene contenido académico utilizable.');
+  });
+
+  // Input: respuesta OLLAMA_UNAVAILABLE.
+  // Resultado esperado: mensaje específico de servicio no disponible.
+  it('describe Ollama no disponible', () => {
+    const error = {
+      response: {
+        status: 503,
+        data: { code: 'OLLAMA_UNAVAILABLE', message: 'No disponible.' },
+      },
+      isAxiosError: true,
+    };
+    expect(materiaExtraccionErrorMessage(error))
+      .toBe('El servicio de generación no está disponible.');
   });
 });

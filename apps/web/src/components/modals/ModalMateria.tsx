@@ -1,6 +1,10 @@
-import { useState, type SubmitEvent } from 'react';
+import { useRef, useState, type SubmitEvent } from 'react';
 import type { Materia } from '../../types/types.ts';
 import { materiaDocumentoErrorMessage } from '../../services/materiaDocumentoService.ts';
+import {
+  extraerConceptosMateria,
+  materiaExtraccionErrorMessage,
+} from '../../services/materiaDocumentoService.ts';
 import { acortarNombreArchivo } from '../../utils/materiaPermisos.ts';
 import '../../styles/ModalMateria.css';
 
@@ -108,6 +112,25 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   );
   const [archivoEliminado, setArchivoEliminado] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [generandoConceptos, setGenerandoConceptos] = useState(false);
+  const [confirmarCancelar, setConfirmarCancelar] = useState(false);
+  const extraccionControllerRef = useRef<AbortController | null>(null);
+
+  const solicitarCancelar = () => {
+    if (generandoConceptos || guardando) {
+      setConfirmarCancelar(true);
+      return;
+    }
+    onCerrar();
+  };
+
+  const confirmarCancelacionExtraccion = () => {
+    extraccionControllerRef.current?.abort();
+    extraccionControllerRef.current = null;
+    setConfirmarCancelar(false);
+    setGenerandoConceptos(false);
+    onCerrar();
+  };
 
   const validate = (): string => {
     if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
@@ -206,6 +229,48 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
     }));
   };
 
+  const generarConceptos = async () => {
+    const pdfTemporal = archivo
+      ?? (archivoExistenteId && !archivoEliminado ? null : null);
+    if (!pdfTemporal) {
+      setError('Selecciona un PDF temporal antes de generar conceptos.');
+      return;
+    }
+
+    if (unidades.length > 0
+        && !window.confirm('Se reemplazará el árbol actual. Los cambios no guardados se perderán.')) {
+      return;
+    }
+
+    setError('');
+    setGenerandoConceptos(true);
+    const controller = new AbortController();
+    extraccionControllerRef.current = controller;
+    try {
+      const tree = await extraerConceptosMateria(pdfTemporal, controller.signal);
+      setUnidades(tree.units.map((unidad) => ({
+        id: crypto.randomUUID(),
+        nombre: unidad.name,
+        temas: unidad.topics.map((tema) => ({
+          id: crypto.randomUUID(),
+          nombre: tema.name,
+          conceptos: tema.concepts.map((concepto) => ({
+            id: crypto.randomUUID(),
+            nombre: concepto.name,
+          })),
+        })),
+      })));
+    } catch (cause) {
+      if (cause instanceof Error && (cause.name === 'CanceledError' || cause.name === 'AbortError')) {
+        return;
+      }
+      setError(materiaExtraccionErrorMessage(cause));
+    } finally {
+      extraccionControllerRef.current = null;
+      setGenerandoConceptos(false);
+    }
+  };
+
   const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     const msg = validate();
@@ -254,6 +319,24 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
 
   return (
     <article className="mm-overlay">
+      {(guardando || generandoConceptos) && (
+        <article className="mm-processing-overlay" aria-live="polite">
+          <button
+            type="button"
+            className="mm-processing-close"
+            aria-label="Cancelar generación"
+            title="Cancelar generación"
+            onClick={() => setConfirmarCancelar(true)}
+          >
+            <i className="bi bi-x-lg" aria-hidden="true"></i>
+          </button>
+          <article className="mm-processing-card" role="status">
+            <span className="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
+            <strong>{generandoConceptos ? 'Generando conceptos...' : 'Guardando materia...'}</strong>
+          </article>
+        </article>
+      )}
+
       <article
         role="dialog"
         aria-modal="true"
@@ -269,8 +352,9 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           </article>
         </header>
 
-        <form onSubmit={handleSubmit} noValidate className="mm-form" aria-busy={guardando}>
-          <fieldset disabled={guardando} className="mm-fieldset">
+        <form onSubmit={handleSubmit} noValidate className="mm-form"
+          aria-busy={guardando || generandoConceptos}>
+          <fieldset disabled={guardando || generandoConceptos} className="mm-fieldset">
           <article className="mm-field">
             <label htmlFor="materia-nombre" className="mm-label">Nombre de la materia</label>
             <input
@@ -390,6 +474,16 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                       </button>
                     </div>
                   )}
+
+                  <button
+                    type="button"
+                    className="mm-add-btn"
+                    onClick={() => void generarConceptos()}
+                    disabled={!archivo || generandoConceptos || guardando}
+                  >
+                    <i className={generandoConceptos ? 'bi bi-arrow-repeat' : 'bi bi-stars'}></i>
+                    {generandoConceptos ? 'Generando conceptos...' : 'Generar conceptos'}
+                  </button>
                 </article>
 
             <legend className="mm-legend">Unidades, temas y conceptos</legend>
@@ -461,10 +555,11 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           {error && <p role="alert" className="mm-error">{error}</p>}
 
           <footer className="mm-footer">
-            <button type="button" onClick={onCerrar} className="mat-btn" disabled={guardando}>
+            <button type="button" onClick={solicitarCancelar} className="mat-btn">
               Cancelar
             </button>
-            <button type="submit" className="mat-btn mat-btn-primary" disabled={guardando}>
+            <button type="submit" className="mat-btn mat-btn-primary"
+              disabled={guardando || generandoConceptos}>
               {guardando
                 ? 'Guardando...'
                 : esEdicion
@@ -473,6 +568,26 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
             </button>
           </footer>
         </form>
+
+        {confirmarCancelar && (
+          <article className="mm-confirm-overlay" role="dialog" aria-modal="true"
+            aria-labelledby="cancelar-materia-titulo">
+            <article className="mm-confirm-card">
+              <h3 id="cancelar-materia-titulo">¿Cancelar generación?</h3>
+              <p>La operación está en curso. Si cancelas, no se aplicarán los cambios extraídos.</p>
+              <footer className="mm-confirm-actions">
+                <button type="button" className="mat-btn"
+                  onClick={() => setConfirmarCancelar(false)}>
+                  Continuar
+                </button>
+                <button type="button" className="mat-btn mat-btn-primary"
+                  onClick={confirmarCancelacionExtraccion}>
+                  Sí, cancelar
+                </button>
+              </footer>
+            </article>
+          </article>
+        )}
       </article>
     </article>
   );

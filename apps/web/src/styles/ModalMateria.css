@@ -10,6 +10,7 @@
 }
 
 .mm-modal {
+  position: relative;
   width: 100%;
   max-width: 34rem;
   max-height: 90vh;
@@ -18,6 +19,92 @@
   border-radius: 0.9rem;
   box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
   font-family: sans-serif;
+}
+
+.mm-processing-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(68, 78, 88, 0.72);
+  backdrop-filter: grayscale(0.75);
+  pointer-events: all;
+}
+
+.mm-processing-close {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 301;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--seige-superficie);
+  background: rgba(15, 23, 32, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 1.1rem;
+}
+
+.mm-processing-close:hover {
+  background: rgba(15, 23, 32, 0.92);
+}
+
+.mm-processing-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 14rem;
+  justify-content: center;
+  padding: 0.9rem 1rem;
+  color: var(--seige-texto);
+  background: var(--seige-superficie);
+  border: 1px solid var(--mat-borde, color-mix(in srgb, var(--ar-acero) 35%, white));
+  border-radius: 0.65rem;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
+}
+
+.mm-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 302;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(15, 23, 32, 0.62);
+  border-radius: 0.9rem;
+}
+
+.mm-confirm-card {
+  width: min(22rem, 100%);
+  padding: 1rem;
+  color: var(--seige-texto);
+  background: var(--seige-superficie);
+  border-radius: 0.65rem;
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.28);
+}
+
+.mm-confirm-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.mm-confirm-card p {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
+.mm-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 1rem;
 }
 
 .mm-header {
@@ -153,6 +240,14 @@
   cursor: pointer;
 }
 .mm-add-btn:hover { background: color-mix(in srgb, var(--ar-azul) 14%, white); }
+
+.mm-add-btn:disabled {
+  color: var(--seige-texto-secundario);
+  background: color-mix(in srgb, var(--seige-texto-secundario) 8%, white);
+  border-color: color-mix(in srgb, var(--seige-texto-secundario) 25%, white);
+  cursor: not-allowed;
+  opacity: 0.72;
+}
 
 .mm-error {
   margin: 0;

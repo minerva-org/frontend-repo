@@ -24,6 +24,146 @@ export interface FileUploadDTO {
   size: number;
 }
 
+export interface ExtraccionMateriaTree {
+  units: Array<{
+    name: string;
+    topics: Array<{
+      name: string;
+      concepts: Array<{ name: string }>;
+    }>;
+  }>;
+}
+
+export interface ExtraccionMateriaError {
+  code?: string;
+  message?: string;
+  mensaje?: string;
+  validationErrors?: string[];
+}
+
+export function materiaExtraccionErrorMessage(error: unknown): string {
+  if (isAxiosError<ExtraccionMateriaError>(error)) {
+    const data = error.response?.data;
+    const code = data?.code;
+
+    if (code === 'NO_USABLE_HIERARCHY') {
+      return 'El archivo no contiene contenido académico utilizable.';
+    }
+    if (code === 'INCOMPLETE_HIERARCHY') {
+      return 'La estructura extraída está incompleta. Revisa unidades, temas y conceptos.';
+    }
+    if (code === 'NO_EXTRACTABLE_TEXT') {
+      return 'No se pudo extraer texto del PDF. Verifica que contenga texto seleccionable.';
+    }
+    if (code === 'PDF_INVALID') {
+      return 'El archivo no es un PDF válido.';
+    }
+    if (code === 'EXTRACTED_TEXT_TOO_LARGE') {
+      return 'El contenido extraído supera el límite permitido.';
+    }
+    if (code === 'INVALID_MODEL_OUTPUT') {
+      return 'El agente no pudo generar una estructura válida.';
+    }
+    if (code === 'OLLAMA_UNAVAILABLE') {
+      return 'El servicio de generación no está disponible.';
+    }
+    if (code === 'OLLAMA_TIMEOUT') {
+      return 'La generación excedió el tiempo de espera.';
+    }
+
+    const message = data?.message || data?.mensaje;
+    if (typeof message === 'string' && message.trim()) return message.trim();
+
+    if (error.response?.status === 413) {
+      return 'El archivo supera el límite permitido de 10 MiB.';
+    }
+    if (error.response?.status === 415) {
+      return 'El archivo no tiene un formato PDF válido.';
+    }
+    if (error.response?.status === 422) {
+      return 'No fue posible extraer una estructura válida del archivo.';
+    }
+    if (error.response?.status === 503) {
+      return 'El servicio de generación no está disponible.';
+    }
+    if (error.response?.status === 504) {
+      return 'La generación excedió el tiempo de espera.';
+    }
+    if (error.response?.status === 502) {
+      return 'El agente no pudo procesar el archivo.';
+    }
+    if (!error.response) {
+      return 'No se pudo contactar al servidor de generación.';
+    }
+  }
+
+  if (error instanceof Error && error.message.trim()) return error.message.trim();
+  return 'No se pudo generar el desglose de la materia.';
+}
+
+export async function extraerConceptosMateria(
+  file: File,
+  signal?: AbortSignal,
+): Promise<ExtraccionMateriaTree> {
+  if (!file.name.toLowerCase().endsWith('.pdf')) {
+    throw new Error('Solo se permiten archivos PDF.');
+  }
+  if (file.size <= 0) {
+    throw new Error('El archivo PDF está vacío.');
+  }
+  if (file.size > 10 * 1024 * 1024) {
+    throw new Error('El archivo supera el límite de 10 MiB.');
+  }
+
+  const form = new FormData();
+  form.append('file', file);
+
+  try {
+    const { data } = await apiClient.post<ExtraccionMateriaTree>(
+      '/api/materias/extract',
+      form,
+      { timeout: 260_000, signal },
+    );
+    const validationError = validarExtraccionMateria(data);
+    if (validationError) throw new Error(validationError);
+    return data;
+  } catch (error) {
+    if (isAxiosError(error)
+        && (error.code === 'ERR_CANCELED' || error.name === 'CanceledError')) {
+      throw error;
+    }
+    if (error instanceof Error && !isAxiosError(error)) throw error;
+    throw new Error(materiaExtraccionErrorMessage(error));
+  }
+}
+
+export function validarExtraccionMateria(
+  tree: ExtraccionMateriaTree | null | undefined,
+): string | null {
+  if (!tree || !Array.isArray(tree.units) || tree.units.length === 0) {
+    return 'No se encontró una jerarquía académica utilizable.';
+  }
+
+  for (const unidad of tree.units) {
+    if (!unidad.name?.trim()) return 'Existe una unidad sin nombre.';
+    if (!Array.isArray(unidad.topics) || unidad.topics.length === 0) {
+      return `La unidad "${unidad.name}" no contiene temas.`;
+    }
+
+    for (const tema of unidad.topics) {
+      if (!tema.name?.trim()) return 'Existe un tema sin nombre.';
+      if (!Array.isArray(tema.concepts) || tema.concepts.length === 0) {
+        return `El tema "${tema.name}" no contiene conceptos.`;
+      }
+
+      for (const concepto of tema.concepts) {
+        if (!concepto.name?.trim()) return 'Existe un concepto sin nombre.';
+      }
+    }
+  }
+  return null;
+}
+
 export function materiaDocumentoErrorMessage(
   error: unknown,
   fallback = 'No se pudo subir el plan de estudio.',
