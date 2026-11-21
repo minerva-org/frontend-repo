@@ -30,6 +30,13 @@ describe('materiaDocumentoErrorMessage', () => {
     expect(materiaDocumentoErrorMessage(error)).toContain('contactar');
   });
 
+  // Input: respuesta HTTP 502 sin detalles internos.
+  // Resultado esperado: mensaje simple de reintento sin mencionar infraestructura.
+  it('describe 502 sin exponer tecnología', () => {
+    const error = { response: { status: 502, data: {} }, code: 'ERR_BAD_RESPONSE', isAxiosError: true };
+    expect(materiaDocumentoErrorMessage(error)).toBe('No se pudo guardar el archivo. Intenta nuevamente.');
+  });
+
   // Input: Error estándar con mensaje.
   // Resultado esperado: reutilizar el mensaje como causa útil.
   it('usa el mensaje de Error estándar', () => {

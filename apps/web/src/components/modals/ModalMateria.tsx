@@ -107,6 +107,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
     materia?.documentoMateriaNombre?.trim() || '',
   );
   const [archivoEliminado, setArchivoEliminado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
 
   const validate = (): string => {
     if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
@@ -213,6 +214,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
       return;
     }
     setError('');
+    setGuardando(true);
     try {
       await onGuardar({
         id: id.trim(),
@@ -245,6 +247,8 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
       });
     } catch (error) {
       setError(materiaDocumentoErrorMessage(error, 'No se pudo guardar la materia.'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -265,7 +269,8 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           </article>
         </header>
 
-        <form onSubmit={handleSubmit} noValidate className="mm-form">
+        <form onSubmit={handleSubmit} noValidate className="mm-form" aria-busy={guardando}>
+          <fieldset disabled={guardando} className="mm-fieldset">
           <article className="mm-field">
             <label htmlFor="materia-nombre" className="mm-label">Nombre de la materia</label>
             <input
@@ -451,15 +456,20 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
               <i className="bi bi-plus-lg"></i> Añadir unidad
             </button>
           </fieldset>
+          </fieldset>
 
           {error && <p role="alert" className="mm-error">{error}</p>}
 
           <footer className="mm-footer">
-            <button type="button" onClick={onCerrar} className="mat-btn">
+            <button type="button" onClick={onCerrar} className="mat-btn" disabled={guardando}>
               Cancelar
             </button>
-            <button type="submit" className="mat-btn mat-btn-primary">
-              {esEdicion ? 'Guardar cambios' : 'Crear materia'}
+            <button type="submit" className="mat-btn mat-btn-primary" disabled={guardando}>
+              {guardando
+                ? 'Guardando...'
+                : esEdicion
+                  ? 'Guardar cambios'
+                  : 'Crear materia'}
             </button>
           </footer>
         </form>
