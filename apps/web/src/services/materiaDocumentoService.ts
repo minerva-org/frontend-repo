@@ -59,7 +59,10 @@ export function materiaDocumentoErrorMessage(
       return 'El servidor no pudo procesar el archivo PDF seleccionado.';
     }
     if (error.response?.status === 503) {
-      return 'El servicio de almacenamiento no está disponible. Intenta nuevamente.';
+      return 'No se pudo guardar el archivo. Intenta nuevamente.';
+    }
+    if (error.response?.status === 502 || error.response?.status === 500) {
+      return 'No se pudo guardar el archivo. Intenta nuevamente.';
     }
     if (error.response?.status) {
       return `El servidor rechazó la subida del archivo (HTTP ${error.response.status}).`;

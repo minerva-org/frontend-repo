@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Materia } from '../types/types.ts';
-import { nombreVisibleMateria, puedeCambiarEstadoMateria } from './materiaPermisos.ts';
+import { acortarNombreArchivo, nombreVisibleMateria, puedeCambiarEstadoMateria } from './materiaPermisos.ts';
 
 function materia(overrides: Partial<Materia> = {}): Materia {
   return {
@@ -59,5 +59,21 @@ describe('materiaPermisos', () => {
   // Resultado esperado: mostrar texto de archivo ausente.
   it('maneja nombre de documento null', () => {
     expect(nombreVisibleMateria(materia({ documentoMateriaNombre: null }))).toBe('Sin archivo asociado');
+  });
+
+  // Input: nombre largo con extensión PDF.
+  // Resultado esperado: recortar el nombre conservando la extensión.
+  it('recorta nombres largos sin perder la extensión', () => {
+    const nombre = 'Plan-anual-de-estudios-y-programacion-didactica-completa.pdf';
+    const acortado = acortarNombreArchivo(nombre, 40);
+    expect(acortado.length).toBeLessThanOrEqual(40);
+    expect(acortado).toContain('...');
+    expect(acortado).toMatch(/\.pdf$/);
+  });
+
+  // Input: nombre dentro del límite.
+  // Resultado esperado: devolverlo sin modificar.
+  it('conserva nombres que ya caben', () => {
+    expect(acortarNombreArchivo('plan.pdf', 40)).toBe('plan.pdf');
   });
 });

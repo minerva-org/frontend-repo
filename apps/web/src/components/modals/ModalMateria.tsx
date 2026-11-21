@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from 'react';
 import type { Materia } from '../../types/types.ts';
 import { materiaDocumentoErrorMessage } from '../../services/materiaDocumentoService.ts';
+import { acortarNombreArchivo } from '../../utils/materiaPermisos.ts';
 import '../../styles/ModalMateria.css';
 
 export interface ConceptoForm {
@@ -27,6 +28,8 @@ export interface DatosMateria {
   planEstudioId: string;
   unidades: UnidadForm[];
   archivo: File | null;
+  archivoExistenteId: string | null;
+  archivoEliminado: boolean;
 }
 
 interface Props {
@@ -97,6 +100,14 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const [prefijoModificado, setPrefijoModificado] = useState(false);
   const prefijoFinal = `${prefijo}${numero}`;
   const [archivo, setArchivo] = useState<File | null>(null);
+  const [archivoExistenteId] = useState<string | null>(
+    materia?.documentoMateriaId?.trim() || null,
+  );
+  const [archivoExistenteNombre] = useState<string>(
+    materia?.documentoMateriaNombre?.trim() || '',
+  );
+  const [archivoEliminado, setArchivoEliminado] = useState(false);
+  const [guardando, setGuardando] = useState(false);
 
   const validate = (): string => {
     if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
@@ -203,6 +214,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
       return;
     }
     setError('');
+    setGuardando(true);
     try {
       await onGuardar({
         id: id.trim(),
@@ -210,6 +222,8 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
         prefijo: prefijoFinal,
         planEstudioId: '',
         archivo,
+        archivoExistenteId,
+        archivoEliminado,
         unidades: unidades
           .filter((unidad) => unidad.nombre.trim())
           .map((unidad) => ({
@@ -233,6 +247,8 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
       });
     } catch (error) {
       setError(materiaDocumentoErrorMessage(error, 'No se pudo guardar la materia.'));
+    } finally {
+      setGuardando(false);
     }
   };
 
@@ -253,7 +269,8 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           </article>
         </header>
 
-        <form onSubmit={handleSubmit} noValidate className="mm-form">
+        <form onSubmit={handleSubmit} noValidate className="mm-form" aria-busy={guardando}>
+          <fieldset disabled={guardando} className="mm-fieldset">
           <article className="mm-field">
             <label htmlFor="materia-nombre" className="mm-label">Nombre de la materia</label>
             <input
@@ -318,7 +335,9 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
 
                   <label htmlFor="materia-archivo" className="mm-add-btn">
                     <i className="bi bi-paperclip"></i>
-                    {archivo ? 'Cambiar archivo' : 'Agregar archivo'}
+                    {archivo || (archivoExistenteId && !archivoEliminado)
+                      ? 'Cambiar archivo'
+                      : 'Agregar archivo'}
                   </label>
 
                   <input
@@ -329,12 +348,15 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                     onChange={(e) => {
                       const seleccionado = e.target.files?.[0] ?? null;
                       setArchivo(seleccionado);
+                      if (seleccionado) setArchivoEliminado(false);
                     }}
                   />
 
                   {archivo && (
                     <div className="mm-hint-box">
-                      <span>{archivo.name}</span>
+                      <span title={archivo.name}>
+                        {acortarNombreArchivo(archivo.name)}
+                      </span>
 
                       <button
                         type="button"
@@ -342,6 +364,27 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                         onClick={() => setArchivo(null)}
                         aria-label="Eliminar archivo"
                         title="Eliminar archivo"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  )}
+
+                  {!archivo && archivoExistenteId && !archivoEliminado && (
+                    <div className="mm-hint-box">
+                      <span title={archivoExistenteNombre || 'Plan de estudio asociado'}>
+                        {acortarNombreArchivo(archivoExistenteNombre || 'Plan de estudio asociado')}
+                      </span>
+
+                      <button
+                        type="button"
+                        className="mm-icon-btn"
+                        onClick={() => {
+                          setArchivo(null);
+                          setArchivoEliminado(true);
+                        }}
+                        aria-label="Eliminar archivo asociado"
+                        title="Eliminar archivo asociado"
                       >
                         <i className="bi bi-trash"></i>
                       </button>
@@ -413,15 +456,20 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
               <i className="bi bi-plus-lg"></i> Añadir unidad
             </button>
           </fieldset>
+          </fieldset>
 
           {error && <p role="alert" className="mm-error">{error}</p>}
 
           <footer className="mm-footer">
-            <button type="button" onClick={onCerrar} className="mat-btn">
+            <button type="button" onClick={onCerrar} className="mat-btn" disabled={guardando}>
               Cancelar
             </button>
-            <button type="submit" className="mat-btn mat-btn-primary">
-              {esEdicion ? 'Guardar cambios' : 'Crear materia'}
+            <button type="submit" className="mat-btn mat-btn-primary" disabled={guardando}>
+              {guardando
+                ? 'Guardando...'
+                : esEdicion
+                  ? 'Guardar cambios'
+                  : 'Crear materia'}
             </button>
           </footer>
         </form>
