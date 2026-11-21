@@ -35,10 +35,10 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Supervisión Estratégica',
         items: [
-          { to: '/planteles', label: 'Catálogo de Planteles', icon: 'bi-building' },
-          { to: '/directores-planteles', label: 'Catálogo de Directores Planteles', icon: 'bi-people' },
-          { to: '/materias', label: 'Catálogo de Materias', icon: 'bi-journal-bookmark' },
-          { to: '/metricas-tronco-comun', label: 'Métricas de Tronco Común', icon: 'bi-bar-chart-line' },
+          { to: '/planteles', label: 'Planteles', icon: 'bi-building' },
+          { to: '/directores-planteles', label: 'Directores', icon: 'bi-people' },
+          { to: '/materias', label: 'Materias', icon: 'bi-journal-bookmark' },
+          { to: '/metricas-tronco-comun', label: 'Métricas Instituto', icon: 'bi-bar-chart-line' },
         ],
       },
     ],
@@ -50,12 +50,12 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Dirección de Sede',
         items: [
-          { to: '/plantel/dashboard', label: 'Dashboard Ejecutivo Local', icon: 'bi-speedometer2' },
+          { to: '/plantel/dashboard', label: 'Resúmen Plantel', icon: 'bi-speedometer2' },
         ],
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Métricas de aprendizaje', icon: 'bi-graph-up', end: true }],
+        items: [{ to: '/metricas-aprendizaje', label: 'Métricas', icon: 'bi-graph-up', end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -65,15 +65,15 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Gestión Académica',
         items: [
-          { to: '/catalogo-grupos', label: 'Listado de Grupos', icon: 'bi-grid-3x3-gap' },
-          { to: '/catalogo-docentes', label: 'Catálogo de Docentes', icon: 'bi-people' },
-          { to: '/catalogo-alumnos', label: 'Catálogo de Alumnos', icon: 'bi-people' },
-          { to: '/materias', label: 'Materias y Planes', icon: 'bi-journal-bookmark' },
+          { to: '/catalogo-grupos', label: 'Grupos', icon: 'bi-grid-3x3-gap' },
+          { to: '/catalogo-docentes', label: 'Docentes', icon: 'bi-people' },
+          { to: '/catalogo-alumnos', label: 'Alumnos', icon: 'bi-people' },
+          { to: '/materias', label: 'Materias', icon: 'bi-journal-bookmark' },
         ],
       },
       {
         label: 'Supervisión',
-        items: [{ to: '/avance-curricular', label: 'Avance Curricular de Sede', icon: 'bi-bar-chart-line' }],
+        items: [{ to: '/avance-curricular', label: 'Avance Curricular', icon: 'bi-bar-chart-line' }],
       },
     ],
   },
@@ -87,7 +87,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Metricas de aprendizaje', icon: 'bi-graph-up', end: true }],
+        items: [{ to: '/metricas-aprendizaje', label: 'Metricas', icon: 'bi-graph-up', end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -97,15 +97,15 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Gestión Académica',
         items: [
-          { to: '/catalogo-grupos', label: 'Listado de Grupos', icon: 'bi-grid-3x3-gap' },
-          { to: '/catalogo-docentes', label: 'Catálogo de Docentes', icon: 'bi-people' },
-          { to: '/catalogo-alumnos', label: 'Catálogo de Alumnos', icon: 'bi-people' },
-          { to: '/materias', label: 'Materias y Planes', icon: 'bi-journal-bookmark' },
+          { to: '/catalogo-grupos', label: 'Grupos', icon: 'bi-grid-3x3-gap' },
+          { to: '/catalogo-docentes', label: 'Docentes', icon: 'bi-people' },
+          { to: '/catalogo-alumnos', label: 'Alumnos', icon: 'bi-people' },
+          { to: '/materias', label: 'Materias', icon: 'bi-journal-bookmark' },
         ],
       },
       {
         label: 'Supervisión',
-        items: [{ to: '/avance-curricular', label: 'Avance Curricular de Sede', icon: 'bi-bar-chart-line' }],
+        items: [{ to: '/avance-curricular', label: 'Avance Curricular', icon: 'bi-bar-chart-line' }],
       },
     ],
   },
@@ -115,11 +115,11 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
     navGroups: [
       {
         label: 'Listado',
-        items: [{ to: '/grupos', label: 'Listado de Grupos', icon: 'bi-people' }],
+        items: [{ to: '/grupos', label: 'Grupos', icon: 'bi-people' }],
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Metricas de aprendizaje', icon: 'bi-graph-up',end: true }],
+        items: [{ to: '/metricas-aprendizaje', label: 'Metricas', icon: 'bi-graph-up',end: true }],
       },
       {
         label: 'Grupos Activos',
