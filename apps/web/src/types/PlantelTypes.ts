@@ -19,3 +19,15 @@ export interface PlantelForm {
   institucionId: number | null;
 }
 
+export interface PlantelRecord{
+  id: number;
+  nombre: string;
+  calle: string;
+  colonia: string;
+  municipio:string;
+  estado:string;
+  codigoPostal:string;
+  institucionId:number;
+  activo: boolean;
+}
+

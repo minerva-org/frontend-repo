@@ -58,3 +58,7 @@ export async function fetchPersonaByEmail(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   return (response.data ?? []).find((persona) => persona.email.toLowerCase() === normalizedEmail) ?? null;
 }
+
+export async function fetchPersonaById(personaId:string){
+  return apiClient.get<PersonaRecord>(`/api/personas/${personaId}`)
+}

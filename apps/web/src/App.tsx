@@ -17,6 +17,7 @@ import MetricasTroncoComun from './pages/MetricasTroncoComun.tsx';
 import DirectorioDocentes from './pages/DirectorioDocentes.tsx';
 import CatalogoAlumnos from './pages/CatalogoAlumnos.tsx';
 import LaboratorioAgente from './pages/LaboratorioAgente.tsx';
+import MiPerfil from './pages/MiPerfil.tsx'
 
 
 export default function App() {
@@ -128,6 +129,11 @@ export default function App() {
                 <MetricasTroncoComun />
               </ProtectedRoute>
             } />
+
+            <Route path="/mi-perfil" element={
+            <ProtectedRoute allowedRoles={['directorGeneral' ,'directorPlantel', 'coordinador' ,'docente', 'alumno']}> <MiPerfil/>
+              </ProtectedRoute>
+          }></Route>
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />
