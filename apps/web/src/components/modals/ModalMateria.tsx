@@ -1,6 +1,9 @@
 import { useRef, useState, type SubmitEvent } from 'react';
 import type { Materia } from '../../types/types.ts';
-import { materiaDocumentoErrorMessage } from '../../services/materiaDocumentoService.ts';
+import {
+  construirUrlDescargaDocumento,
+  materiaDocumentoErrorMessage,
+} from '../../services/materiaDocumentoService.ts';
 import {
   extraerConceptosMateria,
   materiaExtraccionErrorMessage,
@@ -456,9 +459,14 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
 
                   {!archivo && archivoExistenteId && !archivoEliminado && (
                     <div className="mm-hint-box">
-                      <span title={archivoExistenteNombre || 'Plan de estudio asociado'}>
+                      <a
+                        href={construirUrlDescargaDocumento(archivoExistenteId)}
+                        download={archivoExistenteNombre || undefined}
+                        title={archivoExistenteNombre || 'Descargar plan de estudio'}
+                        className="mm-file-link"
+                      >
                         {acortarNombreArchivo(archivoExistenteNombre || 'Plan de estudio asociado')}
-                      </span>
+                      </a>
 
                       <button
                         type="button"

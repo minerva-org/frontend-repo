@@ -186,6 +186,17 @@
   border-radius: 0.5rem;
 }
 
+.mm-file-link {
+  max-width: 21rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ar-azul);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.mm-file-link:hover { color: var(--seige-acento); }
+
 .mm-unidad {
   padding: 0.75rem;
   margin-bottom: 0.6rem;
