@@ -163,7 +163,14 @@ export default function Sidebar({ config, dynamicGroupItems = [] }: SidebarProps
                 bottom: menuPosition.bottom,
               }}
             >
-              <button type="button" className="sd-user-menu-item" role="menuitem" onClick={() => setMenuOpen(false)}>
+              <button 
+              type="button" 
+              className="sd-user-menu-item" 
+              role="menuitem" 
+              onClick={() => {
+                setMenuOpen(false)
+                navigate('/mi-perfil')
+              }}>
                 <i className="bi bi-person"></i> Perfil
               </button>
               <button
