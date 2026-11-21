@@ -1,6 +1,7 @@
 import { useState, type SubmitEvent } from 'react';
 import type { Materia } from '../../types/types.ts';
 import { materiaDocumentoErrorMessage } from '../../services/materiaDocumentoService.ts';
+import { acortarNombreArchivo } from '../../utils/materiaPermisos.ts';
 import '../../styles/ModalMateria.css';
 
 export interface ConceptoForm {
@@ -27,6 +28,8 @@ export interface DatosMateria {
   planEstudioId: string;
   unidades: UnidadForm[];
   archivo: File | null;
+  archivoExistenteId: string | null;
+  archivoEliminado: boolean;
 }
 
 interface Props {
@@ -97,6 +100,13 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const [prefijoModificado, setPrefijoModificado] = useState(false);
   const prefijoFinal = `${prefijo}${numero}`;
   const [archivo, setArchivo] = useState<File | null>(null);
+  const [archivoExistenteId] = useState<string | null>(
+    materia?.documentoMateriaId?.trim() || null,
+  );
+  const [archivoExistenteNombre] = useState<string>(
+    materia?.documentoMateriaNombre?.trim() || '',
+  );
+  const [archivoEliminado, setArchivoEliminado] = useState(false);
 
   const validate = (): string => {
     if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
@@ -210,6 +220,8 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
         prefijo: prefijoFinal,
         planEstudioId: '',
         archivo,
+        archivoExistenteId,
+        archivoEliminado,
         unidades: unidades
           .filter((unidad) => unidad.nombre.trim())
           .map((unidad) => ({
@@ -318,7 +330,9 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
 
                   <label htmlFor="materia-archivo" className="mm-add-btn">
                     <i className="bi bi-paperclip"></i>
-                    {archivo ? 'Cambiar archivo' : 'Agregar archivo'}
+                    {archivo || (archivoExistenteId && !archivoEliminado)
+                      ? 'Cambiar archivo'
+                      : 'Agregar archivo'}
                   </label>
 
                   <input
@@ -329,12 +343,15 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                     onChange={(e) => {
                       const seleccionado = e.target.files?.[0] ?? null;
                       setArchivo(seleccionado);
+                      if (seleccionado) setArchivoEliminado(false);
                     }}
                   />
 
                   {archivo && (
                     <div className="mm-hint-box">
-                      <span>{archivo.name}</span>
+                      <span title={archivo.name}>
+                        {acortarNombreArchivo(archivo.name)}
+                      </span>
 
                       <button
                         type="button"
@@ -342,6 +359,27 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
                         onClick={() => setArchivo(null)}
                         aria-label="Eliminar archivo"
                         title="Eliminar archivo"
+                      >
+                        <i className="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  )}
+
+                  {!archivo && archivoExistenteId && !archivoEliminado && (
+                    <div className="mm-hint-box">
+                      <span title={archivoExistenteNombre || 'Plan de estudio asociado'}>
+                        {acortarNombreArchivo(archivoExistenteNombre || 'Plan de estudio asociado')}
+                      </span>
+
+                      <button
+                        type="button"
+                        className="mm-icon-btn"
+                        onClick={() => {
+                          setArchivo(null);
+                          setArchivoEliminado(true);
+                        }}
+                        aria-label="Eliminar archivo asociado"
+                        title="Eliminar archivo asociado"
                       >
                         <i className="bi bi-trash"></i>
                       </button>

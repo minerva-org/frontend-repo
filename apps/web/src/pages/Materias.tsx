@@ -9,7 +9,7 @@ import '../styles/Materias.css';
 import { useAuth } from '../context/AuthContext.tsx';
 import { deleteArchivoTemporal, uploadArchivoTemporal } from '../services/materiaDocumentoService.ts';
 import Toast, {type ToastData}  from '../components/common/Toast.tsx'
-import { nombreVisibleMateria, puedeCambiarEstadoMateria } from '../utils/materiaPermisos.ts';
+import { acortarNombreArchivo, nombreVisibleMateria, puedeCambiarEstadoMateria } from '../utils/materiaPermisos.ts';
 
 const normalizar = (s: string) =>
   s.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase().trim();
@@ -97,6 +97,11 @@ export default function Materias() {
       }
 
       if (modal?.tipo === 'editar') {
+        if (!datos.archivo) {
+          documentoMateriaId = datos.archivoEliminado
+            ? null
+            : datos.archivoExistenteId;
+        }
         const payload = {
           id: modal.materia.id,
           nombre: datos.nombre,
@@ -333,7 +338,11 @@ export default function Materias() {
                         <td>
                           <span className="mat-plan">
                             <i className="bi bi-folder2-open"></i>{' '}
-                            {nombreVisibleMateria(m)}
+                            <span
+                              title={nombreVisibleMateria(m)}
+                            >
+                              {acortarNombreArchivo(nombreVisibleMateria(m))}
+                            </span>
                           </span>
                         </td>
 
