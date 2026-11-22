@@ -6,6 +6,8 @@ export interface GrupoDetalleBackend {
   docenteId: string;
   plantelId: number | null;
   alumnosIds?: string[];
+  docenteNombre?: string | null;
+  docenteEmail?: string | null;
 }
 
 export interface GrupoBackend {
@@ -17,6 +19,8 @@ export interface GrupoBackend {
   docenteId: string | null;
   plantelId: number | null;
   alumnosIds?: string[];
+  docenteNombre?: string | null;
+  docenteEmail?: string | null;
 }
 
 export interface GrupoListado extends GrupoBackend {

@@ -7,9 +7,7 @@ import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import CreateGroupModal from '../components/modals/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
-import { fetchPersonas } from '../services/personaService';
 import { fetchMisGrupos } from '../services/grupoService';
-import type { PersonaRecord } from '../types/PersonaTypes';
 import type { GrupoBackend, GrupoListado,NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/Grupos.css';
 
@@ -19,7 +17,6 @@ interface GruposProps {
 
 export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   const [groups, setGroups] = useState<GrupoListado[]>([]);
-  const [personas, setPersonas] = useState<PersonaRecord[]>([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { role, email, user, selectedPlantel } = useAuth();
@@ -56,28 +53,22 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
   async function loadGroups() {
     setLoading(true);
     try {
-      const [gruposResponse, personasResponse] = await Promise.all([
+      const gruposResponse = await (
         soloMisGrupos
           ? fetchMisGrupos()
           : activePlantelId != null
             ? apiClient.get<GrupoBackend[]>('/api/grupos', { params: { plantelId: activePlantelId } })
-            : apiClient.get<GrupoBackend[]>('/api/grupos'),
-        fetchPersonas(),
-      ]);
-
-      const personasData = personasResponse.data ?? [] as PersonaRecord[];
-      setPersonas(personasData);
-      const personaMap = new Map<string, PersonaRecord>(personasData.map((persona) => [persona.id, persona]));
+            : apiClient.get<GrupoBackend[]>('/api/grupos')
+      );
 
       const grupos = gruposResponse.data ?? [];
 
       setGroups(
         grupos.map((grupo) => {
-          const persona = grupo.docenteId != null ? personaMap.get(grupo.docenteId) : undefined;
           return {
             ...grupo,
-            docenteNombre: persona ? `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar',
-            docenteEmail: persona?.email ?? '',
+            docenteNombre: grupo.docenteNombre?.trim() || 'Pendiente por asignar',
+            docenteEmail: grupo.docenteEmail?.trim() || '',
             alumnosCount: (grupo.alumnosIds ?? []).length,
           };
         }),
@@ -183,21 +174,6 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
 
   const docenteId = data.docenteId ?? null;
   const alumnosIds = data.alumnosIds ?? [];
-
-  const docente = docenteId
-    ? personas.find((persona) => persona.id === docenteId)
-    : undefined;
-
-  const alumnosInactivos = alumnosIds.filter((alumnoId) => {
-    const alumno = personas.find((persona) => persona.id === alumnoId);
-    return alumno?.activo === false;
-  });
-
-  if (!docente || !docente?.activo || alumnosInactivos.length > 0) {
-    setCreateGroupError(true);
-    setCreatedGroupName(data.materia);
-    throw new Error('No puedes agregar personas desactivadas al grupo.');
-  }
 
   const payload = {
     id: crypto.randomUUID(),
