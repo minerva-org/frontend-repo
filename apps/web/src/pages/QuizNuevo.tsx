@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
+import { useAuth } from '../context/AuthContext.tsx';
 import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import '../styles/QuizNuevo.css';
@@ -57,6 +58,11 @@ export default function QuizNuevo() {
   const { code, quizId } = useParams<{ code: string; quizId?: string }>();
   const navigate = useNavigate();
   const { toggleSidebar } = useSidebar();
+  const { role } = useAuth();
+  const puedeGestionar =
+    role === 'docente' ||
+    role === 'coordinador' ||
+    role === 'dev';
   const esEdicion = !!quizId;
 
   const [unidades, setUnidades] = useState<UnidadCatalogo[]>([]);
@@ -544,6 +550,22 @@ export default function QuizNuevo() {
 
   if (!code) {
     return <p className="qn-empty">No se pudo identificar el grupo del quiz.</p>;
+  }
+
+  if (!puedeGestionar) {
+    return (
+      <article className="qn-screen">
+        <header className="qn-topbar">
+          <button className="qn-icon-btn" onClick={toggleSidebar} aria-label="Mostrar u ocultar menú">
+            <SidebarToggleIcon />
+          </button>
+          <span className="qn-topbar-title">Quizzes</span>
+        </header>
+        <article className="qn-body">
+          <p className="qn-empty">No tienes permiso para crear o editar quizzes.</p>
+        </article>
+      </article>
+    );
   }
 
   if (loading) {
