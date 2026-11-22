@@ -6,7 +6,7 @@ import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import {
   createPersona,
-  fetchPersonaByEmail,
+  fetchPersonaActual,
   fetchPersonasPaginadas,
   updatePersona,
 } from '../services/personaService.ts';
@@ -116,7 +116,8 @@ export default function CatalogoAlumnos() {
       }
 
       try {
-        const persona = await fetchPersonaByEmail(email);
+        const personaResponse = await fetchPersonaActual();
+        const persona = personaResponse.data;
 
         if (!cancelled) {
           setOwnPlantelId(persona?.plantelId ?? null);

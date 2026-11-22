@@ -53,10 +53,23 @@ export async function fetchPersonasPaginadas( plantelId: number, roles: PersonaR
   },);
 }
 
-export async function fetchPersonaByEmail(email: string) {
-  const response = await fetchPersonas();
+export async function fetchPersonaByEmail(
+  email: string,
+  plantelId?: number,
+  rol: 'ALUMNO' | 'DOCENTE' | 'COORDINADOR' = 'ALUMNO',
+) {
   const normalizedEmail = email.trim().toLowerCase();
-  return (response.data ?? []).find((persona) => persona.email.toLowerCase() === normalizedEmail) ?? null;
+  const response = plantelId != null
+    ? await fetchPersonasByPlantelAndRol(plantelId, rol)
+    : await fetchPersonas({ rol });
+
+  return (response.data ?? []).find(
+    (persona) => persona.email?.trim().toLowerCase() === normalizedEmail,
+  ) ?? null;
+}
+
+export async function fetchPersonaActual() {
+  return apiClient.get<PersonaRecord>('/api/personas/me');
 }
 
 export async function fetchPersonaById(personaId:string){

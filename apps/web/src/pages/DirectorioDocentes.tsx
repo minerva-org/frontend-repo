@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { apiClient } from '../services/ApiClient';
-import { createPersona, fetchPersonaByEmail, fetchPersonasPaginadas, updatePersona, type PersonaRecord } from '../services/personaService';
+import { createPersona, fetchPersonaActual, fetchPersonasPaginadas, updatePersona, type PersonaRecord } from '../services/personaService';
 import '../styles/DirectorioDocentes.css';
 import type { PlantelItem } from '../types/PlantelTypes.ts';
 import { DocenteModal } from '../components/modals/ModalDocentes.tsx';
@@ -94,7 +94,8 @@ export default function DirectorioDocentes() {
       }
 
       try {
-        const persona = await fetchPersonaByEmail(email);
+        const personaResponse = await fetchPersonaActual();
+        const persona = personaResponse.data;
         if (!cancelled) {
           setOwnPlantelId(persona?.plantelId ?? null);
         }
