@@ -38,6 +38,8 @@ export default function QuizResolve() {
     const [resultado, setResultado] = useState<ResultadoIntento | null>(null);
     const [envioAutomatico, setEnvioAutomatico] = useState(false);
     const finalizacionIniciada = useRef(false);
+    const cargaIntentoRef = useRef<{ quizId: string; promise: Promise<{ quizData: QuizBackend; intento: IntentoResponse; }>;
+    } | null>(null);
 
     useEffect(() => {
         let cancelado = false;
@@ -48,52 +50,51 @@ export default function QuizResolve() {
                 setCargando(false);
                 return;
             }
+            
 
             try {
                 setCargando(true);
                 setError('');
 
-                const quizResponse = await apiClient.get<QuizBackend>(
-                    `/api/quizzes/${quizId}`
-                );
+                let solicitud = cargaIntentoRef.current;
+                if(!solicitud || solicitud.quizId !== quizId){
+                    const promise =(async () => {
+                        const quizResponse = await apiClient.get<QuizBackend>(
+                        `/api/quizzes/${quizId}`
+                    );
 
-                const intentoResponse = await apiClient.post<IntentoResponse>(
-                    `/api/quizzes/${quizId}/intentos`
-                );
+                    const intentoResponse = await apiClient.post<IntentoResponse>(
+                        `/api/quizzes/${quizId}/intentos`
+                    );
+                    return{
+                        quizData:quizResponse.data,
+                        intento: intentoResponse.data,
+                    };
+                    })();
+                    
+                    solicitud = {quizId,promise};
+                    cargaIntentoRef.current = solicitud;
+                } 
+                const {quizData, intento} = await solicitud.promise;
 
                 if (cancelado) return;
 
-                const quizData = quizResponse.data;
-                const intento = intentoResponse.data;
-
                 setQuiz(quizData);
                 setIntentoId(intento.intentoId);
-
                 setPreguntaActual(intento.preguntaActual);
 
                 if (intento.preguntaActual) {
                     setPreguntasVisitadas([intento.preguntaActual]);
                     setIndiceActual(0);
-
                     setRespuestasLocales({
                         [intento.preguntaActual.id]: ''
                     });
                 }
 
-                setTiempoRestante(
-                    Math.max(
-                        0,
-                        Math.floor(
-                            (new Date(intento.fechaFinalizacion).getTime()
-                                - Date.now()) / 1000
-                        )
-                    )
-                );
+                setTiempoRestante(Math.max(0,Math.floor((new Date(intento.fechaFinalizacion).getTime()- Date.now()) / 1000 )));
 
                 if (intento.preguntaActual) {
-                    setPreguntasRespondidas(
-                        intento.preguntaActual.numero - 1
-                    );
+                    setPreguntasRespondidas(intento.preguntaActual.numero - 1);
                 }
 
                 if (intento.finalizado) {
@@ -117,6 +118,10 @@ export default function QuizResolve() {
                             ? err.message
                             : 'No fue posible cargar el quiz.'
                     );
+                }
+
+                if(cargaIntentoRef.current?.quizId ===quizId){
+                    cargaIntentoRef.current = null;
                 }
             } finally {
                 if (!cancelado) {
