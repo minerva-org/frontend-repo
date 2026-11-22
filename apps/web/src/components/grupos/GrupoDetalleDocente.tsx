@@ -502,6 +502,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
       {modalAgregarAlumnos && (
         <AgregarAlumnosForm
+          grupoId={grupo.id}
           alumnos={alumnosDisponibles}
           alumnosSeleccionados={alumnos.map((alumno) => alumno.id)}
           onCancel={() => setModalAgregarAlumnos(false)}
