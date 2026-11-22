@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/ApiClient.ts';
+import { fetchMisGrupos } from '../services/grupoService';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import '../styles/MisGrupos.css';
@@ -11,10 +12,10 @@ interface GrupoBackend {
   claveGrupo: string;
   nombre: string;
   semestre: string;
-  activo: boolean;
+  activo?: boolean;
   docenteId: string | null;
   plantelId: number | null;
-  alumnosIds: string[];
+  alumnosIds?: string[];
 }
 
 interface QuizBackend {
@@ -66,7 +67,7 @@ export default function MisGrupos() {
         setError(null);
 
         const [gruposResult, quizzesResult] = await Promise.allSettled([
-          apiClient.get<GrupoBackend[]>('/api/grupos/mis-grupos'),
+          fetchMisGrupos(),
           apiClient.get<QuizBackend[]>('/api/quizzes'),
         ]);
 
