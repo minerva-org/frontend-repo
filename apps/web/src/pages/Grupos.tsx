@@ -70,18 +70,6 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
       const personaMap = new Map<string, PersonaRecord>(personasData.map((persona) => [persona.id, persona]));
 
       const grupos = gruposResponse.data ?? [];
-      const alumnoCounts = await Promise.all(
-        grupos.map(async (grupo) => {
-          try {
-            const alumnosResponse = await apiClient.get<string[]>(`/api/grupos/${grupo.id}/alumnos`);
-            return [grupo.id, alumnosResponse.data?.length ?? 0] as const;
-          } catch {
-            return [grupo.id, 0] as const;
-          }
-        }),
-      );
-
-      const countMap = new Map<string, number>(alumnoCounts);
 
       setGroups(
         grupos.map((grupo) => {
@@ -90,7 +78,7 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
             ...grupo,
             docenteNombre: persona ? `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar',
             docenteEmail: persona?.email ?? '',
-            alumnosCount: countMap.get(grupo.id) ?? 0,
+            alumnosCount: (grupo.alumnosIds ?? []).length,
           };
         }),
       );
