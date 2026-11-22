@@ -55,12 +55,12 @@ export default function ContextSidebars() {
       try {
         let response;
 
-        if (role === 'docente') {
+        if (role === 'docente' || role === 'coordinador') {
           const docenteId = user?.personaId ?? user?.id;
           response = docenteId
             ? await apiClient.get<GrupoBackend[]>('/api/grupos', { params: { docenteId } })
             : await apiClient.get<GrupoBackend[]>('/api/grupos');
-        } else if (role === 'coordinador' || role === 'directorPlantel') {
+        } else if (role === 'directorPlantel') {
           const personaResponse = await fetchPersonaActual();
           const plantelId = personaResponse.data?.plantelId ?? null;
           if (plantelId == null) return;
