@@ -59,6 +59,46 @@ export interface ConceptoCatalogo {
   id: string;
   nombre: string;
   temaId: string;
+  idConceptoOrigen?: string | null;
+}
+
+export interface ContenidoCurriculoCatalogo {
+  id: string;
+  descripcion: string;
+}
+
+export interface ConceptoGrupoCatalogo {
+  id: string;
+  nombre: string;
+  idTemaGrupo: string;
+  idConceptoOrigen?: string | null;
+  activo?: boolean;
+  contenidos: ContenidoCurriculoCatalogo[];
+}
+
+export interface TemaGrupoCatalogo {
+  id: string;
+  nombre: string;
+  idUnidadGrupo: string;
+  idTemaOrigen?: string | null;
+  activo?: boolean;
+  conceptos: ConceptoGrupoCatalogo[];
+}
+
+export interface UnidadGrupoCatalogo {
+  id: string;
+  nombre: string;
+  idMateria?: string | null;
+  idGrupo?: string | null;
+  idUnidadOrigen?: string | null;
+  activo?: boolean;
+  temas: TemaGrupoCatalogo[];
+}
+
+export interface CurriculoGrupoCatalogo {
+  idGrupo: string;
+  unidades: UnidadGrupoCatalogo[];
+  fuentes: unknown[];
 }
 
 export interface Opcion {
