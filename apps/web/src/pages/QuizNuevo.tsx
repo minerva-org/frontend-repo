@@ -4,6 +4,7 @@ import { useSidebar } from '../context/SidebarContext.tsx';
 import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import '../styles/QuizNuevo.css';
+import { mapearCurriculoQuiz } from '../utils/quizCurriculo';
 
 import type {
   QuizBackend,
@@ -14,7 +15,8 @@ import type {
   Pregunta,
   PreguntaQuizResponse,
   OpcionQuizResponse,
-  QuizXPreguntaResponse
+  QuizXPreguntaResponse,
+  CurriculoGrupoCatalogo,
 } from '../types/QuizTypes';
 
 type TipoQuiz = 'unico' | 'acumulativo';
@@ -84,15 +86,18 @@ export default function QuizNuevo() {
   useEffect(() => {
     async function cargarCatalogo() {
       try {
-        const [unidadesResponse, temasResponse, conceptosResponse] = await Promise.all([
-          apiClient.get<UnidadCatalogo[]>('/api/unidades'),
-          apiClient.get<TemaCatalogo[]>('/api/temas'),
-          apiClient.get<ConceptoCatalogo[]>('/api/conceptos'),
-        ]);
+        if (!code) {
+          throw new Error('No se pudo identificar el grupo del quiz.');
+        }
 
-        const unidadesData = unidadesResponse.data ?? [];
-        const temasData = temasResponse.data ?? [];
-        const conceptosData = conceptosResponse.data ?? [];
+        const curriculoResponse =
+          await apiClient.get<CurriculoGrupoCatalogo>(
+            `/api/grupos/${encodeURIComponent(code)}/curriculo`,
+          );
+        const curriculo = curriculoResponse.data;
+
+        const { unidades: unidadesData, temas: temasData, conceptos: conceptosData } =
+          mapearCurriculoQuiz(curriculo);
 
         setUnidades(unidadesData);
         setTemas(temasData);
@@ -110,7 +115,7 @@ export default function QuizNuevo() {
           ]);
         }
       } catch {
-        setError('No se pudo cargar el catálogo de unidades, temas y conceptos. Intenta recargar la página.');
+        setError('No se pudo cargar el currículo del grupo. Intenta recargar la página.');
       } finally {
         setLoading(false);
         setQuizCargado(true);
@@ -118,7 +123,7 @@ export default function QuizNuevo() {
     }
 
     void cargarCatalogo();
-  }, [esEdicion]);
+  }, [esEdicion, code]);
 
   useEffect(() => {
     if (!esEdicion || !quizId || !quizCargado) return;
@@ -144,7 +149,10 @@ export default function QuizNuevo() {
               esCorrecta: Boolean(opcion.esCorrecta),
             }));
 
-            const concepto = conceptos.find((item) => item.id === pregunta.conceptoId);
+            const concepto = conceptos.find((item) =>
+              item.id === pregunta.conceptoId ||
+              item.idConceptoOrigen === pregunta.conceptoId
+            );
             const tema = concepto ? temas.find((item) => item.id === concepto.temaId) : undefined;
             const unidad = tema ? unidades.find((item) => item.id === tema.unidadId) : undefined;
             const relacion = relaciones.find((item) => 
@@ -158,7 +166,7 @@ export default function QuizNuevo() {
               quizXPreguntaId:relacion.id,
               unidadId: unidad?.id ?? '',
               temaId: tema?.id ?? '',
-              conceptoId: pregunta.conceptoId,
+              conceptoId: concepto?.id ?? '',
               enunciado: pregunta.descripcion,
               opciones: opciones.length > 0 ? opciones : [emptyOpcion(), emptyOpcion()],
             } satisfies Pregunta;
@@ -452,6 +460,7 @@ export default function QuizNuevo() {
               id: preguntaId,
               descripcion: pregunta.enunciado.trim(),
               conceptoId: pregunta.conceptoId,
+              grupoId: code,
             });
 
             await apiClient.post('/api/quiz-x-pregunta', {
@@ -480,6 +489,7 @@ export default function QuizNuevo() {
                   id: preguntaId,
                   descripcion: pregunta.enunciado.trim(),
                   conceptoId: pregunta.conceptoId,
+                  grupoId: code,
                 });
 
                 await apiClient.post('/api/quiz-x-pregunta', {
@@ -491,6 +501,7 @@ export default function QuizNuevo() {
                 await apiClient.patch(`/api/preguntas/${pregunta.id}`, {
                   descripcion: pregunta.enunciado.trim(),
                   conceptoId: pregunta.conceptoId,
+                  grupoId: code,
                 });
               }
 
