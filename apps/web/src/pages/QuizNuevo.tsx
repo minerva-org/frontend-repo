@@ -21,6 +21,11 @@ import type {
 
 type TipoQuiz = 'unico' | 'acumulativo';
 
+interface GrupoQuizBackend {
+  id: string;
+  nombre: string;
+}
+
 let contId = 0;
 function newId(prefijo: string): string {
   contId += 1;
@@ -72,6 +77,7 @@ export default function QuizNuevo() {
   const [quizCargado, setQuizCargado] = useState(false);
   const [preguntasEliminadas, setPreguntasEliminadas] = useState<{preguntaId:string; quizXPreguntaId?:string}[]>([]);
   const [opcionesOriginales, setOpcionesOriginales] = useState<Record<string, Opcion[]>>({});
+  const [nombreGrupo, setNombreGrupo] = useState('');
 
   const temasDeUnidad = useMemo(
     () => (unidadId: string) => temas.filter((tema) => tema.unidadId === unidadId),
@@ -90,10 +96,15 @@ export default function QuizNuevo() {
           throw new Error('No se pudo identificar el grupo del quiz.');
         }
 
-        const curriculoResponse =
-          await apiClient.get<CurriculoGrupoCatalogo>(
+        const [grupoResponse, curriculoResponse] = await Promise.all([
+          apiClient.get<GrupoQuizBackend>(
+            `/api/grupos/${encodeURIComponent(code)}`,
+          ),
+          apiClient.get<CurriculoGrupoCatalogo>(
             `/api/grupos/${encodeURIComponent(code)}/curriculo`,
-          );
+          ),
+        ]);
+        setNombreGrupo(grupoResponse.data?.nombre?.trim() || code);
         const curriculo = curriculoResponse.data;
 
         const { unidades: unidadesData, temas: temasData, conceptos: conceptosData } =
@@ -563,7 +574,7 @@ export default function QuizNuevo() {
       <article className="qn-body">
         <header className="qn-header">
           <h1 className="qn-title">{esEdicion ? 'Editar quiz' : 'Crear nuevo quiz'}</h1>
-          <p className="qn-subtitle">Grupo {code}</p>
+          <p className="qn-subtitle">Grupo {nombreGrupo || code}</p>
         </header>
 
         <section className="qn-section">
