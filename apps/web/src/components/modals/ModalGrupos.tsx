@@ -1,7 +1,10 @@
 import { useEffect, useState, type SubmitEvent } from 'react';
 import { apiClient } from '../../services/ApiClient';
 import AutocompleteInput from '.././AutoCompleteInput.tsx';
-import { fetchPersonas } from '../../services/personaService';
+import {
+  fetchPersonaActual,
+  fetchPersonasPaginadas,
+} from '../../services/personaService';
 import type { PersonaRecord } from '../../types/PersonaTypes';
 import { useAuth } from '../../context/AuthContext.tsx';
 import type { NewGroupData } from '../../types/GrupoTypes.ts';
@@ -17,14 +20,11 @@ interface MateriaBackend {
   nombre: string;
 }
 
-const normalize = (value: unknown) =>
-  String(value ?? '').trim().toLowerCase();
-
 export default function CreateGroupModal({
   onClose,
   onCreate,
 }: CreateGroupModalProps) {
-  const { email, selectedPlantel } = useAuth();
+  const { selectedPlantel } = useAuth();
   const [materia, setMateria] = useState<string[]>([]);
   const [claveGrupo, setClaveGrupo] = useState('');
   const [semestre, setSemestre] = useState('');
@@ -36,31 +36,29 @@ export default function CreateGroupModal({
 
   useEffect(() => {
     async function loadCreator() {
-      if (!email) {
-        setCreatorPlantelId(null);
-        return;
-      }
-
       try {
-        const response = await fetchPersonas();
-        const personas = response.data ?? [];
-
-        const creator = personas.find(
-          (persona) => normalize(persona.email) === normalize(email),
-        );
-
-        const plantelId = selectedPlantel?.id ?? creator?.plantelId ?? null;
+        const personaResponse = await fetchPersonaActual();
+        const plantelId =
+          selectedPlantel?.id ??
+          personaResponse.data?.plantelId ??
+          null;
 
         setCreatorPlantelId(plantelId);
 
-        const docentesDisponibles = personas.filter(
-          (persona) =>
-            persona.rol === 'DOCENTE' &&
-            persona.activo === true &&
-            persona.plantelId === plantelId,
+        if (plantelId == null) {
+          setDocentes([]);
+          return;
+        }
+
+        const docentesResponse = await fetchPersonasPaginadas(
+          plantelId,
+          ['DOCENTE', 'COORDINADOR'],
+          0,
+          100,
+          true,
         );
 
-        setDocentes(docentesDisponibles);
+        setDocentes(docentesResponse.data.content);
       } catch {
         setCreatorPlantelId(null);
         setDocentes([]);
@@ -69,7 +67,7 @@ export default function CreateGroupModal({
     }
 
     void loadCreator();
-  }, [email, selectedPlantel?.id],);
+  }, [selectedPlantel?.id],);
 
 
 

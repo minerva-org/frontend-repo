@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import QuizCatalogCard, { getQuizCatalogState } from '../quizzes/QuizCatalogCard.tsx';
 import { apiClient } from '../../services/ApiClient';
-import { fetchPersonas, fetchPersonasByPlantelAndRol} from '../../services/personaService.ts';
+import {
+  fetchPersonasByPlantelAndRol,
+  fetchPersonasPaginadas,
+} from '../../services/personaService.ts';
 import type { PersonaRecord } from '../../types/PersonaTypes.ts';
 import type { GrupoDetalleBackend, AlumnoEntry, QuizCatalogBackend } from '../../types/GrupoTypes.ts';
 import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx';
@@ -74,57 +77,61 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
     let cancelled = false;
     async function load() {
       try {
-        const [grupoResponse, personasResponse] = await Promise.all([
-          apiClient.get<GrupoDetalleBackend>(`/api/grupos/${code}`),
-          fetchPersonas(),
-        ]);
+        const grupoResponse =
+          await apiClient.get<GrupoDetalleBackend>(`/api/grupos/${code}`);
 
         if (cancelled) return;
 
         const nextGrupo = grupoResponse.data;
-        const personas = personasResponse.data ?? [];
-        const docente = personas.find((persona) => persona.id === nextGrupo.docenteId);
-        const alumnoIds = nextGrupo.alumnosIds ?? [];
-        const alumnoList = personas.filter((persona) => alumnoIds.includes(persona.id));
-
         let disponibles: PersonaRecord[] = [];
-
         let docentes: PersonaRecord[] = [];
-
-        if (nextGrupo.plantelId !== null && !nextGrupo.docenteId) {
-          const docentesResponse = await fetchPersonasByPlantelAndRol(
-            nextGrupo.plantelId,
-            'DOCENTE'
-          );
-
-          docentes = (docentesResponse.data ?? []).filter(
-            (persona) => persona.activo
-          );
-        }
-
-        if (cancelled) return;
-
-        setDocentesDisponibles(docentes);
+        let docente: PersonaRecord | undefined;
+        let alumnoList: PersonaRecord[] = [];
 
         if (nextGrupo.plantelId !== null) {
-          const alumnosResponse = await fetchPersonasByPlantelAndRol(
-            nextGrupo.plantelId,
-            'ALUMNO'
-          );
+          const [docentesResponse, alumnosResponse] = await Promise.all([
+            fetchPersonasPaginadas(
+              nextGrupo.plantelId,
+              ['DOCENTE', 'COORDINADOR'],
+              0,
+              100,
+              true,
+            ),
+            fetchPersonasByPlantelAndRol(
+              nextGrupo.plantelId,
+              'ALUMNO',
+            ),
+          ]);
 
           if (cancelled) return;
 
+          const docentesActivos = docentesResponse.data.content;
+          docente = docentesActivos.find(
+            (persona) => persona.id === nextGrupo.docenteId,
+          );
+          if (!nextGrupo.docenteId) {
+            docentes = docentesActivos;
+          }
+
+          const alumnoIds = nextGrupo.alumnosIds ?? [];
+          alumnoList = (alumnosResponse.data ?? []).filter(
+            (persona) => alumnoIds.includes(persona.id),
+          );
           disponibles = (alumnosResponse.data ?? []).filter(
             (persona) =>
               persona.activo &&
-              !(nextGrupo.alumnosIds ?? []).includes(persona.id)
+              !(nextGrupo.alumnosIds ?? []).includes(persona.id),
           );
         }
 
+        setDocentesDisponibles(docentes);
         setAlumnosDisponibles(disponibles);
-
         setGrupo(nextGrupo);
-        setDocenteNombre( nextGrupo.docenteId && docente ? `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim() : 'Pendiente por asignar');
+        setDocenteNombre(
+          nextGrupo.docenteId && docente
+            ? `${docente.nombre} ${docente.apellidoPaterno} ${docente.apellidoMaterno ?? ''}`.trim()
+            : 'Pendiente por asignar',
+        );
         setAlumnos(
           alumnoList.map((persona) => ({
             id: persona.id,
