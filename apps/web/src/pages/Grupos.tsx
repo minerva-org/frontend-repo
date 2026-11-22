@@ -119,12 +119,17 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
         return true;
       }
 
+      const personaId = user?.personaId ?? user?.id ?? '';
       const esMiGrupo =
-        Boolean(email) &&
-        (group.docenteEmail ?? '').toLowerCase() === (email ?? '').toLowerCase();
+        (Boolean(personaId) && group.docenteId === personaId) ||
+        (
+          Boolean(email) &&
+          (group.docenteEmail ?? '').toLowerCase() === (email ?? '').toLowerCase()
+        );
 
-      if (soloMisGrupos || normalizedRole === 'docente') return esMiGrupo;
-      if (normalizedRole === 'coordinador') return true;
+      if (soloMisGrupos || normalizedRole === 'docente' || normalizedRole === 'coordinador') {
+        return esMiGrupo;
+      }
 
       return false;
     });
