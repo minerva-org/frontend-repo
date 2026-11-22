@@ -8,6 +8,7 @@ import CreateGroupModal from '../components/modals/ModalGrupos.tsx';
 import GroupActionsMenu from '../components/grupos/GroupActionsMenu.tsx';
 import { apiClient } from '../services/ApiClient';
 import { fetchPersonas } from '../services/personaService';
+import { fetchMisGrupos } from '../services/grupoService';
 import type { PersonaRecord } from '../types/PersonaTypes';
 import type { GrupoBackend, GrupoListado,NewGroupData } from '../types/GrupoTypes.ts';
 import '../styles/Grupos.css';
@@ -56,9 +57,11 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
     setLoading(true);
     try {
       const [gruposResponse, personasResponse] = await Promise.all([
-        activePlantelId != null
-          ? apiClient.get<GrupoBackend[]>('/api/grupos', { params: { plantelId: activePlantelId } })
-          : apiClient.get<GrupoBackend[]>('/api/grupos'),
+        soloMisGrupos
+          ? fetchMisGrupos()
+          : activePlantelId != null
+            ? apiClient.get<GrupoBackend[]>('/api/grupos', { params: { plantelId: activePlantelId } })
+            : apiClient.get<GrupoBackend[]>('/api/grupos'),
         fetchPersonas(),
       ]);
 
@@ -102,20 +105,20 @@ export default function Grupos({ soloMisGrupos = false }: GruposProps) {
 
   useEffect(() => {
     void loadGroups();
-  }, [activePlantelId]);
+  }, [activePlantelId, soloMisGrupos]);
 
   const normalizedRole = String(role ?? '').toLowerCase();
 
   const relatedGroups = groups.filter((group) => {
-      if (activePlantelId != null && group.plantelId != null) {
-        if (group.plantelId !== activePlantelId) return false;
-      }
-
       if (normalizedRole === 'alumno') {
         return Boolean(user?.id && group.alumnosIds?.includes(user.id));
       }
 
       if (['directorgeneral', 'directorplantel', 'admin', 'dev'].includes(normalizedRole)) {
+        return true;
+      }
+
+      if (!soloMisGrupos) {
         return true;
       }
 
