@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiClient } from '../services/ApiClient';
-import { fetchPersonaByEmail } from '../services/personaService';
+import { fetchPersonaActual } from '../services/personaService';
 import { contextSidebarConfigByRole } from '../services/sidebarConfig';
 import type { GrupoBackend } from '../types/GrupoTypes';
 import '../styles/ContextSidebars.css';
@@ -61,10 +61,8 @@ export default function ContextSidebars() {
             ? await apiClient.get<GrupoBackend[]>('/api/grupos', { params: { docenteId } })
             : await apiClient.get<GrupoBackend[]>('/api/grupos');
         } else if (role === 'coordinador' || role === 'directorPlantel') {
-          if (!email) return;
-
-          const persona = await fetchPersonaByEmail(email);
-          const plantelId = persona?.plantelId ?? null;
+          const personaResponse = await fetchPersonaActual();
+          const plantelId = personaResponse.data?.plantelId ?? null;
           if (plantelId == null) return;
 
           response = await apiClient.get<GrupoBackend[]>('/api/grupos', {
