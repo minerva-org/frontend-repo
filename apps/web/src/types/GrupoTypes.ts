@@ -8,6 +8,8 @@ export interface GrupoDetalleBackend {
   alumnosIds?: string[];
   docenteNombre?: string | null;
   docenteEmail?: string | null;
+  materiaId?: string;
+  materiaNombre?: string;
 }
 
 export interface GrupoBackend {

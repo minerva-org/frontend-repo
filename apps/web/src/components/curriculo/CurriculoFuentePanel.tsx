@@ -15,6 +15,7 @@ interface Props {
   onAddSource: (file?: File) => void;
   onGenerate: () => void;
   onOpenFilePicker: () => void;
+  onRemoveSource?: (documentoId: string) => void;
 }
 
 export default function CurriculoFuentePanel({
@@ -26,6 +27,7 @@ export default function CurriculoFuentePanel({
   onAddSource,
   onGenerate,
   onOpenFilePicker,
+  onRemoveSource,
 }: Props) {
   return (
     <aside className="curriculo-sources">
@@ -62,6 +64,17 @@ export default function CurriculoFuentePanel({
           >
             {source.status === 'nueva' ? 'Nueva' : 'Fuente'}
           </span>
+          {puedeEditar && onRemoveSource && (
+            <button
+              type="button"
+              className="btn btn-link btn-sm p-0 text-danger"
+              onClick={() => onRemoveSource(source.id)}
+              title="Eliminar fuente"
+              aria-label={`Eliminar ${source.name}`}
+            >
+              <i className="bi bi-trash" />
+            </button>
+          )}
         </section>
       ))}
       <input

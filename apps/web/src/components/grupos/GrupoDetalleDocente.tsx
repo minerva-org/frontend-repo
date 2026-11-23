@@ -805,8 +805,9 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
       )}
       <CurriculoCanvasModal
         open={curriculoModalAbierto}
+        grupoId={code}
         grupoNombre={grupo?.nombre || grupo?.claveGrupo || code}
-        materiaNombre="Estructura de Datos"
+        materiaNombre={grupo?.materiaNombre || 'Materia del grupo'}
         docenteNombre={docenteNombre}
         puedeEditar={PuedeManejar}
         onClose={() => setCurriculoModalAbierto(false)}

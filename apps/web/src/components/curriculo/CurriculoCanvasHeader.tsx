@@ -23,7 +23,7 @@ export default function CurriculoCanvasHeader({
         <button
           type="button"
           className="btn btn-outline-secondary curriculo-back"
-          onClick={onDiscard}
+          onClick={onBack}
         >
           <i className="bi bi-arrow-left me-2" />
           Volver
@@ -40,7 +40,7 @@ export default function CurriculoCanvasHeader({
         <button
           type="button"
           className="btn btn-outline-secondary"
-          onClick={onBack}
+          onClick={onDiscard}
           disabled={!dirty}
         >
           Descartar

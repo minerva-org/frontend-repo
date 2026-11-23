@@ -29,10 +29,22 @@ import { useCurriculoContent } from './useCurriculoContent.ts';
 import CurriculoCanvasHeader from './CurriculoCanvasHeader.tsx';
 import CurriculoCanvasLegend from './CurriculoCanvasLegend.tsx';
 import CurriculoBackConfirm from './CurriculoBackConfirm.tsx';
+import CurriculoDiscardConfirm from './CurriculoDiscardConfirm.tsx';
+import {
+  getCurriculo,
+  putCurriculo,
+  curriculoBackendToNode,
+} from '../../services/CurriculoService';
+import {
+  createCurriculumTask,
+  type CurriculumGenerationRequest,
+} from '../../services/CurriculoIaService';
+import { useCurriculoTaskPolling } from './useCurriculoTaskPolling';
 import '../../styles/CurriculoCanvas.css';
 
 interface Props {
   open: boolean;
+  grupoId: string;
   grupoNombre: string;
   materiaNombre: string;
   docenteNombre: string;
@@ -47,6 +59,7 @@ function estadoConcepto(node: NodoCurricular): EstadoConcepto {
 
 export default function CurriculoCanvasModal({
   open,
+  grupoId,
   grupoNombre,
   materiaNombre,
   docenteNombre,
@@ -70,11 +83,16 @@ export default function CurriculoCanvasModal({
   });
   const [toast, setToast] = useState<ToastData | null>(null);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [baselineTree, setBaselineTree] = useState<NodoCurricular>(() =>
+    cloneCurriculoTree(demoTree as unknown as NodoCurricular),
+  );
   const canvasRef = useRef<HTMLElement>(null);
   const treeRef = useRef<HTMLElement>(null);
   const canvasPan = useCurriculoCanvasPan();
   const draft = useCurriculoDraftNode();
-  const sources = useCurriculoSources();
+  const sources = useCurriculoSources(grupoId);
+  const taskPolling = useCurriculoTaskPolling(grupoId, true);
   const content = useCurriculoContent(setTree, () => setDirty(true));
 
   const selected = useMemo(
@@ -102,6 +120,75 @@ export default function CurriculoCanvasModal({
     });
     return () => window.cancelAnimationFrame(frame);
   }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void getCurriculo(grupoId)
+      .then((curriculo) => {
+        if (cancelled) return;
+        if (curriculo.unidades.length > 0) {
+          const realTree = curriculoBackendToNode(
+            curriculo,
+            materiaNombre,
+          );
+          const baseline = cloneCurriculoTree(realTree);
+          setBaselineTree(baseline);
+          setTree(realTree);
+          setSelectedId(realTree.id);
+          const expanded = new Set<string>();
+          const collect = (node: NodoCurricular) => {
+            expanded.add(node.id);
+            (node.hijos ?? []).forEach(collect);
+          };
+          collect(realTree);
+          setExpandedIds(expanded);
+          setDirty(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setToast({
+            tipo: 'advertencia',
+            mensaje: 'No se pudo cargar el currículo real. Se muestra el prototipo local.',
+          });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [grupoId, materiaNombre, open]);
+
+  useEffect(() => {
+    if (!taskPolling.status) return;
+    if (taskPolling.status.estado === 'COMPLETADA') {
+      const resultado = taskPolling.status.resultado as
+        | { arbol?: unknown }
+        | null;
+      if (resultado?.arbol && typeof resultado.arbol === 'object') {
+        setTree(cloneCurriculoTree(resultado.arbol as NodoCurricular));
+        setDirty(true);
+        sources.markNewSourcesProcessed();
+        setToast({
+          tipo: 'exito',
+          mensaje: 'El árbol se alimentó con las fuentes nuevas. Revisa los cambios antes de Guardar.',
+        });
+      }
+      void taskPolling.cancel();
+    }
+    if (taskPolling.status.estado === 'ERROR') {
+      console.error('[curriculo] Generación fallida', {
+        tareaId: taskPolling.tareaId,
+        estado: taskPolling.status.estado,
+        error: taskPolling.status.error,
+      });
+      setToast({
+        tipo: 'error',
+        mensaje: taskPolling.status.error
+          || 'La generación terminó con un error.',
+      });
+    }
+  }, [taskPolling.status]);
 
   if (!open) return null;
 
@@ -177,12 +264,31 @@ export default function CurriculoCanvasModal({
 
   const discardAndExit = () => {
     setShowBackConfirm(false);
-    setTree(cloneCurriculoTree(demoTree as unknown as NodoCurricular));
+    setShowDiscardConfirm(false);
+    setTree(cloneCurriculoTree(baselineTree));
+    draft.discard();
     setDirty(false);
     onClose();
   };
 
-  const save = (): boolean => {
+  const discardChanges = () => {
+    const restored = cloneCurriculoTree(baselineTree);
+    setTree(restored);
+    setSelectedId(restored.id);
+    const expanded = new Set<string>();
+    const collect = (node: NodoCurricular) => {
+      expanded.add(node.id);
+      (node.hijos ?? []).forEach(collect);
+    };
+    collect(restored);
+    setExpandedIds(expanded);
+    draft.discard();
+    setEditingId(null);
+    setDirty(false);
+    setShowDiscardConfirm(false);
+  };
+
+  const save = async (): Promise<boolean> => {
     if (draft.draftNode) {
       setToast({
         tipo: 'advertencia',
@@ -192,16 +298,83 @@ export default function CurriculoCanvasModal({
       });
       return false;
     }
-    const json = JSON.stringify(tree, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `curriculo-${grupoNombre || 'grupo'}-prototipo.json`;
-    link.click();
-    URL.revokeObjectURL(url);
-    setDirty(false);
-    return true;
+    try {
+      const persisted = await putCurriculo(grupoId, tree);
+      const persistedTree = curriculoBackendToNode(
+        persisted,
+        materiaNombre,
+      );
+      const persistedBaseline = cloneCurriculoTree(persistedTree);
+      setBaselineTree(persistedBaseline);
+      setTree(persistedTree);
+      setSelectedId(persistedTree.id);
+      const expanded = new Set<string>();
+      const collect = (node: NodoCurricular) => {
+        expanded.add(node.id);
+        (node.hijos ?? []).forEach(collect);
+      };
+      collect(persistedTree);
+      setExpandedIds(expanded);
+      setEditingId(null);
+      setDirty(false);
+      setToast({
+        tipo: 'exito',
+        mensaje: 'Currículo guardado correctamente.',
+      });
+      return true;
+    } catch {
+      setToast({
+        tipo: 'error',
+        mensaje: 'No se pudo guardar el currículo. Los cambios locales siguen pendientes.',
+      });
+      return false;
+    }
+  };
+
+  const generateFromSources = async () => {
+    if (sources.newFiles.length === 0) return;
+    sources.generate();
+    try {
+      const archivos = await Promise.all(
+        sources.newFiles.map(async (entry) => {
+          const buffer = await entry.file.arrayBuffer();
+          const bytes = new Uint8Array(buffer);
+          let binary = '';
+          bytes.forEach((byte) => {
+            binary += String.fromCharCode(byte);
+          });
+          return {
+            nombre: entry.nombre,
+            contenidoBase64: window.btoa(binary),
+          };
+        }),
+      );
+
+      const request: CurriculumGenerationRequest = {
+        grupoId,
+        materiaNombre,
+        arbol: tree,
+        fuentes: sources.newFiles.map((entry) => ({
+          documentoId: entry.documentoId,
+          checksumSha256: entry.checksumSha256,
+          nombre: entry.nombre,
+        })),
+        fuentesProcesadas: [],
+        modoFusion: 'conservadora',
+        archivos,
+      };
+
+      const tareaId = await createCurriculumTask(grupoId, request);
+      taskPolling.start(tareaId);
+    } catch (caught) {
+      setToast({
+        tipo: 'error',
+        mensaje:
+          caught instanceof Error
+            ? caught.message
+            : 'No se pudo iniciar la generación de contenido.',
+      });
+    }
   };
 
   return (
@@ -212,7 +385,7 @@ export default function CurriculoCanvasModal({
         docenteNombre={docenteNombre}
         dirty={dirty}
         onBack={handleBack}
-        onDiscard={discardAndExit}
+        onDiscard={() => setShowDiscardConfirm(true)}
         onSave={save}
       />
 
@@ -232,11 +405,16 @@ export default function CurriculoCanvasModal({
           sources={sources.sources}
           puedeEditar={puedeEditar}
           hasNewSource={sources.hasNewSource}
-          generating={sources.generating}
+          generating={
+            sources.generating
+            || taskPolling.status?.estado === 'EN_COLA'
+            || taskPolling.status?.estado === 'PROCESANDO'
+          }
           fileInputRef={sources.fileInputRef}
           onAddSource={sources.addSource}
-          onGenerate={sources.generate}
+          onGenerate={generateFromSources}
           onOpenFilePicker={sources.openFilePicker}
+          onRemoveSource={sources.removeSource}
         />
 
         <main
@@ -336,25 +514,46 @@ export default function CurriculoCanvasModal({
         />
       </section>
 
-      {sources.generating && (
+      {(sources.generating
+        || taskPolling.status?.estado === 'EN_COLA'
+        || taskPolling.status?.estado === 'PROCESANDO') && (
         <section className="curriculo-generating">
           <article>
             <span className="spinner-border" role="status" />
             <strong>Generando contenido curricular</strong>
-            <small>{sources.sourceName || 'Fuente nueva'}</small>
+            <small>
+              {taskPolling.status?.progreso
+                || sources.sourceName
+                || 'Fuente nueva'}
+            </small>
+            {taskPolling.tareaId && (
+              <button
+                type="button"
+                className="btn btn-outline-secondary btn-sm"
+                onClick={() => void taskPolling.cancel()}
+              >
+                <i className="bi bi-x-lg me-1" />
+                Cancelar
+              </button>
+            )}
           </article>
         </section>
       )}
       <CurriculoBackConfirm
         open={showBackConfirm}
-        onSaveAndExit={() => {
-          if (save()) {
+        onSaveAndExit={async () => {
+          if (await save()) {
             setShowBackConfirm(false);
             onClose();
           }
         }}
         onDiscardAndExit={discardAndExit}
         onContinue={() => setShowBackConfirm(false)}
+      />
+      <CurriculoDiscardConfirm
+        open={showDiscardConfirm}
+        onConfirm={discardChanges}
+        onCancel={() => setShowDiscardConfirm(false)}
       />
       <Toast toast={toast} onCerrar={() => setToast(null)} />
     </section>
