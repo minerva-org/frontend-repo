@@ -160,7 +160,13 @@ export default function CurriculoDetallePanel({
             </>
           ) : (
             <>
-              <h4>Hijos directos</h4>
+              <h4>
+                {selected.tipo === 'materia'
+                  ? 'Unidades'
+                  : selected.tipo === 'unidad'
+                    ? 'Temas'
+                    : 'Conceptos'}
+              </h4>
               {selected.hijos.length === 0 ? (
                 <p className="text-secondary">Sin hijos.</p>
               ) : (

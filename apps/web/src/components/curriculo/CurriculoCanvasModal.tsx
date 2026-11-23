@@ -9,11 +9,26 @@ import CurriculoCanvasNodeLayer from './CurriculoCanvasNodeLayer.tsx';
 import CurriculoCanvasConnectors from './CurriculoCanvasConnectors.tsx';
 import CurriculoDraftNode from './CurriculoDraftNode.tsx';
 import CurriculoNodeTypeSelector from './CurriculoNodeTypeSelector.tsx';
-import CurriculoFuentePanel, {
-  type CurriculoSourceEntry,
-} from './CurriculoFuentePanel.tsx';
+import CurriculoFuentePanel from './CurriculoFuentePanel.tsx';
 import CurriculoDetallePanel from './CurriculoDetallePanel.tsx';
 import Toast, { type ToastData } from '../common/Toast';
+import {
+  attachCurriculoDraftNode,
+  cloneCurriculoTree,
+  findCurriculoNode,
+  invalidCurriculoAssociationMessage,
+  isValidCurriculoDraftDrop,
+  isValidCurriculoDrop,
+  moveCurriculoNode,
+  renameCurriculoNode,
+} from './CurriculoCanvasOperations.ts';
+import { useCurriculoCanvasPan } from './useCurriculoCanvasPan.ts';
+import { useCurriculoDraftNode } from './useCurriculoDraftNode.ts';
+import { useCurriculoSources } from './useCurriculoSources.ts';
+import { useCurriculoContent } from './useCurriculoContent.ts';
+import CurriculoCanvasHeader from './CurriculoCanvasHeader.tsx';
+import CurriculoCanvasLegend from './CurriculoCanvasLegend.tsx';
+import CurriculoBackConfirm from './CurriculoBackConfirm.tsx';
 import '../../styles/CurriculoCanvas.css';
 
 interface Props {
@@ -25,145 +40,6 @@ interface Props {
   onClose: () => void;
 }
 
-function cloneTree(node: NodoCurricular): NodoCurricular {
-  return {
-    ...node,
-    contenido: (node.contenido ?? []).map((item) => ({ ...item })),
-    hijos: (node.hijos ?? []).map(cloneTree),
-  };
-}
-
-function findNode(node: NodoCurricular, id: string): NodoCurricular | null {
-  if (node.id === id) return node;
-  for (const child of node.hijos) {
-    const found = findNode(child, id);
-    if (found) return found;
-  }
-  return null;
-}
-
-function renameNode(node: NodoCurricular, id: string, nombre: string): NodoCurricular {
-  if (node.id === id) return { ...node, nombre, revisionEstado: 'modificado' };
-  return { ...node, hijos: node.hijos.map((child) => renameNode(child, id, nombre)) };
-}
-
-function moveNode(tree: NodoCurricular, nodeId: string, parentId: string): NodoCurricular {
-  let moved: NodoCurricular | null = null;
-
-  const remove = (node: NodoCurricular): NodoCurricular => ({
-    ...node,
-    hijos: node.hijos.filter((child) => {
-      if (child.id === nodeId) {
-        moved = cloneTree(child);
-        return false;
-      }
-      return true;
-    }).map(remove),
-  });
-
-  const withoutMoved = remove(cloneTree(tree));
-  if (!moved) return tree;
-
-  const add = (node: NodoCurricular): NodoCurricular => ({
-    ...node,
-    hijos: node.id === parentId
-      ? [...node.hijos, moved as NodoCurricular]
-      : node.hijos.map(add),
-  });
-
-  return add(withoutMoved);
-}
-
-function isDescendant(
-  node: NodoCurricular,
-  possibleDescendantId: string,
-): boolean {
-  return node.hijos.some((child) =>
-    child.id === possibleDescendantId
-      ? true
-      : isDescendant(child, possibleDescendantId),
-  );
-}
-
-function isValidDrop(
-  dragged: NodoCurricular,
-  target: NodoCurricular,
-): boolean {
-  if (dragged.id === target.id) return false;
-  if (isDescendant(dragged, target.id)) return false;
-
-  if (dragged.tipo === 'concepto') {
-    return false;
-  }
-  if (dragged.tipo === 'tema') {
-    return target.tipo === 'unidad';
-  }
-  if (dragged.tipo === 'unidad') {
-    return target.tipo === 'materia';
-  }
-  if (dragged.tipo === 'materia') {
-    return false;
-  }
-  return false;
-}
-
-function isValidDraftDrop(
-  draft: NodoCurricular,
-  target: NodoCurricular,
-): boolean {
-  if (draft.tipo === 'concepto') return target.tipo === 'tema';
-  if (draft.tipo === 'tema') return target.tipo === 'unidad';
-  if (draft.tipo === 'unidad') return target.tipo === 'materia';
-  return false;
-}
-
-function createDraftNode(tipo: NodoCurricular['tipo']): NodoCurricular {
-  return {
-    id: `TEMP-${crypto.randomUUID()}`,
-    tipo,
-    nombre: '',
-    origen: 'usuario',
-    revisionEstado: 'nuevo',
-    estadoConcepto: tipo === 'concepto' ? 'sin_contenido' : undefined,
-    contenido: [],
-    hijos: [],
-  };
-}
-
-function invalidAssociationMessage(
-  dragged: NodoCurricular,
-  target: NodoCurricular,
-) {
-  if (dragged.tipo === 'concepto') {
-    return 'Los conceptos no aceptan asociaciones. Un concepto solo puede permanecer bajo un tema.';
-  }
-  if (dragged.tipo === 'tema') {
-    return 'Un tema solo puede asociarse a una unidad. No puede colocarse directamente bajo materia o concepto.';
-  }
-  if (dragged.tipo === 'unidad') {
-    return 'Una unidad solo puede asociarse a la materia.';
-  }
-  return `El nodo ${dragged.nombre || dragged.tipo} no puede asociarse a ${target.nombre || target.tipo}.`;
-}
-
-function attachDraftNode(
-  tree: NodoCurricular,
-  draft: NodoCurricular,
-  parentId: string,
-): NodoCurricular {
-  if (tree.id === parentId) {
-    return {
-      ...tree,
-      hijos: [...(tree.hijos ?? []), cloneTree(draft)],
-    };
-  }
-  return {
-    ...tree,
-    hijos: (tree.hijos ?? []).map((child) =>
-      attachDraftNode(child, draft, parentId),
-    ),
-  };
-}
 
 function estadoConcepto(node: NodoCurricular): EstadoConcepto {
   return node.estadoConcepto ?? (node.contenido.length ? 'con_contenido' : 'sin_contenido');
@@ -177,7 +53,9 @@ export default function CurriculoCanvasModal({
   puedeEditar,
   onClose,
 }: Props) {
-  const [tree, setTree] = useState<NodoCurricular>(() => cloneTree(demoTree as unknown as NodoCurricular));
+  const [tree, setTree] = useState<NodoCurricular>(() =>
+    cloneCurriculoTree(demoTree as unknown as NodoCurricular),
+  );
   const [selectedId, setSelectedId] = useState<string | null>(demoTree.id);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
@@ -190,27 +68,19 @@ export default function CurriculoCanvasModal({
     collect(demoTree as unknown as NodoCurricular);
     return ids;
   });
-  const [sourceEntries, setSourceEntries] = useState<CurriculoSourceEntry[]>([
-    { id: 'demo-book', name: 'book.pdf', status: 'disponible' },
-  ]);
-  const [generating, setGenerating] = useState(false);
-  const [sourceName, setSourceName] = useState('');
-  const [editingContentId, setEditingContentId] = useState<string | null>(null);
-  const [editingContentText, setEditingContentText] = useState('');
-  const [showNodeTypeSelector, setShowNodeTypeSelector] = useState(false);
-  const [draftNode, setDraftNode] = useState<NodoCurricular | null>(null);
   const [toast, setToast] = useState<ToastData | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
   const canvasRef = useRef<HTMLElement>(null);
   const treeRef = useRef<HTMLElement>(null);
-  const panRef = useRef({ active: false, x: 0, y: 0, scrollLeft: 0, scrollTop: 0 });
-  const dragAutoPanRef = useRef<number | null>(null);
+  const canvasPan = useCurriculoCanvasPan();
+  const draft = useCurriculoDraftNode();
+  const sources = useCurriculoSources();
+  const content = useCurriculoContent(setTree, () => setDirty(true));
 
   const selected = useMemo(
-    () => selectedId ? findNode(tree, selectedId) : null,
+    () => selectedId ? findCurriculoNode(tree, selectedId) : null,
     [tree, selectedId],
   );
-  const hasNewSource = sourceEntries.some((source) => source.status === 'nueva');
   const canvasLayout = useMemo(
     () => calculateCurriculoCanvasLayout(tree, expandedIds),
     [tree, expandedIds],
@@ -231,13 +101,13 @@ export default function CurriculoCanvasModal({
       canvas.scrollLeft = visibleCenter - canvas.clientWidth / 2;
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [open, canvasLayout]);
+  }, [open]);
 
   if (!open) return null;
 
   const updateName = (nodeId: string, name: string) => {
     if (!name.trim()) return;
-    setTree((current) => renameNode(current, nodeId, name.trim()));
+    setTree((current) => renameCurriculoNode(current, nodeId, name.trim()));
     setEditingId(null);
     setDirty(true);
   };
@@ -247,67 +117,80 @@ export default function CurriculoCanvasModal({
     const draggedId = event.dataTransfer.getData('text/plain');
     if (!draggedId || draggedId === nodeId || !puedeEditar) return;
 
-    if (draftNode && draggedId === draftNode.id) {
-      const target = findNode(tree, nodeId);
-      if (!target || !isValidDraftDrop(draftNode, target)) {
+    const draggedDraft = draft.draftNode;
+    if (draggedDraft && draggedId === draggedDraft.id) {
+      const target = findCurriculoNode(tree, nodeId);
+      if (!target || !isValidCurriculoDraftDrop(draggedDraft, target)) {
         if (target) {
           setToast({
             tipo: 'advertencia',
-            mensaje: invalidAssociationMessage(draftNode, target),
+            mensaje: invalidCurriculoAssociationMessage(draggedDraft, target),
           });
         }
         return;
       }
 
-      setTree((current) => attachDraftNode(current, draftNode, nodeId));
-      setDraftNode(null);
+      setTree((current) =>
+        attachCurriculoDraftNode(current, draggedDraft, nodeId),
+      );
+      setExpandedIds((current) => {
+        const next = new Set(current);
+        next.add(nodeId);
+        next.add(draggedDraft.id);
+        return next;
+      });
+      draft.discard();
       setDirty(true);
-      setSelectedId(draftNode.id);
+      setSelectedId(draggedDraft.id);
       return;
     }
 
-    const dragged = findNode(tree, draggedId);
-    const target = findNode(tree, nodeId);
+    const dragged = findCurriculoNode(tree, draggedId);
+    const target = findCurriculoNode(tree, nodeId);
     if (!dragged || !target) return;
-    if (!isValidDrop(dragged, target)) {
+    if (!isValidCurriculoDrop(dragged, target)) {
       setToast({
         tipo: 'advertencia',
-        mensaje: invalidAssociationMessage(dragged, target),
+        mensaje: invalidCurriculoAssociationMessage(dragged, target),
       });
       return;
     }
-    setTree((current) => moveNode(current, draggedId, nodeId));
+    setTree((current) =>
+      moveCurriculoNode(current, draggedId, nodeId),
+    );
+    setExpandedIds((current) => {
+      const next = new Set(current);
+      next.add(nodeId);
+      return next;
+    });
     setDirty(true);
   };
 
-  const addSource = (file?: File) => {
-    if (!file) return;
-    setSourceName(file.name);
-    setSourceEntries((current) => [
-      ...current,
-      { id: crypto.randomUUID(), name: file.name, status: 'nueva' },
-    ]);
-  };
-
-  const generate = () => {
-    if (!hasNewSource) return;
-    setGenerating(true);
-    window.setTimeout(() => setGenerating(false), 900);
-  };
 
   const handleBack = () => {
-    if (!dirty || window.confirm('Hay cambios sin guardar. ¿Quieres salir y descartar los cambios?')) onClose();
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    setShowBackConfirm(true);
   };
 
-  const save = () => {
-    if (draftNode) {
+  const discardAndExit = () => {
+    setShowBackConfirm(false);
+    setTree(cloneCurriculoTree(demoTree as unknown as NodoCurricular));
+    setDirty(false);
+    onClose();
+  };
+
+  const save = (): boolean => {
+    if (draft.draftNode) {
       setToast({
         tipo: 'advertencia',
         mensaje:
           'No se puede guardar mientras exista un nodo nuevo sin asociar. '
           + 'Arrastre el nodo a una posición válida o cancele su creación.',
       });
-      return;
+      return false;
     }
     const json = JSON.stringify(tree, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
@@ -318,178 +201,62 @@ export default function CurriculoCanvasModal({
     link.click();
     URL.revokeObjectURL(url);
     setDirty(false);
+    return true;
   };
-
-  const updateConceptContent = (
-    conceptoId: string,
-    contenidoId: string,
-    descripcion: string,
-  ) => {
-    if (!descripcion.trim()) return;
-    setTree((current) => {
-      const replaceContent = (node: NodoCurricular): NodoCurricular => {
-        if (node.id === conceptoId) {
-          return {
-            ...node,
-            revisionEstado: 'modificado',
-            estadoConcepto: 'con_contenido',
-            contenido: node.contenido.map((item) =>
-              item.id === contenidoId
-                ? {
-                    ...item,
-                    descripcion: descripcion.trim(),
-                    revisionEstado: 'modificado',
-                  }
-                : item,
-            ),
-          };
-        }
-        return {
-          ...node,
-          hijos: node.hijos.map(replaceContent),
-        };
-      };
-      return replaceContent(current);
-    });
-    setEditingContentId(null);
-    setEditingContentText('');
-    setDirty(true);
-  };
-
-  const addConceptContent = (conceptoId: string) => {
-    setTree((current) => {
-      const addContent = (node: NodoCurricular): NodoCurricular => {
-        if (node.id === conceptoId) {
-          return {
-            ...node,
-            revisionEstado: 'modificado',
-            estadoConcepto: 'con_contenido',
-            contenido: [
-              ...node.contenido,
-              {
-                id: `TEMP-CTG-${crypto.randomUUID()}`,
-                descripcion: 'Nuevo contenido curricular',
-                origen: 'usuario',
-                revisionEstado: 'nuevo',
-              },
-            ],
-          };
-        }
-        return {
-          ...node,
-          hijos: node.hijos.map(addContent),
-        };
-      };
-      return addContent(current);
-    });
-    setDirty(true);
-  };
-
 
   return (
     <section className="curriculo-modal" role="dialog" aria-modal="true" aria-label="Árbol curricular">
-      <header className="curriculo-header">
-        <article className="curriculo-header-left">
-          <button type="button" className="btn btn-outline-secondary curriculo-back" onClick={handleBack}>
-            <i className="bi bi-arrow-left me-2" />
-            Volver
-          </button>
-          <article>
-            <strong>{grupoNombre}</strong>
-            <small>{materiaNombre} · {docenteNombre}</small>
-          </article>
-        </article>
-        <article className="curriculo-header-actions">
-          {dirty && <span className="curriculo-dirty">Cambios sin guardar</span>}
-          <button type="button" className="btn btn-outline-secondary" onClick={handleBack} disabled={!dirty}>Descartar</button>
-          <button type="button" className="btn btn-primary" onClick={save} disabled={!dirty}>Guardar</button>
-        </article>
-      </header>
+      <CurriculoCanvasHeader
+        grupoNombre={grupoNombre}
+        materiaNombre={materiaNombre}
+        docenteNombre={docenteNombre}
+        dirty={dirty}
+        onBack={handleBack}
+        onDiscard={discardAndExit}
+        onSave={save}
+      />
 
       <section className="curriculo-layout">
         <CurriculoNodeTypeSelector
-          open={showNodeTypeSelector}
+          open={draft.showTypeSelector}
           disabled={!puedeEditar}
           onToggle={() =>
-            setShowNodeTypeSelector((current) => !current)
+            draft.toggleTypeSelector()
           }
           onSelect={(tipo) => {
-            setDraftNode(createDraftNode(tipo));
-            setShowNodeTypeSelector(false);
+            draft.selectType(tipo);
             setDirty(true);
           }}
         />
         <CurriculoFuentePanel
-          sources={sourceEntries}
+          sources={sources.sources}
           puedeEditar={puedeEditar}
-          hasNewSource={hasNewSource}
-          generating={generating}
-          fileInputRef={fileInputRef}
-          onAddSource={addSource}
-          onGenerate={generate}
-          onOpenFilePicker={() => fileInputRef.current?.click()}
+          hasNewSource={sources.hasNewSource}
+          generating={sources.generating}
+          fileInputRef={sources.fileInputRef}
+          onAddSource={sources.addSource}
+          onGenerate={sources.generate}
+          onOpenFilePicker={sources.openFilePicker}
         />
 
         <main
           className="curriculo-canvas"
           ref={canvasRef}
-          onPointerDown={(event) => {
-            const target = event.target as HTMLElement;
-            if (target.closest('.curriculo-node, .curriculo-draft-node, .curriculo-canvas-toolbar, .curriculo-legend')) return;
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            event.preventDefault();
-            panRef.current = {
-              active: true,
-              x: event.clientX,
-              y: event.clientY,
-              scrollLeft: canvas.scrollLeft,
-              scrollTop: canvas.scrollTop,
-            };
-            canvas.setPointerCapture(event.pointerId);
-            canvas.classList.add('is-panning');
-          }}
-          onPointerMove={(event) => {
-            const pan = panRef.current;
-            const canvas = canvasRef.current;
-            if (!pan.active || !canvas) return;
-            canvas.scrollLeft = pan.scrollLeft - (event.clientX - pan.x);
-            canvas.scrollTop = pan.scrollTop - (event.clientY - pan.y);
-          }}
-          onPointerUp={(event) => {
-            panRef.current.active = false;
-            canvasRef.current?.classList.remove('is-panning');
-            if (canvasRef.current?.hasPointerCapture(event.pointerId)) {
-              canvasRef.current.releasePointerCapture(event.pointerId);
-            }
-          }}
-          onPointerCancel={() => {
-            panRef.current.active = false;
-            canvasRef.current?.classList.remove('is-panning');
-          }}
-          onDragOver={(event) => {
-            event.preventDefault();
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const rect = canvas.getBoundingClientRect();
-            const edge = 64;
-            if (event.clientX - rect.left < edge) {
-              canvas.scrollLeft -= 18;
-            } else if (rect.right - event.clientX < edge) {
-              canvas.scrollLeft += 18;
-            }
-            if (event.clientY - rect.top < edge) {
-              canvas.scrollTop -= 18;
-            } else if (rect.bottom - event.clientY < edge) {
-              canvas.scrollTop += 18;
-            }
-          }}
-          onDragEnd={() => {
-            if (dragAutoPanRef.current !== null) {
-              window.cancelAnimationFrame(dragAutoPanRef.current);
-              dragAutoPanRef.current = null;
-            }
-          }}
+          onPointerDown={(event) =>
+            canvasPan.onPointerDown(event, canvasRef.current)
+          }
+          onPointerMove={(event) =>
+            canvasPan.onPointerMove(event, canvasRef.current)
+          }
+          onPointerUp={(event) =>
+            canvasPan.onPointerEnd(event, canvasRef.current)
+          }
+          onPointerCancel={() =>
+            canvasPan.onPointerCancel(canvasRef.current)
+          }
+          onDragOver={(event) =>
+            canvasPan.onDragOver(event, canvasRef.current)
+          }
           onClick={(event) => {
             const target = event.target as HTMLElement;
             if (!target.closest('.curriculo-node, .curriculo-canvas-toolbar, .curriculo-legend')) {
@@ -497,18 +264,14 @@ export default function CurriculoCanvasModal({
             }
           }}
         >
-          {draftNode && (
+          {draft.draftNode && (
             <CurriculoDraftNode
-              node={draftNode}
-              onChangeName={(nombre) =>
-                setDraftNode((current) =>
-                  current ? { ...current, nombre } : current,
-                )
-              }
-              onEmpty={() => setDraftNode(null)}
-              onCancel={() => setDraftNode(null)}
+              node={draft.draftNode}
+              onChangeName={draft.changeName}
+              onEmpty={draft.discard}
+              onCancel={draft.discard}
               onDragStart={(event) =>
-                event.dataTransfer.setData('text/plain', draftNode.id)
+                event.dataTransfer.setData('text/plain', draft.draftNode!.id)
               }
             />
           )}
@@ -533,7 +296,7 @@ export default function CurriculoCanvasModal({
               expandedIds={expandedIds}
               editable={puedeEditar}
               estadoConcepto={(id) => {
-                const node = findNode(tree, id);
+                const node = findCurriculoNode(tree, id);
                 return node ? estadoConcepto(node) : 'sin_contenido';
               }}
               onSelect={setSelectedId}
@@ -553,47 +316,46 @@ export default function CurriculoCanvasModal({
               setRef={() => undefined}
             />
           </section>
-          <section className="curriculo-legend">
-            <strong>Leyenda</strong>
-            <span><i className="bi bi-book" /> Materia</span>
-            <span><i className="bi bi-layers" /> Unidad</span>
-            <span><i className="bi bi-diagram-3" /> Tema</span>
-            <span><i className="bi bi-lightbulb" /> Concepto</span>
-            <span><i className="legend-outline state-unsaved" /> Cambios sin guardar</span>
-            <span><i className="legend-dot state-visto" /> Visto</span>
-            <span><i className="legend-dot state-planeado" /> Planeado</span>
-            <span><i className="legend-dot state-con_contenido" /> Con contenido</span>
-            <span><i className="legend-dot state-sin_contenido" /> Sin contenido</span>
-            <small>Los conceptos grises no se consideran en la generación automática de Quiz.</small>
-          </section>
+          <CurriculoCanvasLegend />
         </main>
 
         <CurriculoDetallePanel
           selected={selected}
           puedeEditar={puedeEditar}
           editingId={editingId}
-          editingContentId={editingContentId}
-          editingContentText={editingContentText}
+          editingContentId={content.editingContentId}
+          editingContentText={content.editingContentText}
           estadoConcepto={estadoConcepto}
           onEditingId={setEditingId}
           onFinishName={updateName}
           onSelectChild={setSelectedId}
-          onEditingContentId={setEditingContentId}
-          onEditingContentText={setEditingContentText}
-          onApplyContent={updateConceptContent}
-          onAddContent={addConceptContent}
+          onEditingContentId={content.setEditingContentId}
+          onEditingContentText={content.setEditingContentText}
+          onApplyContent={content.updateContent}
+          onAddContent={content.addContent}
         />
       </section>
 
-      {generating && (
+      {sources.generating && (
         <section className="curriculo-generating">
           <article>
             <span className="spinner-border" role="status" />
             <strong>Generando contenido curricular</strong>
-            <small>{sourceName || 'Fuente nueva'}</small>
+            <small>{sources.sourceName || 'Fuente nueva'}</small>
           </article>
         </section>
       )}
+      <CurriculoBackConfirm
+        open={showBackConfirm}
+        onSaveAndExit={() => {
+          if (save()) {
+            setShowBackConfirm(false);
+            onClose();
+          }
+        }}
+        onDiscardAndExit={discardAndExit}
+        onContinue={() => setShowBackConfirm(false)}
+      />
       <Toast toast={toast} onCerrar={() => setToast(null)} />
     </section>
   );

@@ -2,6 +2,8 @@
   position: fixed;
   inset: 0;
   z-index: 1060;
+  --curriculo-sources-width: 240px;
+  --curriculo-detail-width: 300px;
   display: grid;
   grid-template-rows: 72px minmax(0, 1fr);
   background: #f4f6f8;
@@ -53,7 +55,7 @@
 
 .curriculo-layout {
   display: grid;
-  grid-template-columns: 240px minmax(480px, 1fr) 300px;
+  grid-template-columns: var(--curriculo-sources-width) minmax(480px, 1fr) var(--curriculo-detail-width);
   min-height: 0;
 }
 
@@ -187,7 +189,7 @@
 .curriculo-add-node-wrapper {
   position: fixed;
   top: 82px;
-  left: calc(240px + 16px);
+  left: calc(var(--curriculo-sources-width) + 16px);
   z-index: 1080;
 }
 
@@ -222,7 +224,7 @@
 .curriculo-draft-node {
   position: fixed;
   top: 118px;
-  left: 256px;
+  left: calc(var(--curriculo-sources-width) + 16px);
   z-index: 20;
   height: 44px;
   min-width: 220px;
@@ -475,9 +477,8 @@
 .curriculo-legend {
   position: fixed;
   bottom: 8px;
-  left: 248px;
+  left: calc(var(--curriculo-sources-width) + 8px);
   width: fit-content;
-  max-width: calc(100% - 256px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -549,9 +550,15 @@
   background: #fff;
 }
 
+.curriculo-back-confirm {
+  min-width: 520px;
+  max-width: calc(100vw - 40px);
+}
+
 @media (max-width: 1100px) {
-  .curriculo-layout {
-    grid-template-columns: 220px minmax(420px, 1fr) 260px;
+  .curriculo-modal {
+    --curriculo-sources-width: 220px;
+    --curriculo-detail-width: 260px;
   }
 }
 
@@ -561,7 +568,8 @@
     display: none;
   }
 
-  .curriculo-layout {
-    grid-template-columns: 190px minmax(420px, 1fr) 220px;
+  .curriculo-modal {
+    --curriculo-sources-width: 190px;
+    --curriculo-detail-width: 220px;
   }
 }
