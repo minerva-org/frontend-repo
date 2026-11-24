@@ -13,7 +13,10 @@ export function expandAllCurriculoNodes(tree: NodoCurricular): Set<string> {
   return expanded;
 }
 
-export function useCurriculoCanvasState(initialTree: NodoCurricular) {
+export function useCurriculoCanvasState(
+  initialTree: NodoCurricular,
+  rootOffsetPixels = 24,
+) {
   const [tree, setTree] = useState(() => cloneCurriculoTree(initialTree));
   const [selectedId, setSelectedId] = useState<string | null>(initialTree.id);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -63,11 +66,11 @@ export function useCurriculoCanvasState(initialTree: NodoCurricular) {
       const visibleCenter = (left + right) / 2;
       canvas.scrollLeft = Math.max(
         0,
-        visibleCenter * zoom - canvas.clientWidth / 2,
+        visibleCenter * zoom - canvas.clientWidth / 2 + rootOffsetPixels,
       );
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [canvasLayout.centeringNodes, zoom]);
+  }, [canvasLayout.centeringNodes, zoom, rootOffsetPixels]);
 
   return {
     tree,

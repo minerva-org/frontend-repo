@@ -452,16 +452,13 @@
 }
 
 .materia-canvas-modal .curriculo-zoom-controls {
-  position: fixed;
   right: 18px;
   bottom: 18px;
   left: auto;
-  z-index: 30;
 }
 
 .materia-canvas-modal .curriculo-legend {
-  position: fixed;
-  left: calc(240px + 18px);
+  left: 18px;
   bottom: 18px;
   z-index: 30;
 }

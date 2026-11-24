@@ -224,9 +224,9 @@
 }
 
 .curriculo-add-node-wrapper {
-  position: fixed;
-  top: 82px;
-  left: calc(var(--curriculo-sources-width, 240px) + 16px);
+  position: absolute;
+  top: 16px;
+  left: 16px;
   z-index: 1080;
 }
 
@@ -559,9 +559,10 @@
 }
 
 .curriculo-legend {
-  position: fixed;
+  position: absolute;
+  z-index: 20;
   bottom: 18px;
-  left: calc(var(--curriculo-sources-width) + 8px);
+  left: 18px;
   width: fit-content;
   display: flex;
   flex-wrap: wrap;
@@ -581,10 +582,10 @@
 }
 
 .curriculo-zoom-controls {
-  position: fixed;
+  position: absolute;
   z-index: 20;
   bottom: 18px;
-  right: calc(var(--curriculo-detail-width) + 18px);
+  right: 18px;
   display: flex;
   align-items: center;
   gap: 4px;
