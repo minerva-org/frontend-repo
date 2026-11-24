@@ -656,26 +656,6 @@
   background: #fffaeb;
 }
 
-.curriculo-generating {
-  position: fixed;
-  inset: 72px 0 0;
-  z-index: 3000;
-  display: grid;
-  place-items: center;
-  background: rgba(38, 50, 56, 0.72);
-}
-
-.curriculo-generating article {
-  display: grid;
-  justify-items: center;
-  gap: 8px;
-  min-width: 280px;
-  padding: 24px;
-  border: 1px solid #dfe4e8;
-  border-radius: 10px;
-  background: #fff;
-}
-
 .curriculo-back-confirm {
   min-width: 520px;
   max-width: calc(100vw - 40px);

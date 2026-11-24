@@ -11,6 +11,7 @@ import CurriculoNodeTypeSelector from './CurriculoNodeTypeSelector.tsx';
 import CurriculoFuentePanel from './CurriculoFuentePanel.tsx';
 import CurriculoDetallePanel from './CurriculoDetallePanel.tsx';
 import Toast, { type ToastData } from '../common/Toast';
+import TaskGeneratingOverlay from '../common/TaskGeneratingOverlay.tsx';
 import {
   attachCurriculoDraftNode,
   cloneCurriculoTree,
@@ -555,31 +556,18 @@ export default function CurriculoCanvasModal({
         />
       </section>
 
-      {(sources.generating
-        || taskPolling.status?.estado === 'EN_COLA'
-        || taskPolling.status?.estado === 'PROCESANDO') && (
-        <section className="curriculo-generating">
-          <article>
-            <span className="spinner-border" role="status" />
-            <strong>Generando contenido curricular</strong>
-            <small>
-              {taskPolling.status?.progreso
-                || sources.sourceName
-                || 'Fuente nueva'}
-            </small>
-            {taskPolling.tareaId && (
-              <button
-                type="button"
-                className="btn btn-outline-secondary btn-sm"
-                onClick={() => void taskPolling.cancel()}
-              >
-                <i className="bi bi-x-lg me-1" />
-                Cancelar
-              </button>
-            )}
-          </article>
-        </section>
-      )}
+      <TaskGeneratingOverlay
+        visible={sources.generating
+          || taskPolling.status?.estado === 'EN_COLA'
+          || taskPolling.status?.estado === 'PROCESANDO'}
+        title="Generando contenido curricular"
+        subtitle={taskPolling.status?.progreso
+          || sources.sourceName
+          || 'Fuente nueva'}
+        onCancel={taskPolling.tareaId
+          ? () => void taskPolling.cancel()
+          : undefined}
+      />
       <CurriculoBackConfirm
         open={showBackConfirm}
         onSaveAndExit={async () => {
