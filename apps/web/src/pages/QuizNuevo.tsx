@@ -6,6 +6,12 @@ import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { apiClient } from '../services/ApiClient';
 import '../styles/QuizNuevo.css';
 import { mapearCurriculoQuiz } from '../utils/quizCurriculo';
+import { useTaskPolling } from '../hooks/useTaskPolling';
+import {
+  createQuizGenerationTask,
+  getQuizGenerationTask,
+  cancelQuizGenerationTask,
+} from '../services/QuizIaService';
 
 import type {
   QuizBackend,
@@ -18,6 +24,7 @@ import type {
   OpcionQuizResponse,
   QuizXPreguntaResponse,
   CurriculoGrupoCatalogo,
+  QuizGenerationTaskStatus,
 } from '../types/QuizTypes';
 
 type TipoQuiz = 'unico' | 'acumulativo';
@@ -84,6 +91,9 @@ export default function QuizNuevo() {
   const [preguntasEliminadas, setPreguntasEliminadas] = useState<{preguntaId:string; quizXPreguntaId?:string}[]>([]);
   const [opcionesOriginales, setOpcionesOriginales] = useState<Record<string, Opcion[]>>({});
   const [nombreGrupo, setNombreGrupo] = useState('');
+  const [quizPrompt, setQuizPrompt] = useState('');
+  const [quizCurriculo, setQuizCurriculo] =
+    useState<CurriculoGrupoCatalogo | null>(null);
 
   const temasDeUnidad = useMemo(
     () => (unidadId: string) => temas.filter((tema) => tema.unidadId === unidadId),
@@ -94,6 +104,56 @@ export default function QuizNuevo() {
     () => (temaId: string) => conceptos.filter((concepto) => concepto.temaId === temaId),
     [conceptos],
   );
+
+  const quizPolling = useTaskPolling<QuizGenerationTaskStatus>({
+    enabled: true,
+    fetchStatus: (tareaId) =>
+      getQuizGenerationTask(code ?? '', tareaId),
+    cancelStatus: (tareaId) =>
+      cancelQuizGenerationTask(code ?? '', tareaId),
+  });
+
+  useEffect(() => {
+    if (quizPolling.status?.estado === 'ERROR') {
+      setError(
+        quizPolling.status.error
+        || 'No se pudieron generar las preguntas.',
+      );
+      void quizPolling.cancel();
+    }
+    if (quizPolling.status?.estado !== 'COMPLETADA') return;
+    const resultado = quizPolling.status.resultado;
+    if (!resultado?.questions?.length) return;
+
+    const generated = resultado.questions.map((question) => {
+      const concepto = conceptos.find(
+        (item) =>
+          item.id === question.conceptId
+          || item.idConceptoOrigen === question.conceptId,
+      );
+      const tema = concepto
+        ? temas.find((item) => item.id === concepto.temaId)
+        : undefined;
+      const unidad = tema
+        ? unidades.find((item) => item.id === tema.unidadId)
+        : undefined;
+
+      return {
+        id: newId('preg'),
+        unidadId: unidad?.id ?? unidadUnicaId,
+        temaId: tema?.id ?? temaUnicoId,
+        conceptoId: concepto?.id ?? '',
+        enunciado: question.question,
+        opciones: question.options.map((option) => ({
+          id: newId('op'),
+          texto: option.text,
+          esCorrecta: option.isCorrect,
+        })),
+      };
+    });
+    setPreguntas(generated);
+    void quizPolling.cancel();
+  }, [quizPolling.status]);
 
   useEffect(() => {
     async function cargarCatalogo() {
@@ -112,6 +172,7 @@ export default function QuizNuevo() {
         ]);
         setNombreGrupo(grupoResponse.data?.nombre?.trim() || code);
         const curriculo = curriculoResponse.data;
+        setQuizCurriculo(curriculo);
 
         const { unidades: unidadesData, temas: temasData, conceptos: conceptosData } =
           mapearCurriculoQuiz(curriculo);
@@ -263,6 +324,56 @@ export default function QuizNuevo() {
 
   function updatePregunta(id: string, cambios: Partial<Pregunta>) {
     setPreguntas((prev) => prev.map((pregunta) => (pregunta.id === id ? { ...pregunta, ...cambios } : pregunta)));
+  }
+
+  async function generarPreguntas() {
+    if (!code) {
+      setError('No se pudo identificar el grupo.');
+      return;
+    }
+    if (!quizCurriculo) {
+      setError('No se pudo cargar el currículo del grupo.');
+      return;
+    }
+
+    const conceptosElegibles =
+      quizCurriculo.unidades.flatMap((unidad) =>
+        (unidad.temas ?? []).flatMap((tema) =>
+          (tema.conceptos ?? [])
+            .filter((concepto) =>
+              concepto.activo !== false
+              && (concepto.contenidos ?? []).length > 0,
+            )
+            .map((concepto) => ({
+              id: concepto.id,
+              nombre: concepto.nombre,
+              contenido: concepto.contenidos ?? [],
+            })),
+        ),
+      );
+
+    if (conceptosElegibles.length === 0) {
+      setError(
+        'No hay conceptos con contenido relacionado. Agrega contenido a conceptos del currículo antes de generar preguntas.',
+      );
+      return;
+    }
+
+    setError(null);
+    try {
+      const tareaId = await createQuizGenerationTask(code, {
+        prompt: quizPrompt.trim()
+          || 'Genera 10 preguntas variadas, combinando verdadero/falso y opcion multiple.',
+        arbol: quizCurriculo,
+      });
+      quizPolling.start(tareaId);
+    } catch (caught) {
+      setError(
+        caught instanceof Error
+          ? caught.message
+          : 'No se pudieron generar las preguntas.',
+      );
+    }
   }
 
   function handleCambiarUnidadPregunta(id: string, unidadId: string) {
@@ -678,6 +789,44 @@ export default function QuizNuevo() {
 
         <section className="qn-section">
           <h2 className="qn-preguntas-title">Preguntas ({preguntas.length})</h2>
+
+          <article className="qn-ai-generator">
+            <label className="qn-field">
+              <span className="qn-field-label">
+                Describe el contenido o estilo del quiz
+              </span>
+              <textarea
+                className="qn-input qn-ai-prompt"
+                rows={3}
+                value={quizPrompt}
+                onChange={(event) => setQuizPrompt(event.target.value)}
+                placeholder="Ejemplo: Haz énfasis en algoritmos de búsqueda y dificultad intermedia."
+              />
+            </label>
+            <button
+              type="button"
+              className="qn-btn-primary qn-ai-button"
+              disabled={
+                quizPolling.status?.estado === 'EN_COLA'
+                || quizPolling.status?.estado === 'PROCESANDO'
+              }
+              onClick={() => void generarPreguntas()}
+            >
+              <i className={
+                quizPolling.status?.estado === 'EN_COLA'
+                || quizPolling.status?.estado === 'PROCESANDO'
+                  ? 'bi bi-arrow-repeat me-2'
+                  : 'bi bi-stars me-2'
+              }></i>
+              {quizPolling.status?.estado === 'EN_COLA'
+                || quizPolling.status?.estado === 'PROCESANDO'
+                ? 'Generando preguntas...'
+                : 'Generar preguntas y respuestas'}
+            </button>
+            <small className="qn-ai-legend">
+              Solo se generarán preguntas para conceptos que tengan contenido relacionado.
+            </small>
+          </article>
 
           {preguntas.map((pregunta, index) => {
             const unidadPregunta = tipo === 'unico' ? unidadUnicaId : pregunta.unidadId;

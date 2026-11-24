@@ -162,6 +162,30 @@ export interface ResultadoIntento {
   total: number;
 }
 
+export interface QuizGenerationOption {
+  text: string;
+  isCorrect: boolean;
+}
+
+export interface QuizGenerationQuestion {
+  conceptId: string;
+  question: string;
+  options: QuizGenerationOption[];
+}
+
+export interface QuizGenerationResult {
+  questions: QuizGenerationQuestion[];
+}
+
+export interface QuizGenerationTaskStatus {
+  tareaId: string;
+  tipo: 'QUIZ_GENERATE';
+  estado: 'EN_COLA' | 'PROCESANDO' | 'COMPLETADA' | 'ERROR';
+  progreso: string | null;
+  resultado: QuizGenerationResult | null;
+  error: string | null;
+}
+
 export interface RespuestaRequest {
   preguntaId: string;
   opcionId: string | null;
