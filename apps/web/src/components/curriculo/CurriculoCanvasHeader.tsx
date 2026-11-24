@@ -1,21 +1,21 @@
 interface Props {
-  grupoNombre: string;
-  materiaNombre: string;
-  docenteNombre: string;
+  title: string;
+  subtitle?: string;
   dirty: boolean;
   onBack: () => void;
   onDiscard: () => void;
   onSave: () => void;
+  onEditMetadata?: () => void;
 }
 
 export default function CurriculoCanvasHeader({
-  grupoNombre,
-  materiaNombre,
-  docenteNombre,
+  title,
+  subtitle,
   dirty,
   onBack,
   onDiscard,
   onSave,
+  onEditMetadata,
 }: Props) {
   return (
     <header className="curriculo-header">
@@ -29,8 +29,23 @@ export default function CurriculoCanvasHeader({
           Volver
         </button>
         <article>
-          <strong>{grupoNombre}</strong>
-          <small>{materiaNombre} · {docenteNombre}</small>
+          <strong>{title}</strong>
+          {subtitle && (
+            <small>
+              {subtitle}
+              {onEditMetadata && (
+                <button
+                  type="button"
+                  className="curriculo-edit-metadata"
+                  onClick={onEditMetadata}
+                  aria-label="Editar nombre y clave"
+                  title="Editar nombre y clave"
+                >
+                  <i className="bi bi-pencil-square" />
+                </button>
+              )}
+            </small>
+          )}
         </article>
       </article>
       <article className="curriculo-header-actions">

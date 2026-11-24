@@ -22,6 +22,7 @@ export default function CurriculoNodeTypeSelector({
         className="btn btn-outline-secondary btn-sm curriculo-add-node"
         disabled={disabled}
         onClick={onToggle}
+        onPointerDown={(event) => event.stopPropagation()}
       >
         <i className="bi bi-plus-lg me-1" />
         Agregar nodo

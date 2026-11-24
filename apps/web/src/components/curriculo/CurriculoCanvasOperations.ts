@@ -36,6 +36,22 @@ export function renameCurriculoNode(
   };
 }
 
+export function removeCurriculoNode(
+  tree: NodoCurricular,
+  nodeId: string,
+): NodoCurricular {
+  if (tree.id === nodeId) return cloneCurriculoTree(tree);
+
+  const removeFromChildren = (node: NodoCurricular): NodoCurricular => ({
+    ...node,
+    hijos: (node.hijos ?? [])
+      .filter((child) => child.id !== nodeId)
+      .map(removeFromChildren),
+  });
+
+  return removeFromChildren(cloneCurriculoTree(tree));
+}
+
 export function moveCurriculoNode(
   tree: NodoCurricular,
   nodeId: string,

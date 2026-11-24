@@ -14,7 +14,7 @@ export function useCurriculoCanvasPan() {
       const target = event.target as HTMLElement;
       if (
         target.closest(
-          '.curriculo-node, .curriculo-draft-node, .curriculo-canvas-toolbar, .curriculo-legend',
+          '.curriculo-node, .curriculo-draft-node, .curriculo-canvas-toolbar, .curriculo-legend, .curriculo-add-node-wrapper',
         )
       ) return;
       if (!canvas) return;
