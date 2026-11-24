@@ -38,7 +38,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
           { to: '/planteles', label: 'Planteles', icon: 'bi-building' },
           { to: '/directores-planteles', label: 'Directores', icon: 'bi-people' },
           { to: '/materias', label: 'Materias', icon: 'bi-journal-bookmark' },
-          { to: '/metricas-tronco-comun', label: 'Métricas Instituto', icon: 'bi-bar-chart-line' },
+          { to: '/metricas-tronco-comun', label: 'Métricas', icon: 'bi-bar-chart-line' },
         ],
       },
     ],
@@ -55,7 +55,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Métricas', icon: 'bi-graph-up', end: true }],
+        items: [{ to: '/metricas-tronco-comun', label: 'Métricas', icon: 'bi-graph-up', end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -87,7 +87,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Metricas', icon: 'bi-graph-up', end: true }],
+        items: [{ to: '/metricas-tronco-comun', label: 'Metricas', icon: 'bi-graph-up', end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -119,7 +119,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-aprendizaje', label: 'Metricas', icon: 'bi-graph-up',end: true }],
+        items: [{ to: '/metricas-tronco-comun', label: 'Metricas', icon: 'bi-graph-up',end: true }],
       },
       {
         label: 'Grupos Activos',
