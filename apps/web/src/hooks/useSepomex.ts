@@ -27,7 +27,7 @@ export function useSepomex(){
             return resultados;
             } catch (error){
                 setColonias([]);
-                setErrorCP(error instanceof Error ? error.message :'Error al consultar el CP');
+                setErrorCP(error instanceof Error ? error.message :'Error al consultar el código Postal');
                 return null;
             } finally {
                 setBuscandoCP(false)
