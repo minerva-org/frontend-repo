@@ -1,3 +1,5 @@
+import '../../styles/TaskGeneratingOverlay.css';
+
 interface Props {
   open: boolean;
   onConfirm: () => void;
@@ -13,7 +15,7 @@ export default function CurriculoDiscardConfirm({
 
   return (
     <section
-      className="curriculo-generating"
+      className="task-generating"
       role="alertdialog"
       aria-modal="true"
       aria-label="Confirmar descarte"

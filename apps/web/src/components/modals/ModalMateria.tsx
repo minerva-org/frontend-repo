@@ -37,6 +37,7 @@ import MateriaMetadataModal from './MateriaMetadataModal.tsx';
 import MateriaPlanPanel from './MateriaPlanPanel.tsx';
 import CurriculoDeleteConfirm from '../curriculo/CurriculoDeleteConfirm.tsx';
 import { removeCurriculoNode } from '../curriculo/CurriculoCanvasOperations.ts';
+import TaskGeneratingOverlay from '../common/TaskGeneratingOverlay.tsx';
 import '../../styles/ModalMateria.css';
 import '../../styles/CurriculoCanvas.css';
 
@@ -449,22 +450,12 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           }}
         />
       )}
-      {generando && (
-        <article className="curriculo-generating" role="status" aria-live="polite">
-          <article>
-            <span className="spinner-border" />
-            <strong>Generando estructura curricular</strong>
-            <small>{archivo?.name}</small>
-            <button
-              type="button"
-              className="btn btn-outline-secondary"
-              onClick={() => extraccionControllerRef.current?.abort()}
-            >
-              Cancelar
-            </button>
-          </article>
-        </article>
-      )}
+      <TaskGeneratingOverlay
+        visible={generando}
+        title="Generando estructura curricular"
+        subtitle={archivo?.name}
+        onCancel={() => extraccionControllerRef.current?.abort()}
+      />
       <article
         className="materia-canvas-modal"
         role="dialog"

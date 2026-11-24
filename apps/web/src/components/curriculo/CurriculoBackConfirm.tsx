@@ -1,3 +1,5 @@
+import '../../styles/TaskGeneratingOverlay.css';
+
 interface Props {
   open: boolean;
   onSaveAndExit: () => void;
@@ -15,7 +17,7 @@ export default function CurriculoBackConfirm({
 
   return (
     <section
-      className="curriculo-generating"
+      className="task-generating"
       role="dialog"
       aria-modal="true"
       aria-label="Cambios sin guardar"

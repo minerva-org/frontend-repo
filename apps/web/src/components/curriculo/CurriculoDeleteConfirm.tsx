@@ -1,3 +1,5 @@
+import '../../styles/TaskGeneratingOverlay.css';
+
 interface Props {
   open: boolean;
   name: string;
@@ -17,7 +19,7 @@ export default function CurriculoDeleteConfirm({
 
   return (
     <section
-      className="curriculo-generating"
+      className="task-generating"
       role="alertdialog"
       aria-modal="true"
       aria-label="Confirmar eliminación"

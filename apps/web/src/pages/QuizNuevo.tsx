@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useSidebar } from '../context/SidebarContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
+import TaskGeneratingOverlay from '../components/common/TaskGeneratingOverlay.tsx';
 import { apiClient } from '../services/ApiClient';
 import '../styles/QuizNuevo.css';
 import { mapearCurriculoQuiz } from '../utils/quizCurriculo';
@@ -112,6 +113,11 @@ export default function QuizNuevo() {
     cancelStatus: (tareaId) =>
       cancelQuizGenerationTask(code ?? '', tareaId),
   });
+
+  const generandoPreguntas =
+    quizPolling.taskId !== null
+    && quizPolling.status?.estado !== 'COMPLETADA'
+    && quizPolling.status?.estado !== 'ERROR';
 
   useEffect(() => {
     if (quizPolling.status?.estado === 'ERROR') {
@@ -806,20 +812,15 @@ export default function QuizNuevo() {
             <button
               type="button"
               className="qn-btn-primary qn-ai-button"
-              disabled={
-                quizPolling.status?.estado === 'EN_COLA'
-                || quizPolling.status?.estado === 'PROCESANDO'
-              }
+              disabled={generandoPreguntas}
               onClick={() => void generarPreguntas()}
             >
               <i className={
-                quizPolling.status?.estado === 'EN_COLA'
-                || quizPolling.status?.estado === 'PROCESANDO'
+                generandoPreguntas
                   ? 'bi bi-arrow-repeat me-2'
                   : 'bi bi-stars me-2'
               }></i>
-              {quizPolling.status?.estado === 'EN_COLA'
-                || quizPolling.status?.estado === 'PROCESANDO'
+              {generandoPreguntas
                 ? 'Generando preguntas...'
                 : 'Generar preguntas y respuestas'}
             </button>
@@ -919,6 +920,14 @@ export default function QuizNuevo() {
           </button>
         </footer>
       </article>
+
+      <TaskGeneratingOverlay
+        visible={generandoPreguntas}
+        title="Generando preguntas del quiz"
+        subtitle={quizPolling.status?.progreso
+          || 'Esto puede tardar unos minutos'}
+        onCancel={() => void quizPolling.cancel()}
+      />
     </article>
   );
 }
