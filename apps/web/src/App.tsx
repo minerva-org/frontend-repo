@@ -19,7 +19,6 @@ import CatalogoAlumnos from './pages/CatalogoAlumnos.tsx';
 import LaboratorioAgente from './pages/LaboratorioAgente.tsx';
 import MiPerfil from './pages/MiPerfil.tsx'
 
-
 export default function App() {
   return (
     <AuthProvider>
@@ -125,7 +124,7 @@ export default function App() {
             } />
 
             <Route path="/metricas-tronco-comun" element={
-              <ProtectedRoute allowedRoles={['directorGeneral', 'admin', 'dev']}>
+              <ProtectedRoute allowedRoles={['docente','coordinador', 'directorPlantel' ,'directorGeneral', 'dev']}>
                 <MetricasTroncoComun />
               </ProtectedRoute>
             } />
