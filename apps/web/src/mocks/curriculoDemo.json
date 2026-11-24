@@ -1,0 +1,161 @@
+{
+  "id": "MAT-AE026",
+  "tipo": "materia",
+  "nombre": "Estructura de Datos",
+  "origen": "materia",
+  "revisionEstado": "original",
+  "contenido": [],
+  "hijos": [
+    {
+      "id": "UG-1",
+      "tipo": "unidad",
+      "nombre": "Introducción a las estructuras de datos",
+      "origen": "materia",
+      "revisionEstado": "original",
+      "contenido": [],
+      "hijos": [
+        {
+          "id": "TG-1",
+          "tipo": "tema",
+          "nombre": "Fundamentos",
+          "origen": "materia",
+          "revisionEstado": "original",
+          "contenido": [],
+          "hijos": [
+            {
+              "id": "CG-1",
+              "tipo": "concepto",
+              "nombre": "Tipos de datos abstractos",
+              "origen": "materia",
+              "revisionEstado": "original",
+              "estadoConcepto": "sin_contenido",
+              "contenido": []
+            },
+            {
+              "id": "CG-2",
+              "tipo": "concepto",
+              "nombre": "Memoria estática y dinámica",
+              "origen": "materia",
+              "revisionEstado": "original",
+              "estadoConcepto": "sin_contenido",
+              "contenido": []
+            },
+            {
+              "id": "CG-3",
+              "tipo": "concepto",
+              "nombre": "Complejidad temporal",
+              "origen": "materia",
+              "revisionEstado": "original",
+              "estadoConcepto": "con_contenido",
+              "contenido": [
+                {
+                  "id": "CTG-1",
+                  "descripcion": "Describe el crecimiento del tiempo de ejecución según el tamaño de la entrada.",
+                  "origen": "materia",
+                  "revisionEstado": "original"
+                }
+              ]
+            },
+            {
+              "id": "CG-20",
+              "tipo": "concepto",
+              "nombre": "Complejidad espacial",
+              "origen": "usuario",
+              "revisionEstado": "nuevo",
+              "estadoConcepto": "visto",
+              "contenido": [
+                {
+                  "id": "CTG-3",
+                  "descripcion": "Concepto evaluado previamente en un quiz cerrado.",
+                  "origen": "usuario",
+                  "revisionEstado": "nuevo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "UG-2",
+      "tipo": "unidad",
+      "nombre": "Recursividad",
+      "origen": "materia",
+      "revisionEstado": "original",
+      "contenido": [],
+      "hijos": [
+        {
+          "id": "TG-2",
+          "tipo": "tema",
+          "nombre": "Procedimientos recursivos",
+          "origen": "materia",
+          "revisionEstado": "original",
+          "contenido": [],
+          "hijos": [
+            {
+              "id": "CG-5",
+              "tipo": "concepto",
+              "nombre": "Recursividad",
+              "origen": "usuario",
+              "revisionEstado": "nuevo",
+              "estadoConcepto": "planeado",
+              "contenido": [
+                {
+                  "id": "CTG-2",
+                  "descripcion": "Función que se invoca a sí misma para resolver una instancia menor.",
+                  "origen": "usuario",
+                  "revisionEstado": "nuevo"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "UG-3",
+      "tipo": "unidad",
+      "nombre": "Estructuras lineales",
+      "origen": "materia",
+      "revisionEstado": "original",
+      "contenido": [],
+      "hijos": [
+        {
+          "id": "TG-3",
+          "tipo": "tema",
+          "nombre": "Arreglos y estructuras dinámicas",
+          "origen": "materia",
+          "revisionEstado": "original",
+          "contenido": [],
+          "hijos": [
+            {
+              "id": "CG-6",
+              "tipo": "concepto",
+              "nombre": "Arreglos",
+              "origen": "materia",
+              "revisionEstado": "original",
+              "estadoConcepto": "sin_contenido",
+              "contenido": []
+            },
+            {
+              "id": "CG-8",
+              "tipo": "concepto",
+              "nombre": "Pilas",
+              "origen": "ia",
+              "revisionEstado": "pendiente_revision",
+              "estadoConcepto": "con_contenido",
+              "contenido": [
+                {
+                  "id": "TEMP-CTG-1",
+                  "descripcion": "Estructura LIFO que admite las operaciones push y pop.",
+                  "origen": "ia",
+                  "revisionEstado": "pendiente_revision"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

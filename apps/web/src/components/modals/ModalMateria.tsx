@@ -1,15 +1,44 @@
-import { useRef, useState, type SubmitEvent } from 'react';
-import type { Materia } from '../../types/types.ts';
 import {
-  construirUrlDescargaDocumento,
-  materiaDocumentoErrorMessage,
-} from '../../services/materiaDocumentoService.ts';
+  useEffect,
+  useRef,
+  useState,
+  type DragEvent,
+} from 'react';
+import type { Materia } from '../../types/types.ts';
+import type { NodoCurricular } from '../../types/CurriculoCanvasTypes.ts';
 import {
   extraerConceptosMateria,
   materiaExtraccionErrorMessage,
+  materiaDocumentoErrorMessage,
 } from '../../services/materiaDocumentoService.ts';
-import { acortarNombreArchivo } from '../../utils/materiaPermisos.ts';
+import {
+  attachCurriculoDraftNode,
+  cloneCurriculoTree,
+  findCurriculoNode,
+  invalidCurriculoAssociationMessage,
+  isValidCurriculoDraftDrop,
+  isValidCurriculoDrop,
+  moveCurriculoNode,
+  renameCurriculoNode,
+} from '../curriculo/CurriculoCanvasOperations.ts';
+import CurriculoCanvasNodeLayer from '../curriculo/CurriculoCanvasNodeLayer.tsx';
+import CurriculoCanvasConnectors from '../curriculo/CurriculoCanvasConnectors.tsx';
+import CurriculoDraftNode from '../curriculo/CurriculoDraftNode.tsx';
+import CurriculoNodeTypeSelector from '../curriculo/CurriculoNodeTypeSelector.tsx';
+import { useCurriculoDraftNode } from '../curriculo/useCurriculoDraftNode.ts';
+import { useCurriculoCanvasPan } from '../curriculo/useCurriculoCanvasPan.ts';
+import CurriculoCanvasLegend from '../curriculo/CurriculoCanvasLegend.tsx';
+import CurriculoZoomControls from '../curriculo/CurriculoZoomControls.tsx';
+import CurriculoBackConfirm from '../curriculo/CurriculoBackConfirm.tsx';
+import CurriculoDiscardConfirm from '../curriculo/CurriculoDiscardConfirm.tsx';
+import CurriculoCanvasHeader from '../curriculo/CurriculoCanvasHeader.tsx';
+import { useCurriculoCanvasState } from '../curriculo/useCurriculoCanvasState.ts';
+import MateriaMetadataModal from './MateriaMetadataModal.tsx';
+import MateriaPlanPanel from './MateriaPlanPanel.tsx';
+import CurriculoDeleteConfirm from '../curriculo/CurriculoDeleteConfirm.tsx';
+import { removeCurriculoNode } from '../curriculo/CurriculoCanvasOperations.ts';
 import '../../styles/ModalMateria.css';
+import '../../styles/CurriculoCanvas.css';
 
 export interface ConceptoForm {
   id: string;
@@ -46,14 +75,12 @@ interface Props {
 }
 
 function derivarPrefijo(nombre: string): string {
-  const limpio = nombre
+  return nombre
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-zA-Z]/g, '')
     .slice(0, 4)
     .toUpperCase();
-
-  return limpio;
 }
 
 function extraerNumeroDesdePrefijo(prefijo?: string): number {
@@ -62,541 +89,579 @@ function extraerNumeroDesdePrefijo(prefijo?: string): number {
   return Number.isFinite(numero) && numero >= 1 && numero <= 9 ? numero : 1;
 }
 
-function crearConceptoVacio(): ConceptoForm {
-  return { id: crypto.randomUUID(), nombre: '' };
-}
-
-function crearTemaVacio(): TemaForm {
-  return { id: crypto.randomUUID(), nombre: '', conceptos: [crearConceptoVacio()] };
-}
-
-function crearUnidadVacia(): UnidadForm {
-  return { id: crypto.randomUUID(), nombre: '', temas: [crearTemaVacio()] };
-}
-
-
-function crearDatosDesdeMateria(materia: Materia | null | undefined): UnidadForm[] {
-  if (!materia?.unidades?.length) {
-    return [];
-  }
-
-  return materia.unidades.map((unidad) => ({
-    id: unidad.id ?? crypto.randomUUID(),
-    nombre: unidad.nombre ?? '',
-    temas: (unidad.temas ?? []).map((tema) => ({
-      id: tema.id ?? crypto.randomUUID(),
-      nombre: tema.nombre ?? '',
-      conceptos: (tema.conceptos ?? []).map((concepto) => ({
-        id: concepto.id ?? crypto.randomUUID(),
-        nombre: concepto.nombre ?? '',
+function buildTree(materia: Materia | null | undefined): NodoCurricular {
+  const materiaId = materia?.id ?? `MAT-${crypto.randomUUID()}`;
+  return {
+    id: materiaId,
+    tipo: 'materia',
+    nombre: materia?.nombre ?? '',
+    origen: 'materia',
+    revisionEstado: 'original',
+    contenido: [],
+    hijos: (materia?.unidades ?? []).map((unidad) => ({
+      id: unidad.id ?? crypto.randomUUID(),
+      tipo: 'unidad',
+      nombre: unidad.nombre ?? '',
+      origen: 'materia',
+      revisionEstado: 'original',
+      contenido: [],
+      hijos: (unidad.temas ?? []).map((tema) => ({
+        id: tema.id ?? crypto.randomUUID(),
+        tipo: 'tema',
+        nombre: tema.nombre ?? '',
+        origen: 'materia',
+        revisionEstado: 'original',
+        contenido: [],
+        hijos: (tema.conceptos ?? []).map((concepto) => ({
+          id: concepto.id ?? crypto.randomUUID(),
+          tipo: 'concepto',
+          nombre: concepto.nombre ?? '',
+          origen: 'materia',
+          revisionEstado: 'original',
+          estadoConcepto: 'sin_contenido',
+          contenido: [],
+          hijos: [],
+        })),
       })),
     })),
-  }));
+  };
+}
+
+function treeToUnits(tree: NodoCurricular): UnidadForm[] {
+  return (tree.hijos ?? [])
+    .filter((unidad) => unidad.tipo === 'unidad')
+    .filter((unidad) => unidad.nombre.trim())
+    .map((unidad) => ({
+      id: unidad.id,
+      nombre: unidad.nombre.trim(),
+      temas: (unidad.hijos ?? [])
+        .filter((tema) => tema.tipo === 'tema')
+        .filter((tema) => tema.nombre.trim())
+        .map((tema) => ({
+          id: tema.id,
+          nombre: tema.nombre.trim(),
+          conceptos: (tema.hijos ?? [])
+            .filter((concepto) => concepto.tipo === 'concepto')
+            .filter((concepto) => concepto.nombre.trim())
+            .map((concepto) => ({
+              id: concepto.id,
+              nombre: concepto.nombre.trim(),
+            })),
+        }))
+        .filter((tema) => tema.conceptos.length > 0),
+    }))
+    .filter((unidad) => unidad.temas.length > 0);
 }
 
 export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const esEdicion = !!materia;
-
   const [id] = useState(materia?.id ?? crypto.randomUUID());
   const [nombre, setNombre] = useState(materia?.nombre ?? '');
-  const [numero, setNumero] = useState<number>(() => extraerNumeroDesdePrefijo(materia?.prefijo));
-  const [unidades, setUnidades] = useState<UnidadForm[]>(() => crearDatosDesdeMateria(materia));
-  const [error, setError] = useState('');
-
-  const [prefijo, setPrefijo] = useState(materia?.prefijo?.replace(/\d$/, '') || derivarPrefijo(materia?.nombre ?? ''));
+  const [prefijo, setPrefijo] = useState(
+    materia?.prefijo?.replace(/\d$/, '') ?? '',
+  );
+  const [numero, setNumero] = useState(() =>
+    extraerNumeroDesdePrefijo(materia?.prefijo),
+  );
   const [prefijoModificado, setPrefijoModificado] = useState(false);
-  const prefijoFinal = `${prefijo}${numero}`;
+  const [metadataConfirmada, setMetadataConfirmada] = useState(
+    !!materia,
+  );
+  const [editandoMetadatos, setEditandoMetadatos] = useState(false);
   const [archivo, setArchivo] = useState<File | null>(null);
-  const [archivoExistenteId] = useState<string | null>(
+  const [archivoExistenteId] = useState(
     materia?.documentoMateriaId?.trim() || null,
   );
-  const [archivoExistenteNombre] = useState<string>(
+  const [archivoExistenteNombre] = useState(
     materia?.documentoMateriaNombre?.trim() || '',
   );
   const [archivoEliminado, setArchivoEliminado] = useState(false);
+  const canvasState = useCurriculoCanvasState(buildTree(materia));
+  const {
+    tree,
+    setTree,
+    selectedId,
+    setSelectedId,
+    editingId,
+    setEditingId,
+    expandedIds,
+    setExpandedIds,
+    zoom,
+    changeZoom,
+    canvasRef,
+    canvasLayout,
+    toggleExpanded,
+    replaceTree,
+  } = canvasState;
+  const [baselineTree, setBaselineTree] = useState<NodoCurricular>(() =>
+    cloneCurriculoTree(buildTree(materia)),
+  );
+  const [dirty, setDirty] = useState(false);
   const [guardando, setGuardando] = useState(false);
-  const [generandoConceptos, setGenerandoConceptos] = useState(false);
-  const [confirmarCancelar, setConfirmarCancelar] = useState(false);
+  const [generando, setGenerando] = useState(false);
+  const [error, setError] = useState('');
+  const [showBackConfirm, setShowBackConfirm] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [deleteNodeId, setDeleteNodeId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const extraccionControllerRef = useRef<AbortController | null>(null);
+  const draft = useCurriculoDraftNode();
+  const canvasPan = useCurriculoCanvasPan();
 
-  const solicitarCancelar = () => {
-    if (generandoConceptos || guardando) {
-      setConfirmarCancelar(true);
+  const prefijoFinal = `${prefijo}${numero}`;
+  const datosInicialesValidos =
+    nombre.trim().length > 0 && prefijo.trim().length > 0;
+
+
+
+  useEffect(() => {
+    if (!metadataConfirmada || !datosInicialesValidos) return;
+    setTree((current) => ({
+      ...current,
+      nombre: nombre.trim(),
+      revisionEstado: current.nombre === nombre.trim()
+        ? current.revisionEstado
+        : 'modificado',
+    }));
+  }, [nombre, datosInicialesValidos]);
+
+  useEffect(() => {
+    if (!tree.hijos.length) {
+      setExpandedIds(new Set([tree.id]));
       return;
     }
-    onCerrar();
-  };
-
-  const confirmarCancelacionExtraccion = () => {
-    extraccionControllerRef.current?.abort();
-    extraccionControllerRef.current = null;
-    setConfirmarCancelar(false);
-    setGenerandoConceptos(false);
-    onCerrar();
-  };
-
-  const validate = (): string => {
-    if (!nombre.trim()) return 'El nombre de la materia es obligatorio.';
-    if (!prefijo.trim()) return 'El prefijo de la materia es obligatorio.';
-    if (archivo && (!archivo.name.toLowerCase().endsWith('.pdf') || archivo.size > 10 * 1024 * 1024)) {
-      return 'El plan de estudio debe ser un PDF de hasta 10 MiB.';
-    }
-    if (esEdicion) return '';
-
-    const unidadesValidas = unidades.filter((unidad) => unidad.nombre.trim() && unidad.temas.some((tema) => tema.nombre.trim() && tema.conceptos.some((concepto) => concepto.nombre.trim())));
-    if (!unidadesValidas.length) return 'Agrega al menos una unidad con temas y conceptos.';
-    return '';
-  };
-
-  const actualizarUnidad = (unidadId: string, cambios: Partial<UnidadForm>) => {
-    setUnidades((prev) => prev.map((unidad) => (unidad.id === unidadId ? { ...unidad, ...cambios } : unidad)));
-  };
-
-  const actualizarTema = (unidadId: string, temaId: string, cambios: Partial<TemaForm>) => {
-    setUnidades((prev) => prev.map((unidad) => {
-      if (unidad.id !== unidadId) return unidad;
-      return {
-        ...unidad,
-        temas: unidad.temas.map((tema) => (tema.id === temaId ? { ...tema, ...cambios } : tema)),
+    setExpandedIds((current) => {
+      if (current.size > 0) return current;
+      const next = new Set<string>();
+      const collect = (node: NodoCurricular) => {
+        next.add(node.id);
+        node.hijos.forEach(collect);
       };
-    }));
-  };
+      collect(tree);
+      return next;
+    });
+  }, [tree]);
 
-  const actualizarConcepto = (unidadId: string, temaId: string, conceptoId: string, nombreConcepto: string) => {
-    setUnidades((prev) => prev.map((unidad) => {
-      if (unidad.id !== unidadId) return unidad;
-      return {
-        ...unidad,
-        temas: unidad.temas.map((tema) => {
-          if (tema.id !== temaId) return tema;
-          return {
-            ...tema,
-            conceptos: tema.conceptos.map((concepto) =>
-              concepto.id === conceptoId ? { ...concepto, nombre: nombreConcepto } : concepto,
-            ),
-          };
-        }),
-      };
-    }));
-  };
 
-  const agregarUnidad = () => {
-    setUnidades((prev) => [...prev, crearUnidadVacia()]);
-  };
-
-  const agregarTema = (unidadId: string) => {
-    setUnidades((prev) => prev.map((unidad) =>
-      unidad.id === unidadId ? { ...unidad, temas: [...unidad.temas, crearTemaVacio()] } : unidad,
-    ));
-  };
-
-  const agregarConcepto = (unidadId: string, temaId: string) => {
-    setUnidades((prev) => prev.map((unidad) => {
-      if (unidad.id !== unidadId) return unidad;
-      return {
-        ...unidad,
-        temas: unidad.temas.map((tema) =>
-          tema.id === temaId ? { ...tema, conceptos: [...tema.conceptos, crearConceptoVacio()] } : tema,
-        ),
-      };
-    }));
-  };
-
-  const eliminarUnidad = (unidadId: string) => {
-    setUnidades((prev) => prev.filter((unidad) => unidad.id !== unidadId));
-  };
-
-  const eliminarTema = (unidadId: string, temaId: string) => {
-    setUnidades((prev) => prev.map((unidad) => {
-      if (unidad.id !== unidadId) return unidad;
-      return {
-        ...unidad,
-        temas: unidad.temas.filter((tema) => tema.id !== temaId),
-      };
-    }));
-  };
-
-  const eliminarConcepto = (unidadId: string, temaId: string, conceptoId: string) => {
-    setUnidades((prev) => prev.map((unidad) => {
-      if (unidad.id !== unidadId) return unidad;
-      return {
-        ...unidad,
-        temas: unidad.temas.map((tema) => {
-          if (tema.id !== temaId) return tema;
-          return {
-            ...tema,
-            conceptos: tema.conceptos.filter((concepto) => concepto.id !== conceptoId),
-          };
-        }),
-      };
-    }));
-  };
-
-  const generarConceptos = async () => {
-    const pdfTemporal = archivo
-      ?? (archivoExistenteId && !archivoEliminado ? null : null);
-    if (!pdfTemporal) {
-      setError('Selecciona un PDF temporal antes de generar conceptos.');
+  const generarDesdePlan = async () => {
+    if (!datosInicialesValidos) {
+      setError('Ingresa el nombre de la materia y el prefijo.');
       return;
     }
-
-    if (unidades.length > 0
-        && !window.confirm('Se reemplazará el árbol actual. Los cambios no guardados se perderán.')) {
+    if (!archivo) {
+      setError('Selecciona el plan de estudio PDF.');
+      return;
+    }
+    if ((tree.hijos ?? []).length > 0
+        && !window.confirm(
+          'El nuevo plan reemplazará por completo el árbol actual, incluidos los cambios manuales.',
+        )) {
       return;
     }
 
     setError('');
-    setGenerandoConceptos(true);
+    setGenerando(true);
     const controller = new AbortController();
     extraccionControllerRef.current = controller;
     try {
-      const tree = await extraerConceptosMateria(pdfTemporal, controller.signal);
-      setUnidades(tree.units.map((unidad) => ({
-        id: crypto.randomUUID(),
-        nombre: unidad.name,
-        temas: unidad.topics.map((tema) => ({
+      const extracted = await extraerConceptosMateria(archivo, controller.signal);
+      const newTree: NodoCurricular = {
+        id: id,
+        tipo: 'materia',
+        nombre: nombre.trim(),
+        origen: 'materia',
+        revisionEstado: 'original',
+        contenido: [],
+        hijos: extracted.units.map((unidad) => ({
           id: crypto.randomUUID(),
-          nombre: tema.name,
-          conceptos: tema.concepts.map((concepto) => ({
+          tipo: 'unidad',
+          nombre: unidad.name,
+          origen: 'ia',
+          revisionEstado: 'original',
+          contenido: [],
+          hijos: unidad.topics.map((tema) => ({
             id: crypto.randomUUID(),
-            nombre: concepto.name,
+            tipo: 'tema',
+            nombre: tema.name,
+            origen: 'ia',
+            revisionEstado: 'original',
+            contenido: [],
+            hijos: tema.concepts.map((concepto) => ({
+              id: crypto.randomUUID(),
+              tipo: 'concepto',
+              nombre: concepto.name,
+              origen: 'ia',
+              revisionEstado: 'original',
+              estadoConcepto: 'sin_contenido',
+              contenido: [],
+              hijos: [],
+            })),
           })),
         })),
-      })));
-    } catch (cause) {
-      if (cause instanceof Error && (cause.name === 'CanceledError' || cause.name === 'AbortError')) {
+      };
+      replaceTree(newTree);
+      setDirty(true);
+    } catch (caught) {
+      if (caught instanceof Error
+          && (caught.name === 'AbortError' || caught.name === 'CanceledError')) {
         return;
       }
-      setError(materiaExtraccionErrorMessage(cause));
+      setError(materiaExtraccionErrorMessage(caught));
     } finally {
       extraccionControllerRef.current = null;
-      setGenerandoConceptos(false);
+      setGenerando(false);
     }
   };
 
-  const handleSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const msg = validate();
-    if (msg) {
-      setError(msg);
+  const updateName = (nodeId: string, name: string) => {
+    if (!name.trim()) return;
+    setTree((current) => renameCurriculoNode(current, nodeId, name.trim()));
+    setDirty(true);
+    setEditingId(null);
+  };
+
+  const handleDrop = (event: DragEvent<HTMLElement>, targetId: string) => {
+    event.preventDefault();
+    const movedId = event.dataTransfer.getData('text/plain');
+    if (!movedId) return;
+    if (draft.draftNode && movedId === draft.draftNode.id) {
+      const target = findCurriculoNode(tree, targetId);
+      if (!target
+          || !isValidCurriculoDraftDrop(draft.draftNode, target)) {
+        setError(invalidCurriculoAssociationMessage(draft.draftNode, target ?? tree));
+        return;
+      }
+      setTree((current) =>
+        attachCurriculoDraftNode(current, draft.draftNode!, targetId),
+      );
+      setDirty(true);
+      draft.discard();
       return;
     }
-    setError('');
+    const dragged = findCurriculoNode(tree, movedId);
+    const target = findCurriculoNode(tree, targetId);
+    if (!dragged || !target || !isValidCurriculoDrop(dragged, target)) {
+      if (dragged && target) {
+        setError(invalidCurriculoAssociationMessage(dragged, target));
+      }
+      return;
+    }
+    setTree((current) => moveCurriculoNode(current, movedId, targetId));
+    setDirty(true);
+  };
+
+  const guardar = async () => {
+    if (!datosInicialesValidos) {
+      setError('Ingresa el nombre de la materia y el prefijo.');
+      return;
+    }
     setGuardando(true);
+    setError('');
     try {
       await onGuardar({
-        id: id.trim(),
+        id,
         nombre: nombre.trim(),
         prefijo: prefijoFinal,
         planEstudioId: '',
         archivo,
         archivoExistenteId,
         archivoEliminado,
-        unidades: unidades
-          .filter((unidad) => unidad.nombre.trim())
-          .map((unidad) => ({
-            ...unidad,
-            nombre: unidad.nombre.trim(),
-            temas: (unidad.temas ?? [])
-              .filter((tema) => tema.nombre.trim())
-              .map((tema) => ({
-                ...tema,
-                nombre: tema.nombre.trim(),
-                conceptos: (tema.conceptos ?? [])
-                  .filter((concepto) => concepto.nombre.trim())
-                  .map((concepto) => ({
-                    ...concepto,
-                    nombre: concepto.nombre.trim(),
-                  })),
-              }))
-              .filter((tema) => tema.conceptos.length > 0),
-          }))
-          .filter((unidad) => unidad.temas.length > 0),
+        unidades: treeToUnits(tree),
       });
-    } catch (error) {
-      setError(materiaDocumentoErrorMessage(error, 'No se pudo guardar la materia.'));
+      setBaselineTree(cloneCurriculoTree(tree));
+      setDirty(false);
+    } catch (caught) {
+      setError(materiaDocumentoErrorMessage(
+        caught,
+        'No se pudo guardar la materia.',
+      ));
     } finally {
       setGuardando(false);
     }
   };
 
+  const descartar = () => {
+    replaceTree(baselineTree);
+    setDirty(false);
+    setShowDiscardConfirm(false);
+  };
+
+  const cerrar = () => {
+    extraccionControllerRef.current?.abort();
+    onCerrar();
+  };
+
+  const cerrarMetadatos = () => {
+    if (editandoMetadatos) {
+      setNombre(materia?.nombre ?? nombre);
+      setPrefijo(
+        materia?.prefijo?.replace(/\d$/, '')
+        ?? prefijo,
+      );
+      setNumero(extraerNumeroDesdePrefijo(
+        materia?.prefijo,
+      ));
+      setMetadataConfirmada(true);
+      setEditandoMetadatos(false);
+      setEditandoMetadatos(false);
+      setError('');
+      return;
+    }
+    cerrar();
+  };
+
   return (
-    <article className="mm-overlay">
-      {(guardando || generandoConceptos) && (
-        <article className="mm-processing-overlay" aria-live="polite">
-          <button
-            type="button"
-            className="mm-processing-close"
-            aria-label="Cancelar generación"
-            title="Cancelar generación"
-            onClick={() => setConfirmarCancelar(true)}
-          >
-            <i className="bi bi-x-lg" aria-hidden="true"></i>
-          </button>
-          <article className="mm-processing-card" role="status">
-            <span className="spinner-border spinner-border-sm text-primary" aria-hidden="true"></span>
-            <strong>{generandoConceptos ? 'Generando conceptos...' : 'Guardando materia...'}</strong>
+    <article
+      className={`mm-overlay${!metadataConfirmada ? ' materia-canvas-setup-open' : ''}`}
+    >
+      {!metadataConfirmada && (
+        <MateriaMetadataModal
+          open
+          title={esEdicion ? 'Editar materia' : 'Nueva materia'}
+          nombre={nombre}
+          prefijo={prefijo}
+          numero={numero}
+          error={error}
+          valid={datosInicialesValidos}
+          onNombreChange={(value) => {
+            setNombre(value);
+            if (!prefijoModificado) setPrefijo(derivarPrefijo(value));
+          }}
+          onPrefijoChange={(value) => {
+            setPrefijo(value);
+            setPrefijoModificado(true);
+          }}
+          onNumeroChange={setNumero}
+          onClose={cerrarMetadatos}
+          onConfirm={() => {
+            if (!datosInicialesValidos) return;
+            setSelectedId(id);
+            setExpandedIds(new Set([id]));
+            setError('');
+            setMetadataConfirmada(true);
+            setEditandoMetadatos(false);
+            setTree((current) => ({
+              ...current,
+              nombre: nombre.trim(),
+              revisionEstado: 'modificado',
+            }));
+            setDirty(true);
+          }}
+        />
+      )}
+      {generando && (
+        <article className="curriculo-generating" role="status" aria-live="polite">
+          <article>
+            <span className="spinner-border" />
+            <strong>Generando estructura curricular</strong>
+            <small>{archivo?.name}</small>
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => extraccionControllerRef.current?.abort()}
+            >
+              Cancelar
+            </button>
           </article>
         </article>
       )}
-
       <article
+        className="materia-canvas-modal"
         role="dialog"
-        aria-modal="true"
-        aria-labelledby="modal-materia-titulo"
-        className="mm-modal"
+        aria-modal={!datosInicialesValidos ? undefined : true}
+        inert={!metadataConfirmada ? true : undefined}
       >
-        <header className="mm-header">
-          <article>
-            <h2 id="modal-materia-titulo" className="mm-header-title">
-              {esEdicion ? 'Editar materia' : 'Nueva materia'}
-            </h2>
-            <p className="mm-header-subtitle">Preparatoria Chapala Gutiérrez</p>
-          </article>
-        </header>
+        <CurriculoCanvasHeader
+          title={prefijoFinal}
+          subtitle={nombre.trim()}
+          dirty={dirty}
+          onEditMetadata={() => {
+            setEditandoMetadatos(true);
+            setMetadataConfirmada(false);
+          }}
+          onBack={() => setShowBackConfirm(true)}
+          onDiscard={() => setShowDiscardConfirm(true)}
+          onSave={() => void guardar()}
+        />
 
-        <form onSubmit={handleSubmit} noValidate className="mm-form"
-          aria-busy={guardando || generandoConceptos}>
-          <fieldset disabled={guardando || generandoConceptos} className="mm-fieldset">
-          <article className="mm-field">
-            <label htmlFor="materia-nombre" className="mm-label">Nombre de la materia</label>
-            <input
-              id="materia-nombre"
-              className="mm-input"
-              type="text"
-              value={nombre}
-              onChange={(e) => {
-                const nuevoNombre = e.target.value;
-                setNombre(nuevoNombre);
-                if (!prefijoModificado){
-                  setPrefijo(nuevoNombre.trim() ? derivarPrefijo(nuevoNombre) : '');
-                }
+        <section className="materia-canvas-layout">
+          <MateriaPlanPanel
+            archivo={archivo}
+            archivoExistenteId={archivoExistenteId}
+            archivoExistenteNombre={archivoExistenteNombre}
+            archivoEliminado={archivoEliminado}
+            generando={generando}
+            fileInputRef={fileInputRef}
+            onFileChange={(next) => {
+              setArchivo(next);
+              if (next) setArchivoEliminado(false);
+            }}
+            onGenerate={() => void generarDesdePlan()}
+          />
+
+          <main
+            className="curriculo-canvas materia-canvas"
+            ref={canvasRef}
+            onWheel={(event) => {
+              event.preventDefault();
+              const factor = event.deltaY < 0 ? 1.1 : 0.9;
+              changeZoom(zoom * factor);
+            }}
+            onPointerDown={(event) =>
+              canvasPan.onPointerDown(event, canvasRef.current)
+            }
+            onPointerMove={(event) =>
+              canvasPan.onPointerMove(event, canvasRef.current)
+            }
+            onPointerUp={(event) =>
+              canvasPan.onPointerEnd(event, canvasRef.current)
+            }
+            onPointerCancel={() =>
+              canvasPan.onPointerCancel(canvasRef.current)
+            }
+            onDragOver={(event) =>
+              canvasPan.onDragOver(event, canvasRef.current)
+            }
+            onClick={(event) => {
+              const target = event.target as HTMLElement;
+              if (!target.closest(
+                '.curriculo-node, .curriculo-draft-node, .curriculo-canvas-toolbar, .curriculo-legend',
+              )) {
+                setSelectedId(null);
+              }
+            }}
+          >
+            <CurriculoNodeTypeSelector
+              open={draft.showTypeSelector}
+              disabled={
+                !metadataConfirmada
+                || generando
+                || guardando
+              }
+              onToggle={draft.toggleTypeSelector}
+              onSelect={(tipo) => {
+                draft.selectType(tipo);
+                setDirty(true);
               }}
-              placeholder='Matemáticas'
             />
-          </article>
-
-          <article className="mm-field">
-            <label className="mm-label">Prefijo</label>
-            <article style={{ display: 'flex', gap: '0.75rem' }}>
-              <input
-                className="mm-input"
-                type="text"
-                value={prefijo}
-                onChange={(e) => {
-                  const valor = e.target.value.replace(/[^a-zA-Z]/g,'').slice(0,4).toUpperCase();
-                  if(valor === ''){
-                    setPrefijoModificado(false);
-                    setPrefijo('');
-                    return;
+            {draft.draftNode && (
+              <CurriculoDraftNode
+                node={draft.draftNode}
+                onChangeName={draft.changeName}
+                onEmpty={draft.discard}
+                onCancel={draft.discard}
+                onDragStart={(event) =>
+                  event.dataTransfer.setData('text/plain', draft.draftNode!.id)
+                }
+              />
+            )}
+            <div
+              className="curriculo-tree-viewport"
+              style={{
+                width: canvasLayout.width * zoom,
+                height: canvasLayout.height * zoom,
+              }}
+            >
+              <section
+                className="curriculo-tree"
+                style={{
+                  width: canvasLayout.width,
+                  height: canvasLayout.height,
+                  transform: `scale(${zoom})`,
+                  transformOrigin: 'top left',
+                }}
+              >
+                <CurriculoCanvasConnectors
+                  connectors={canvasLayout.connectors}
+                  width={canvasLayout.width}
+                  height={canvasLayout.height}
+                />
+                <CurriculoCanvasNodeLayer
+                  positions={canvasLayout.nodes}
+                  selectedId={selectedId}
+                  editingId={editingId}
+                  expandedIds={expandedIds}
+                  editable={true}
+                  estadoConcepto={() => 'sin_contenido'}
+                  onSelect={setSelectedId}
+                  onEdit={setEditingId}
+                  onFinishEdit={updateName}
+                  onCancelEdit={() => setEditingId(null)}
+                  onToggle={(id) => {
+                    toggleExpanded(id);
+                  }}
+                  onDragStart={(event, id) =>
+                    event.dataTransfer.setData('text/plain', id)
                   }
-                  setPrefijo(valor);
-                  setPrefijoModificado(valor !== derivarPrefijo(nombre));
-                }}
-                placeholder='Ejemplo: MATE'
-                aria-label="Prefijo derivado de la materia"
-              />
-              <input
-                className="mm-input"
-                type="number"
-                min={1}
-                max={9}
-                step={1}
-                value={numero}
-                onChange={(e) => {
-                  const valor = e.target.value;
-                  if (valor === '') return;
-                  const next = Number(valor);
-                  if (!Number.isInteger(next) || next < 1 || next > 9)  return;
-                  setNumero(next);
-                }}
-                aria-label="Número del prefijo"
-                style={{ maxWidth: '90px' }}
-              />
-            </article>
-          </article>
+                  onDrop={handleDrop}
+                  onDelete={setDeleteNodeId}
+                  setRef={() => undefined}
+                />
+              </section>
+            </div>
 
-          <fieldset className="mm-fieldset">
-                <article className="mm-field">
-                  <label className="mm-label">Plan de estudio</label>
-
-                  <label htmlFor="materia-archivo" className="mm-add-btn">
-                    <i className="bi bi-paperclip"></i>
-                    {archivo || (archivoExistenteId && !archivoEliminado)
-                      ? 'Cambiar archivo'
-                      : 'Agregar archivo'}
-                  </label>
-
-                  <input
-                    id="materia-archivo"
-                    type="file"
-                    accept="application/pdf,.pdf"
-                    hidden
-                    onChange={(e) => {
-                      const seleccionado = e.target.files?.[0] ?? null;
-                      setArchivo(seleccionado);
-                      if (seleccionado) setArchivoEliminado(false);
-                    }}
-                  />
-
-                  {archivo && (
-                    <div className="mm-hint-box">
-                      <span title={archivo.name}>
-                        {acortarNombreArchivo(archivo.name)}
-                      </span>
-
-                      <button
-                        type="button"
-                        className="mm-icon-btn"
-                        onClick={() => setArchivo(null)}
-                        aria-label="Eliminar archivo"
-                        title="Eliminar archivo"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  )}
-
-                  {!archivo && archivoExistenteId && !archivoEliminado && (
-                    <div className="mm-hint-box">
-                      <a
-                        href={construirUrlDescargaDocumento(archivoExistenteId)}
-                        download={archivoExistenteNombre || undefined}
-                        title={archivoExistenteNombre || 'Descargar plan de estudio'}
-                        className="mm-file-link"
-                      >
-                        {acortarNombreArchivo(archivoExistenteNombre || 'Plan de estudio asociado')}
-                      </a>
-
-                      <button
-                        type="button"
-                        className="mm-icon-btn"
-                        onClick={() => {
-                          setArchivo(null);
-                          setArchivoEliminado(true);
-                        }}
-                        aria-label="Eliminar archivo asociado"
-                        title="Eliminar archivo asociado"
-                      >
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-                  )}
-
-                  <button
-                    type="button"
-                    className="mm-add-btn"
-                    onClick={() => void generarConceptos()}
-                    disabled={!archivo || generandoConceptos || guardando}
-                  >
-                    <i className={generandoConceptos ? 'bi bi-arrow-repeat' : 'bi bi-stars'}></i>
-                    {generandoConceptos ? 'Generando conceptos...' : 'Generar conceptos'}
-                  </button>
-                </article>
-
-            <legend className="mm-legend">Unidades, temas y conceptos</legend>
-            <p className="mm-hint-box">Cada materia puede incluir varias unidades con temas y conceptos para crear quizzes con contenido real.</p>
-
-            {unidades.map((unidad) => (
-              <article key={unidad.id} className="mm-unidad">
-                <div className="mm-unidad-row">
-                  <input
-                    className="mm-input"
-                    type="text"
-                    value={unidad.nombre}
-                    onChange={(e) => actualizarUnidad(unidad.id, { nombre: e.target.value })}
-                    placeholder="Nombre de la unidad"
-                  />
-                  <button type="button" className="mm-icon-btn" onClick={() => eliminarUnidad(unidad.id)} aria-label="Eliminar unidad" title="Eliminar unidad">
-                    <i className="bi bi-trash"></i>
-                  </button>
-                </div>
-
-                {unidad.temas.map((tema) => (
-                  <article key={tema.id} className="mm-tema">
-                    <div className="mm-tema-row">
-                      <input
-                        className="mm-input"
-                        type="text"
-                        value={tema.nombre}
-                        onChange={(e) => actualizarTema(unidad.id, tema.id, { nombre: e.target.value })}
-                        placeholder="Nombre del tema"
-                      />
-                      <button type="button" className="mm-icon-btn" onClick={() => eliminarTema(unidad.id, tema.id)} aria-label="Eliminar tema" title="Eliminar tema">
-                        <i className="bi bi-trash"></i>
-                      </button>
-                    </div>
-
-                    {tema.conceptos.map((concepto) => (
-                      <div key={concepto.id} className="mm-concepto-row">
-                        <input
-                          className="mm-input"
-                          type="text"
-                          value={concepto.nombre}
-                          onChange={(e) => actualizarConcepto(unidad.id, tema.id, concepto.id, e.target.value)}
-                          placeholder="Nombre del concepto"
-                        />
-                        <button type="button" className="mm-icon-btn" onClick={() => eliminarConcepto(unidad.id, tema.id, concepto.id)} aria-label="Eliminar concepto" title="Eliminar concepto">
-                          <i className="bi bi-trash"></i>
-                        </button>
-                      </div>
-                    ))}
-
-                    <button type="button" className="mm-add-btn" onClick={() => agregarConcepto(unidad.id, tema.id)}>
-                      <i className="bi bi-plus-lg"></i> Añadir concepto
-                    </button>
-                  </article>
-                ))}
-
-                <button type="button" className="mm-add-btn" onClick={() => agregarTema(unidad.id)}>
-                  <i className="bi bi-plus-lg"></i> Añadir tema
-                </button>
-              </article>
-            ))}
-
-            <button type="button" className="mm-add-btn" onClick={agregarUnidad}>
-              <i className="bi bi-plus-lg"></i> Añadir unidad
-            </button>
-          </fieldset>
-          </fieldset>
-
-          {error && <p role="alert" className="mm-error">{error}</p>}
-
-          <footer className="mm-footer">
-            <button type="button" onClick={solicitarCancelar} className="mat-btn">
-              Cancelar
-            </button>
-            <button type="submit" className="mat-btn mat-btn-primary"
-              disabled={guardando || generandoConceptos}>
-              {guardando
-                ? 'Guardando...'
-                : esEdicion
-                  ? 'Guardar cambios'
-                  : 'Crear materia'}
-            </button>
-          </footer>
-        </form>
-
-        {confirmarCancelar && (
-          <article className="mm-confirm-overlay" role="dialog" aria-modal="true"
-            aria-labelledby="cancelar-materia-titulo">
-            <article className="mm-confirm-card">
-              <h3 id="cancelar-materia-titulo">¿Cancelar generación?</h3>
-              <p>La operación está en curso. Si cancelas, no se aplicarán los cambios extraídos.</p>
-              <footer className="mm-confirm-actions">
-                <button type="button" className="mat-btn"
-                  onClick={() => setConfirmarCancelar(false)}>
-                  Continuar
-                </button>
-                <button type="button" className="mat-btn mat-btn-primary"
-                  onClick={confirmarCancelacionExtraccion}>
-                  Sí, cancelar
-                </button>
-              </footer>
-            </article>
-          </article>
-        )}
+            <CurriculoZoomControls
+              zoom={zoom}
+              onChange={changeZoom}
+            />
+            <CurriculoCanvasLegend variant="materia" />
+          </main>
+        </section>
       </article>
+
+      {showDiscardConfirm && (
+        <CurriculoDiscardConfirm
+          open
+          onConfirm={descartar}
+          onCancel={() => setShowDiscardConfirm(false)}
+        />
+      )}
+
+      {showBackConfirm && (
+        <CurriculoBackConfirm
+          open
+          onContinue={() => setShowBackConfirm(false)}
+          onDiscardAndExit={cerrar}
+          onSaveAndExit={() => void guardar().then(cerrar)}
+        />
+      )}
+      {deleteNodeId && (
+        <CurriculoDeleteConfirm
+          open
+          name={findCurriculoNode(tree, deleteNodeId)?.nombre ?? ''}
+          descendants={
+            (() => {
+              const node = findCurriculoNode(tree, deleteNodeId);
+              const count = (item: NodoCurricular | null): number =>
+                item
+                  ? (item.hijos ?? []).reduce(
+                      (total, child) => total + 1 + count(child),
+                      0,
+                    )
+                  : 0;
+              return count(node);
+            })()
+          }
+          onConfirm={() => {
+            setTree((current) =>
+              removeCurriculoNode(current, deleteNodeId),
+            );
+            setSelectedId((current) =>
+              current === deleteNodeId ? null : current,
+            );
+            setEditingId(null);
+            setDirty(true);
+            setDeleteNodeId(null);
+          }}
+          onCancel={() => setDeleteNodeId(null)}
+        />
+      )}
+      {error && (
+        <article className="materia-canvas-error">
+          <span>{error}</span>
+          <button type="button" onClick={() => setError('')}>×</button>
+        </article>
+      )}
     </article>
   );
 }

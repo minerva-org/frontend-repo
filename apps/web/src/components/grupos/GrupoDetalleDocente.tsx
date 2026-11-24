@@ -11,6 +11,7 @@ import type { GrupoDetalleBackend, AlumnoEntry, QuizCatalogBackend } from '../..
 import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
 import Toast, {type ToastData} from '../common/Toast';
+import CurriculoCanvasModal from '../curriculo/CurriculoCanvasModal.tsx';
 
 function toDateValue(value?: string | null): number {
   if (!value) return 0;
@@ -30,6 +31,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
   const PuedeManejar = role !== 'directorGeneral' && role !== 'directorPlantel';
 
   const [tab, setTab] = useState<'general' | 'settings'>('general');
+  const [curriculoModalAbierto, setCurriculoModalAbierto] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [modalAgregarAlumnos, setModalAgregarAlumnos] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -610,6 +612,15 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                 <i className="bi bi-gear" />
                 Settings de Grupo y Examen
               </button>
+
+              <button
+                type="button"
+                className="nav-link d-inline-flex align-items-center gap-2 text-nowrap text-body"
+                onClick={() => setCurriculoModalAbierto(true)}
+              >
+                <i className="bi bi-diagram-3" />
+                Árbol curricular
+              </button>
             </nav>
         </article>
       </section>
@@ -792,6 +803,15 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
           </article>
         </article>
       )}
+      <CurriculoCanvasModal
+        open={curriculoModalAbierto}
+        grupoId={code}
+        grupoNombre={grupo?.nombre || grupo?.claveGrupo || code}
+        materiaNombre={grupo?.materiaNombre || 'Materia del grupo'}
+        docenteNombre={docenteNombre}
+        puedeEditar={PuedeManejar}
+        onClose={() => setCurriculoModalAbierto(false)}
+      />
     </>
   );
 }
