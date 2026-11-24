@@ -163,8 +163,22 @@ export default function CurriculoCanvasModal({
     if (!taskPolling.status) return;
     if (taskPolling.status.estado === 'COMPLETADA') {
       const resultado = taskPolling.status.resultado as
-        | { arbol?: unknown }
+        | {
+            arbol?: unknown;
+            errores?: Array<{ mensaje?: string }>;
+          }
         | null;
+      const generationError = resultado?.errores?.find(
+        (item) => typeof item.mensaje === 'string' && item.mensaje.trim(),
+      )?.mensaje;
+      if (generationError) {
+        setToast({
+          tipo: 'error',
+          mensaje: generationError,
+        });
+        void taskPolling.cancel();
+        return;
+      }
       if (resultado?.arbol && typeof resultado.arbol === 'object') {
         setTree(cloneCurriculoTree(resultado.arbol as NodoCurricular));
         setDirty(true);
