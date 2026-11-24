@@ -17,6 +17,7 @@ interface Props {
   onToggle: (id: string) => void;
   onDragStart: (event: DragEvent<HTMLElement>, id: string) => void;
   onDrop: (event: DragEvent<HTMLElement>, id: string) => void;
+  onDelete: (id: string) => void;
   setRef: (id: string, element: HTMLElement | null) => void;
 }
 
@@ -34,6 +35,7 @@ export default function CurriculoCanvasNodeLayer({
   onToggle,
   onDragStart,
   onDrop,
+  onDelete,
   setRef,
 }: Props) {
   return (
@@ -61,6 +63,7 @@ export default function CurriculoCanvasNodeLayer({
           onToggle={onToggle}
           onDragStart={onDragStart}
           onDrop={onDrop}
+          onDelete={onDelete}
           setRef={setRef}
           depth={position.depth}
         />

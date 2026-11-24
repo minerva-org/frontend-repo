@@ -4,7 +4,6 @@ import type {
   EstadoConcepto,
   NodoCurricular,
 } from '../../types/CurriculoCanvasTypes.ts';
-import { calculateCurriculoCanvasLayout } from './CurriculoCanvasLayout.ts';
 import CurriculoCanvasNodeLayer from './CurriculoCanvasNodeLayer.tsx';
 import CurriculoCanvasConnectors from './CurriculoCanvasConnectors.tsx';
 import CurriculoDraftNode from './CurriculoDraftNode.tsx';
@@ -28,8 +27,11 @@ import { useCurriculoSources } from './useCurriculoSources.ts';
 import { useCurriculoContent } from './useCurriculoContent.ts';
 import CurriculoCanvasHeader from './CurriculoCanvasHeader.tsx';
 import CurriculoCanvasLegend from './CurriculoCanvasLegend.tsx';
+import CurriculoZoomControls from './CurriculoZoomControls.tsx';
 import CurriculoBackConfirm from './CurriculoBackConfirm.tsx';
 import CurriculoDiscardConfirm from './CurriculoDiscardConfirm.tsx';
+import CurriculoDeleteConfirm from './CurriculoDeleteConfirm.tsx';
+import { removeCurriculoNode } from './CurriculoCanvasOperations.ts';
 import {
   getCurriculo,
   putCurriculo,
@@ -40,6 +42,7 @@ import {
   type CurriculumGenerationRequest,
 } from '../../services/CurriculoIaService';
 import { useCurriculoTaskPolling } from './useCurriculoTaskPolling';
+import { useCurriculoCanvasState } from './useCurriculoCanvasState.ts';
 import '../../styles/CurriculoCanvas.css';
 
 interface Props {
@@ -66,29 +69,32 @@ export default function CurriculoCanvasModal({
   puedeEditar,
   onClose,
 }: Props) {
-  const [tree, setTree] = useState<NodoCurricular>(() =>
-    cloneCurriculoTree(demoTree as unknown as NodoCurricular),
+  const canvasState = useCurriculoCanvasState(
+    demoTree as unknown as NodoCurricular,
   );
-  const [selectedId, setSelectedId] = useState<string | null>(demoTree.id);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const {
+    tree,
+    setTree,
+    selectedId,
+    setSelectedId,
+    editingId,
+    setEditingId,
+    expandedIds,
+    setExpandedIds,
+    zoom,
+    changeZoom,
+    canvasRef,
+    canvasLayout,
+    toggleExpanded,
+  } = canvasState;
   const [dirty, setDirty] = useState(false);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => {
-    const ids = new Set<string>();
-    const collect = (node: NodoCurricular) => {
-      ids.add(node.id);
-      (node.hijos ?? []).forEach(collect);
-    };
-    collect(demoTree as unknown as NodoCurricular);
-    return ids;
-  });
   const [toast, setToast] = useState<ToastData | null>(null);
   const [showBackConfirm, setShowBackConfirm] = useState(false);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [deleteNodeId, setDeleteNodeId] = useState<string | null>(null);
   const [baselineTree, setBaselineTree] = useState<NodoCurricular>(() =>
     cloneCurriculoTree(demoTree as unknown as NodoCurricular),
   );
-  const [zoom, setZoom] = useState(1);
-  const canvasRef = useRef<HTMLElement>(null);
   const treeRef = useRef<HTMLElement>(null);
   const canvasPan = useCurriculoCanvasPan();
   const draft = useCurriculoDraftNode();
@@ -100,30 +106,16 @@ export default function CurriculoCanvasModal({
     () => selectedId ? findCurriculoNode(tree, selectedId) : null,
     [tree, selectedId],
   );
-  const canvasLayout = useMemo(
-    () => calculateCurriculoCanvasLayout(tree, expandedIds),
-    [tree, expandedIds],
-  );
-  const changeZoom = (nextZoom: number) => {
-    setZoom(Math.min(1.6, Math.max(0.6, nextZoom)));
+  const deleteNode = deleteNodeId
+    ? findCurriculoNode(tree, deleteNodeId)
+    : null;
+  const countDescendants = (node: NodoCurricular | null): number => {
+    if (!node) return 0;
+    return (node.hijos ?? []).reduce(
+      (count, child) => count + 1 + countDescendants(child),
+      0,
+    );
   };
-
-  useEffect(() => {
-    if (!open || !canvasRef.current || canvasLayout.centeringNodes.length === 0) return;
-    const frame = window.requestAnimationFrame(() => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const left = Math.min(
-        ...canvasLayout.centeringNodes.map((node) => node.x),
-      );
-      const right = Math.max(
-        ...canvasLayout.centeringNodes.map((node) => node.x + node.width),
-      );
-      const visibleCenter = (left + right) / 2;
-      canvas.scrollLeft = visibleCenter - canvas.clientWidth / 2;
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -408,9 +400,8 @@ export default function CurriculoCanvasModal({
   return (
     <section className="curriculo-modal" role="dialog" aria-modal="true" aria-label="Árbol curricular">
       <CurriculoCanvasHeader
-        grupoNombre={grupoNombre}
-        materiaNombre={materiaNombre}
-        docenteNombre={docenteNombre}
+        title={grupoNombre}
+        subtitle={`${materiaNombre} · ${docenteNombre}`}
         dirty={dirty}
         onBack={handleBack}
         onDiscard={() => setShowDiscardConfirm(true)}
@@ -418,23 +409,6 @@ export default function CurriculoCanvasModal({
       />
 
       <section className="curriculo-layout">
-        <CurriculoNodeTypeSelector
-          open={draft.showTypeSelector}
-          disabled={
-            !puedeEditar
-            || sources.uploading
-            || sources.generating
-            || taskPolling.status?.estado === 'EN_COLA'
-            || taskPolling.status?.estado === 'PROCESANDO'
-          }
-          onToggle={() =>
-            draft.toggleTypeSelector()
-          }
-          onSelect={(tipo) => {
-            draft.selectType(tipo);
-            setDirty(true);
-          }}
-        />
         <CurriculoFuentePanel
           sources={sources.sources}
           puedeEditar={puedeEditar}
@@ -483,6 +457,21 @@ export default function CurriculoCanvasModal({
             }
           }}
         >
+          <CurriculoNodeTypeSelector
+            open={draft.showTypeSelector}
+            disabled={
+              !puedeEditar
+              || sources.uploading
+              || sources.generating
+              || taskPolling.status?.estado === 'EN_COLA'
+              || taskPolling.status?.estado === 'PROCESANDO'
+            }
+            onToggle={draft.toggleTypeSelector}
+            onSelect={(tipo) => {
+              draft.selectType(tipo);
+              setDirty(true);
+            }}
+          />
           {draft.draftNode && (
             <CurriculoDraftNode
               node={draft.draftNode}
@@ -532,59 +521,20 @@ export default function CurriculoCanvasModal({
                 onFinishEdit={updateName}
                 onCancelEdit={() => setEditingId(null)}
                 onToggle={(id) => {
-                  setExpandedIds((current) => {
-                    const next = new Set(current);
-                    if (next.has(id)) next.delete(id);
-                    else next.add(id);
-                    return next;
-                  });
+                  toggleExpanded(id);
                 }}
                 onDragStart={(event, id) => event.dataTransfer.setData('text/plain', id)}
                 onDrop={handleDrop}
+                onDelete={setDeleteNodeId}
                 setRef={() => undefined}
               />
             </section>
           </div>
-          <section className="curriculo-zoom-controls" aria-label="Controles de zoom">
-            <button
-              type="button"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                changeZoom(zoom - 0.1);
-              }}
-              disabled={zoom <= 0.6}
-              aria-label="Alejar"
-              title="Alejar"
-            >
-              <i className="bi bi-dash-lg" />
-            </button>
-            <button
-              type="button"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                changeZoom(1);
-              }}
-              className="curriculo-zoom-value"
-              title="Restablecer zoom"
-            >
-              {Math.round(zoom * 100)}%
-            </button>
-            <button
-              type="button"
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                changeZoom(zoom + 0.1);
-              }}
-              disabled={zoom >= 1.6}
-              aria-label="Acercar"
-              title="Acercar"
-            >
-              <i className="bi bi-plus-lg" />
-            </button>
-          </section>
+          <CurriculoZoomControls
+            zoom={zoom}
+            onChange={changeZoom}
+            stopPropagation
+          />
           <CurriculoCanvasLegend />
         </main>
 
@@ -645,6 +595,24 @@ export default function CurriculoCanvasModal({
         open={showDiscardConfirm}
         onConfirm={discardChanges}
         onCancel={() => setShowDiscardConfirm(false)}
+      />
+      <CurriculoDeleteConfirm
+        open={deleteNode !== null}
+        name={deleteNode?.nombre ?? ''}
+        descendants={countDescendants(deleteNode)}
+        onConfirm={() => {
+          if (!deleteNodeId) return;
+          setTree((current) =>
+            removeCurriculoNode(current, deleteNodeId),
+          );
+          setSelectedId((current) =>
+            current === deleteNodeId ? null : current,
+          );
+          setEditingId(null);
+          setDirty(true);
+          setDeleteNodeId(null);
+        }}
+        onCancel={() => setDeleteNodeId(null)}
       />
       <Toast toast={toast} onCerrar={() => setToast(null)} />
     </section>

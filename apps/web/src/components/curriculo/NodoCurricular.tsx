@@ -17,6 +17,7 @@ interface Props {
   onFinishEdit: (id: string, nombre: string) => void;
   onCancelEdit: () => void;
   onToggle: (id: string) => void;
+  onDelete: (id: string) => void;
   onDragStart: (event: DragEvent<HTMLElement>, id: string) => void;
   onDrop: (event: DragEvent<HTMLElement>, id: string) => void;
   setRef: (id: string, element: HTMLElement | null) => void;
@@ -47,6 +48,7 @@ export default function NodoCurricular({
   onFinishEdit,
   onCancelEdit,
   onToggle,
+  onDelete,
   onDragStart,
   onDrop,
   setRef,
@@ -88,6 +90,21 @@ export default function NodoCurricular({
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => onDrop(event, nodo.id)}
     >
+      {nodo.tipo !== 'materia' && editable && (
+        <button
+          type="button"
+          className="curriculo-node-delete"
+          aria-label={`Eliminar ${nodo.nombre}`}
+          title={`Eliminar ${nodo.nombre}`}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete(nodo.id);
+          }}
+        >
+          <i className="bi bi-x-lg" />
+        </button>
+      )}
       {editing ? (
         <input
           className="curriculo-name-input"
