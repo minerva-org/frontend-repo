@@ -149,14 +149,32 @@
   background-size: 24px 24px;
   cursor: grab;
   user-select: none;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: #98a6ad #edf1f3;
 }
 
 .curriculo-canvas::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
+  width: 10px;
+  height: 10px;
+}
+
+.curriculo-canvas::-webkit-scrollbar-track {
+  background: #edf1f3;
+  border-radius: 999px;
+}
+
+.curriculo-canvas::-webkit-scrollbar-thumb {
+  background: #98a6ad;
+  border: 2px solid #edf1f3;
+  border-radius: 999px;
+}
+
+.curriculo-canvas::-webkit-scrollbar-thumb:hover {
+  background: #6f8088;
+}
+
+.curriculo-canvas::-webkit-scrollbar-corner {
+  background: #edf1f3;
 }
 
 .curriculo-canvas:active {
@@ -235,6 +253,11 @@
   border-radius: 8px;
   background: #fff;
   box-shadow: 0 4px 12px rgba(38, 50, 56, 0.12);
+}
+
+.curriculo-tree-viewport {
+  position: relative;
+  flex: none;
 }
 
 .curriculo-tree {
@@ -476,7 +499,7 @@
 
 .curriculo-legend {
   position: fixed;
-  bottom: 8px;
+  bottom: 18px;
   left: calc(var(--curriculo-sources-width) + 8px);
   width: fit-content;
   display: flex;
@@ -494,6 +517,47 @@
 .curriculo-legend small {
   flex-basis: 100%;
   color: #667085;
+}
+
+.curriculo-zoom-controls {
+  position: fixed;
+  z-index: 20;
+  bottom: 18px;
+  right: calc(var(--curriculo-detail-width) + 18px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #dfe4e8;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 2px 8px rgba(38, 50, 56, 0.12);
+}
+
+.curriculo-zoom-controls button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #43525c;
+  font-weight: 700;
+}
+
+.curriculo-zoom-controls button:hover:not(:disabled) {
+  background: #edf1f3;
+}
+
+.curriculo-zoom-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.curriculo-zoom-controls .curriculo-zoom-value {
+  width: 52px;
+  font-size: 0.75rem;
 }
 
 .legend-dot {
@@ -533,7 +597,7 @@
 .curriculo-generating {
   position: fixed;
   inset: 72px 0 0;
-  z-index: 1070;
+  z-index: 3000;
   display: grid;
   place-items: center;
   background: rgba(38, 50, 56, 0.72);

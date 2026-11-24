@@ -87,6 +87,7 @@ export default function CurriculoCanvasModal({
   const [baselineTree, setBaselineTree] = useState<NodoCurricular>(() =>
     cloneCurriculoTree(demoTree as unknown as NodoCurricular),
   );
+  const [zoom, setZoom] = useState(1);
   const canvasRef = useRef<HTMLElement>(null);
   const treeRef = useRef<HTMLElement>(null);
   const canvasPan = useCurriculoCanvasPan();
@@ -103,6 +104,9 @@ export default function CurriculoCanvasModal({
     () => calculateCurriculoCanvasLayout(tree, expandedIds),
     [tree, expandedIds],
   );
+  const changeZoom = (nextZoom: number) => {
+    setZoom(Math.min(1.6, Math.max(0.6, nextZoom)));
+  };
 
   useEffect(() => {
     if (!open || !canvasRef.current || canvasLayout.centeringNodes.length === 0) return;
@@ -172,6 +176,7 @@ export default function CurriculoCanvasModal({
         (item) => typeof item.mensaje === 'string' && item.mensaje.trim(),
       )?.mensaje;
       if (generationError) {
+        sources.stopGenerating();
         setToast({
           tipo: 'error',
           mensaje: generationError,
@@ -191,6 +196,7 @@ export default function CurriculoCanvasModal({
       void taskPolling.cancel();
     }
     if (taskPolling.status.estado === 'ERROR') {
+      sources.stopGenerating();
       console.error('[curriculo] Generación fallida', {
         tareaId: taskPolling.tareaId,
         estado: taskPolling.status.estado,
@@ -201,6 +207,7 @@ export default function CurriculoCanvasModal({
         mensaje: taskPolling.status.error
           || 'La generación terminó con un error.',
       });
+      void taskPolling.cancel();
     }
   }, [taskPolling.status]);
 
@@ -407,7 +414,13 @@ export default function CurriculoCanvasModal({
       <section className="curriculo-layout">
         <CurriculoNodeTypeSelector
           open={draft.showTypeSelector}
-          disabled={!puedeEditar}
+          disabled={
+            !puedeEditar
+            || sources.uploading
+            || sources.generating
+            || taskPolling.status?.estado === 'EN_COLA'
+            || taskPolling.status?.estado === 'PROCESANDO'
+          }
           onToggle={() =>
             draft.toggleTypeSelector()
           }
@@ -437,6 +450,11 @@ export default function CurriculoCanvasModal({
         <main
           className="curriculo-canvas"
           ref={canvasRef}
+          onWheel={(event) => {
+            event.preventDefault();
+            const factor = event.deltaY < 0 ? 1.1 : 0.9;
+            changeZoom(zoom * factor);
+          }}
           onPointerDown={(event) =>
             canvasPan.onPointerDown(event, canvasRef.current)
           }
@@ -470,46 +488,96 @@ export default function CurriculoCanvasModal({
               }
             />
           )}
-          <section
-            className="curriculo-tree"
-            ref={treeRef}
+          <div
+            className="curriculo-tree-viewport"
             style={{
-              width: canvasLayout.width,
-              height: canvasLayout.height,
-              padding: 0,
+              width: canvasLayout.width * zoom,
+              height: canvasLayout.height * zoom,
             }}
           >
-            <CurriculoCanvasConnectors
-              connectors={canvasLayout.connectors}
-              width={canvasLayout.width}
-              height={canvasLayout.height}
-            />
-            <CurriculoCanvasNodeLayer
-              positions={canvasLayout.nodes}
-              selectedId={selectedId}
-              editingId={editingId}
-              expandedIds={expandedIds}
-              editable={puedeEditar}
-              estadoConcepto={(id) => {
-                const node = findCurriculoNode(tree, id);
-                return node ? estadoConcepto(node) : 'sin_contenido';
+            <section
+              className="curriculo-tree"
+              ref={treeRef}
+              style={{
+                width: canvasLayout.width,
+                height: canvasLayout.height,
+                padding: 0,
+                transform: `scale(${zoom})`,
+                transformOrigin: 'top left',
               }}
-              onSelect={setSelectedId}
-              onEdit={setEditingId}
-              onFinishEdit={updateName}
-              onCancelEdit={() => setEditingId(null)}
-              onToggle={(id) => {
-                setExpandedIds((current) => {
-                  const next = new Set(current);
-                  if (next.has(id)) next.delete(id);
-                  else next.add(id);
-                  return next;
-                });
+            >
+              <CurriculoCanvasConnectors
+                connectors={canvasLayout.connectors}
+                width={canvasLayout.width}
+                height={canvasLayout.height}
+              />
+              <CurriculoCanvasNodeLayer
+                positions={canvasLayout.nodes}
+                selectedId={selectedId}
+                editingId={editingId}
+                expandedIds={expandedIds}
+                editable={puedeEditar}
+                estadoConcepto={(id) => {
+                  const node = findCurriculoNode(tree, id);
+                  return node ? estadoConcepto(node) : 'sin_contenido';
+                }}
+                onSelect={setSelectedId}
+                onEdit={setEditingId}
+                onFinishEdit={updateName}
+                onCancelEdit={() => setEditingId(null)}
+                onToggle={(id) => {
+                  setExpandedIds((current) => {
+                    const next = new Set(current);
+                    if (next.has(id)) next.delete(id);
+                    else next.add(id);
+                    return next;
+                  });
+                }}
+                onDragStart={(event, id) => event.dataTransfer.setData('text/plain', id)}
+                onDrop={handleDrop}
+                setRef={() => undefined}
+              />
+            </section>
+          </div>
+          <section className="curriculo-zoom-controls" aria-label="Controles de zoom">
+            <button
+              type="button"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                changeZoom(zoom - 0.1);
               }}
-              onDragStart={(event, id) => event.dataTransfer.setData('text/plain', id)}
-              onDrop={handleDrop}
-              setRef={() => undefined}
-            />
+              disabled={zoom <= 0.6}
+              aria-label="Alejar"
+              title="Alejar"
+            >
+              <i className="bi bi-dash-lg" />
+            </button>
+            <button
+              type="button"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                changeZoom(1);
+              }}
+              className="curriculo-zoom-value"
+              title="Restablecer zoom"
+            >
+              {Math.round(zoom * 100)}%
+            </button>
+            <button
+              type="button"
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                changeZoom(zoom + 0.1);
+              }}
+              disabled={zoom >= 1.6}
+              aria-label="Acercar"
+              title="Acercar"
+            >
+              <i className="bi bi-plus-lg" />
+            </button>
           </section>
           <CurriculoCanvasLegend />
         </main>
