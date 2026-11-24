@@ -1,11 +1,12 @@
 import { apiClient } from './ApiClient';
 import type {
+  CurriculoGrupoCatalogo,
   QuizGenerationTaskStatus,
 } from '../types/QuizTypes';
 
 export interface QuizGenerationRequest {
   prompt: string;
-  arbol: unknown;
+  arbol: CurriculoGrupoCatalogo;
 }
 
 export async function createQuizGenerationTask(

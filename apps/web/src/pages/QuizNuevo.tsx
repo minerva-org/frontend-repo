@@ -120,6 +120,11 @@ export default function QuizNuevo() {
     && quizPolling.status?.estado !== 'ERROR';
 
   useEffect(() => {
+    if (!quizPolling.error) return;
+    setError(quizPolling.error);
+  }, [quizPolling.error]);
+
+  useEffect(() => {
     if (quizPolling.status?.estado === 'ERROR') {
       setError(
         quizPolling.status.error
@@ -129,7 +134,11 @@ export default function QuizNuevo() {
     }
     if (quizPolling.status?.estado !== 'COMPLETADA') return;
     const resultado = quizPolling.status.resultado;
-    if (!resultado?.questions?.length) return;
+    if (!resultado?.questions?.length) {
+      setError('El servicio de IA no devolvió preguntas válidas.');
+      void quizPolling.cancel();
+      return;
+    }
 
     const generated = resultado.questions.map((question) => {
       const concepto = conceptos.find(
