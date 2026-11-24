@@ -46,6 +46,15 @@ export const obtenerTendenciaAprobacion = async (): Promise<EstadisticasTendenci
   return data;
 };
 
+export const obtenerTendenciaAprobacionGrupo = async (
+  grupoId: string,
+): Promise<EstadisticasTendencia[]> => {
+  const { data } = await apiClient.get<EstadisticasTendencia[]>(
+    `/api/estadisticas/grupos/${encodeURIComponent(grupoId)}/tendencia`,
+  );
+  return data;
+};
+
 export const obtenerResumenGrupos = async (): Promise<EstadisticasGrupoResumen[]> => {
   const { data } = await apiClient.get<EstadisticasGrupoResumen[]>(
     '/api/estadisticas/grupos'
@@ -56,6 +65,15 @@ export const obtenerResumenGrupos = async (): Promise<EstadisticasGrupoResumen[]
 export const obtenerEstadisticasPlanteles = async (): Promise<EstadisticasPlantel[]> => {
   const { data } = await apiClient.get<EstadisticasPlantel[]>(
     '/api/estadisticas/planteles'
+  );
+  return data;
+};
+
+export const obtenerEstadisticasPlantel = async (
+  plantelId: number,
+): Promise<EstadisticasPlantel> => {
+  const { data } = await apiClient.get<EstadisticasPlantel>(
+    `/api/estadisticas/planteles/${encodeURIComponent(plantelId)}`,
   );
   return data;
 };

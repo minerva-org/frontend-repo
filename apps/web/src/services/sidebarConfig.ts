@@ -48,14 +48,8 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
     roleLabel: 'Director de Plantel',
     navGroups: [
       {
-        label: 'Dirección de Sede',
-        items: [
-          { to: '/plantel/dashboard', label: 'Resúmen Plantel', icon: 'bi-speedometer2' },
-        ],
-      },
-      {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-tronco-comun', label: 'Métricas', icon: 'bi-graph-up', end: true }],
+        items: [{ to: '/metricas-tronco-comun', label: 'Métricas Plantel', icon: 'bi-graph-up', end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -70,10 +64,6 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
           { to: '/catalogo-alumnos', label: 'Alumnos', icon: 'bi-people' },
           { to: '/materias', label: 'Materias', icon: 'bi-journal-bookmark' },
         ],
-      },
-      {
-        label: 'Supervisión',
-        items: [{ to: '/avance-curricular', label: 'Avance Curricular', icon: 'bi-bar-chart-line' }],
       },
     ],
   },

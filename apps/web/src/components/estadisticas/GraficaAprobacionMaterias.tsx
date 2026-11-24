@@ -8,6 +8,7 @@ import {
 } from 'chart.js';
 import type { ChartOptions, TooltipItem } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import LeyendaGrafica from './LeyendaGrafica';
 
 import type { EstadisticasMateria } from '../../types/EstadisticasTypes';
 
@@ -116,6 +117,20 @@ export default function GraficaAprobacionMaterias({
             </article>
           )}
         </article>
+        <LeyendaGrafica
+          items={[
+            {
+              color: colores.exito,
+              label: 'Aprobación suficiente',
+              description: '70% o más de los intentos de la materia fueron aprobados.',
+            },
+            {
+              color: colores.alerta,
+              label: 'Requiere atención',
+              description: 'Menos de 70% de los intentos de la materia fueron aprobados.',
+            },
+          ]}
+        />
       </article>
     </section>
   );

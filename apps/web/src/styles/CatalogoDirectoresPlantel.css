@@ -6,12 +6,19 @@
 }
 
 .dp-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   color: var(--ar-nieve);
-  background: var(--ar-profundo);
+  background: linear-gradient(
+    135deg,
+    var(--ar-profundo),
+    color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul))
+  );
 }
 .dp-icon-btn {
   padding: 0.4rem;
@@ -38,7 +45,7 @@
   width: 100%;
   max-width: 72rem;
   margin-inline: auto;
-  padding: 1rem;
+  padding: 1.875rem 1rem 2rem;
 }
 
 .dp-header {
@@ -50,7 +57,7 @@
   background: linear-gradient(
     135deg,
     var(--ar-profundo),
-    color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul))
+    color-mix(in srgb, var(--ar-azul) 75%, var(--ar-acero))
   );
   border-radius: 0.9rem;
 }
@@ -80,9 +87,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.65rem 1rem;
+  padding: 0.55rem 1rem;
   font-family: sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--seige-superficie);
   background: var(--seige-acento);
@@ -142,7 +149,8 @@
   border-bottom: 0;
 }
 .dp-row-inactivo {
-  opacity: 0.6;
+  opacity: 0.55;
+  background: color-mix(in srgb, var(--ar-neblina) 18%, white);
 }
 .dp-table td {
   padding: 0;
@@ -174,8 +182,28 @@
 
 .dp-acciones {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
 }
+.dp-link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  
+  color: var(--ar-azul);
+  font: inherit;
+  font-weight: 520;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dp-link-button:hover { text-decoration: underline; }
+.dp-link-button:disabled {
+  color: var(--ar-acero);
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.dp-link-danger { color: var(--seige-error-texto); }
+.dp-link-success { color: var(--seige-exito); }
 .dp-btn {
   padding: 0.4rem 0.8rem;
   font-family: sans-serif;
@@ -409,7 +437,7 @@
     text-align: left;
     text-transform: uppercase;
     color: var(--dp-texto-suave);
-    background: color-mix(in srgb, var(--ar-neblina) 12%, white);
+    background: color-mix(in srgb, var(--seige-exito) 8%, var(--seige-superficie));
     border-bottom: 1px solid var(--seige-borde);
   }
   .dp-th-acciones {
@@ -423,6 +451,9 @@
     display: table-cell;
     padding: 0.85rem 1rem;
     vertical-align: middle;
+  }
+  .dp-table tbody tr:hover {
+    background: color-mix(in srgb, var(--ar-neblina) 15%, white);
   }
   .dp-acciones {
     justify-content: flex-end;

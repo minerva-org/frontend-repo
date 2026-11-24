@@ -406,10 +406,6 @@ export default function DirectoresPlanteles() {
         </article>
 
         <article className="dp-table-wrap">
-          <h2 style={{ margin: '1rem 1rem 0' }}>
-            Directores de Plantel Escolar
-          </h2>
-
           {fetchError && (
             <p className="dp-empty" style={{ paddingTop: 0 }}>
               {fetchError}
@@ -454,10 +450,10 @@ export default function DirectoresPlanteles() {
                         {director.activo ? 'Activo' : 'Inactivo'}
                       </span>
                     </td>
-                    <td className="ca-acciones">
+                    <td className="dp-acciones">
                       <button
                         type="button"
-                        className="ca-link-button"
+                        className="dp-link-button"
                         disabled={!director.activo || loading}
                         onClick={() => openEditModal(director)}
                       >
@@ -466,10 +462,10 @@ export default function DirectoresPlanteles() {
 
                       <button
                         type="button"
-                        className={`ca-link-button ${
+                        className={`dp-link-button ${
                           director.activo
-                            ? 'ca-link-danger'
-                            : 'ca-link-success'
+                            ? 'dp-link-danger'
+                            : 'dp-link-success'
                         }`}
                         disabled={loading}
                         onClick={() =>

@@ -14,6 +14,8 @@ import PlantelDashboard from './pages/PlantelDashboard.tsx';
 import Planteles from './pages/Planteles.tsx';
 import DirectoresPlanteles from './pages/DirectoresPlanteles.tsx';
 import MetricasTroncoComun from './pages/MetricasTroncoComun.tsx';
+import MetricasGrupo from './pages/MetricasGrupo.tsx';
+import ResultadosQuiz from './pages/ResultadosQuiz.tsx';
 import DirectorioDocentes from './pages/DirectorioDocentes.tsx';
 import CatalogoAlumnos from './pages/CatalogoAlumnos.tsx';
 import LaboratorioAgente from './pages/LaboratorioAgente.tsx';
@@ -46,7 +48,7 @@ export default function App() {
             } />
 
             <Route path="/plantel/dashboard" element={
-              <ProtectedRoute allowedRoles={['directorPlantel', 'directorGeneral', 'admin', 'dev']}>
+              <ProtectedRoute allowedRoles={['coordinador', 'directorPlantel', 'directorGeneral', 'admin', 'dev']}>
                 <PlantelDashboard />
               </ProtectedRoute>
             } />
@@ -93,6 +95,12 @@ export default function App() {
               </ProtectedRoute>
             } />
 
+            <Route path="/grupos/:code/metricas" element={
+              <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorGeneral', 'directorPlantel', 'admin', 'dev']}>
+                <MetricasGrupo/>
+              </ProtectedRoute>
+            } />
+
             <Route path="/grupos/:code/quizzes/nuevo" element={
               <ProtectedRoute allowedRoles={['docente','coordinador','directorGeneral','directorPlantel','admin','dev']}>
                 <QuizNuevo/>
@@ -102,6 +110,12 @@ export default function App() {
             <Route path="/grupos/:code/quizzes/:quizId/editar" element={
               <ProtectedRoute allowedRoles={['docente','coordinador','directorGeneral','directorPlantel','admin','dev']}>
                 <QuizNuevo/>
+              </ProtectedRoute>
+            } />
+
+            <Route path="/grupos/:code/quizzes/:quizId/resultados" element={
+              <ProtectedRoute allowedRoles={['docente', 'coordinador', 'directorGeneral', 'directorPlantel', 'admin', 'dev']}>
+                <ResultadosQuiz/>
               </ProtectedRoute>
             } />
 

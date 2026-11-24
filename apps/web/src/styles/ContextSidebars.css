@@ -56,7 +56,8 @@
   align-items: center;
   justify-content: center;
   min-height: 3.75rem;
-  padding: 0 0.75rem;
+  height: auto;
+  padding: 0.75rem;
   font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: 0.04em;
@@ -64,13 +65,14 @@
   color: var(--ar-nieve);
   background: #355971;
   border-bottom: 1px solid color-mix(in srgb, white 12%, transparent);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .context-sidebar-header span {
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .context-sidebar-list {

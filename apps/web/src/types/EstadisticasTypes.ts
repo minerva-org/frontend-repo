@@ -69,10 +69,15 @@ export interface EstadisticasTendencia {
 export interface EstadisticasPlantel {
   plantelId: number;
   nombrePlantel: string;
+  promedioGeneral: number;
   porcentajeAprobacion: number;
+  porcentajeReprobacion: number;
+  indiceFocoLimpio: number;
   alumnosEvaluados: number;
   intentosFinalizados: number;
   incidenciasFoco: number;
+  intentosAprobados: number;
+  intentosReprobados: number;
 }
 export interface DatosVistaMetricas {
   datos: EstadisticasGenerales;

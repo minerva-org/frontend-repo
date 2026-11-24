@@ -10,6 +10,7 @@ import {
 } from 'chart.js';
 import type { ChartOptions, TooltipItem } from 'chart.js';
 import { Line } from 'react-chartjs-2';
+import LeyendaGrafica from './LeyendaGrafica';
 
 import type { EstadisticasTendencia } from '../../types/EstadisticasTypes';
 
@@ -136,6 +137,16 @@ export default function GraficaTendencia({ quizzes }: GraficaTendenciaProps) {
             </article>
           )}
         </article>
+        <LeyendaGrafica
+          items={[
+            {
+              color: colores.azul,
+              label: 'Aprobación por quiz',
+              description:
+                'Porcentaje de intentos aprobados en cada uno de los últimos seis quizzes cerrados, ordenados por fecha.',
+            },
+          ]}
+        />
       </article>
     </section>
   );

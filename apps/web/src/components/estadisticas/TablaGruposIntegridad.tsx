@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import type { EstadisticasGrupoResumen } from '../../types/EstadisticasTypes';
 
 interface TablaGruposIntegridadProps {
@@ -62,9 +63,21 @@ export default function TablaGruposIntegridad({ grupos }: TablaGruposIntegridadP
                   return (
                     <tr key={g.grupoId} style={{ borderColor: 'var(--seige-borde)' }}>
                       <td>
-                        <span className="fw-semibold" style={{ color: 'var(--ar-profundo)' }}>
+                        <Link
+                          to={`/grupos/${g.grupoId}/metricas`}
+                          className="fw-semibold text-decoration-none"
+                          style={{ color: '#67b7f7' }}
+                          onMouseEnter={(event) => {
+                            event.currentTarget.style.color = '#3b9ee8';
+                            event.currentTarget.style.textDecoration = 'underline';
+                          }}
+                          onMouseLeave={(event) => {
+                            event.currentTarget.style.color = '#67b7f7';
+                            event.currentTarget.style.textDecoration = 'none';
+                          }}
+                        >
                           {g.nombreGrupo}
-                        </span>
+                        </Link>
                         <br />
                         <small style={{ color: 'var(--seige-texto-secundario)' }}>
                           {g.claveGrupo}

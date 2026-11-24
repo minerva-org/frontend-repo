@@ -7,21 +7,25 @@ import {
   Legend,
 } from 'chart.js';
 import { Doughnut } from 'react-chartjs-2';
+import LeyendaGrafica from './LeyendaGrafica';
 
 ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface GraficaResultadosProps {
   aprobados: number;
   reprobados: number;
+  sinResponder?: number;
 }
 
 export default function GraficaResultados({
   aprobados,
   reprobados,
+  sinResponder = 0,
 }: GraficaResultadosProps) {
   const [colores, setColores] = useState({
     aprobado: '#3f8d5f',
     reprobado: '#b9791f',
+    pendiente: '#9ca9b4',
     texto: '#243c4c',
     borde: '#ffffff',
   });
@@ -34,6 +38,8 @@ export default function GraficaResultados({
         estilos.getPropertyValue('--seige-exito').trim() || '#3f8d5f',
       reprobado:
         estilos.getPropertyValue('--seige-alerta').trim() || '#b9791f',
+      pendiente:
+        estilos.getPropertyValue('--ar-acero').trim() || '#9ca9b4',
       texto:
         estilos.getPropertyValue('--seige-texto').trim() || '#243c4c',
       borde:
@@ -41,14 +47,20 @@ export default function GraficaResultados({
     });
   }, []);
 
-  const total = aprobados + reprobados;
+  const total = aprobados + reprobados + sinResponder;
 
   const data = {
-    labels: ['Aprobados', 'Reprobados'],
+    labels: sinResponder > 0
+      ? ['Aprobados', 'Reprobados', 'No respondieron']
+      : ['Aprobados', 'Reprobados'],
     datasets: [
       {
-        data: [aprobados, reprobados],
-        backgroundColor: [colores.aprobado, colores.reprobado],
+        data: sinResponder > 0
+          ? [aprobados, reprobados, sinResponder]
+          : [aprobados, reprobados],
+        backgroundColor: sinResponder > 0
+          ? [colores.aprobado, colores.reprobado, colores.pendiente]
+          : [colores.aprobado, colores.reprobado],
         borderColor: colores.borde,
         borderWidth: 4,
         hoverOffset: 0,
@@ -100,7 +112,7 @@ export default function GraficaResultados({
           className="small mb-3"
           style={{ color: 'var(--seige-texto-secundario)' }}
         >
-          Distribución de intentos aprobados y reprobados.
+          Distribución de los participantes por resultado.
         </p>
 
         <article
@@ -138,6 +150,25 @@ export default function GraficaResultados({
             </article>
           )}
         </article>
+        <LeyendaGrafica
+          items={[
+            {
+              color: colores.aprobado,
+              label: 'Aprobados',
+              description: 'Intentos con calificación igual o mayor a 70%.',
+            },
+            {
+              color: colores.reprobado,
+              label: 'Reprobados',
+              description: 'Intentos con calificación menor a 70%.',
+            },
+            ...(sinResponder > 0 ? [{
+              color: colores.pendiente,
+              label: 'No respondieron',
+              description: 'Alumnos con intento asignado que no completaron el quiz.',
+            }] : []),
+          ]}
+        />
       </article>
     </section>
   );

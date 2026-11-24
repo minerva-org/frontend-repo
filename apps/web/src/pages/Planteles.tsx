@@ -366,8 +366,6 @@ export default function Planteles() {
         </article>
 
         <article className="pl-table-wrap">
-          <h2 style={{ margin: '1rem 1rem 0' }}>Planteles registrados</h2>
-
           {fetchError && <p className="pl-empty" style={{ paddingTop: 0 }}>{fetchError}</p>}
 
           {filteredPlanteles.length === 0 && !fetchError ? (
@@ -394,7 +392,7 @@ export default function Planteles() {
                     </td>
                     <td className="pl-acciones">
                       <button className="pl-btn pl-btn-neutral" type="button" disabled={!plantel.activo ||loading} onClick={() => openEditModal(plantel)}>
-                        Editar
+                        <i className="bi bi-pencil" /> Editar
                       </button>
                       <button
                         className={`pl-btn ${plantel.activo ? 'pl-btn-danger' : 'pl-btn-success'}`}

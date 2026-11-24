@@ -30,7 +30,6 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
   const PuedeManejar = role !== 'directorGeneral' && role !== 'directorPlantel';
 
-  const [tab, setTab] = useState<'general' | 'settings'>('general');
   const [curriculoModalAbierto, setCurriculoModalAbierto] = useState(false);
   const [copiado, setCopiado] = useState(false);
   const [modalAgregarAlumnos, setModalAgregarAlumnos] = useState(false);
@@ -597,8 +596,7 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
            <nav className="nav nav-pills gap-2 bg-body-secondary rounded-3 p-1 overflow-x-auto">
               <button
                 type="button"
-                className={`nav-link d-inline-flex align-items-center gap-2 text-nowrap ${tab === 'general' ? 'active' : 'text-body'}`}
-                onClick={() => setTab('general')}
+                className="nav-link active d-inline-flex align-items-center gap-2 text-nowrap"
               >
                 <i className="bi bi-card-list" />
                 General
@@ -606,11 +604,11 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
 
               <button
                 type="button"
-                className={`nav-link d-inline-flex align-items-center gap-2 text-nowrap ${tab === 'settings' ? 'active' : 'text-body'}`}
-                onClick={() => setTab('settings')}
+                className="nav-link d-inline-flex align-items-center gap-2 text-nowrap text-body"
+                onClick={() => navigate(`/grupos/${code}/metricas`)}
               >
-                <i className="bi bi-gear" />
-                Settings de Grupo y Examen
+                <i className="bi bi-bar-chart-line" />
+                Métricas del grupo
               </button>
 
               <button
@@ -625,16 +623,6 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         </article>
       </section>
 
-      {tab === 'settings' ? (
-        <section className="bg-white border rounded-4 shadow-sm p-4">
-          <article className="text-center py-4">
-            <i className="bi bi-gear fs-1 text-secondary d-block mb-3" />
-            <p className="text-secondary mb-0">
-              Settings de grupo y examen — en construcción.
-            </p>
-          </article>
-        </section>
-      ) : (
         <article className="row g-3 align-items-start">
           {/* Gestión de quizzes*/}
           <article className="col-12 col-lg-8">
@@ -713,6 +701,9 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                         navigate(`/grupos/${code}/quizzes/${quizId}/editar`)
                       }
                       onDelete={handleBorrarQuiz}
+                      onViewResults={(quizId) =>
+                        navigate(`/grupos/${code}/quizzes/${quizId}/resultados`)
+                      }
                       PuedeManejar={PuedeManejar}
                     />
                   ))}
@@ -802,7 +793,6 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
             </section>
           </article>
         </article>
-      )}
       <CurriculoCanvasModal
         open={curriculoModalAbierto}
         grupoId={code}

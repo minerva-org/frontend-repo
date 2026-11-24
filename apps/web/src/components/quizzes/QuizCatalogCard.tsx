@@ -10,6 +10,7 @@ interface QuizCatalogCardProps {
   onToggleExpand: (quizId: string) => void;
   onEdit: (quizId: string) => void;
   onDelete: (quizId: string, nombre: string) => void;
+  onViewResults: (quizId: string) => void;
   PuedeManejar: boolean;
 }
 
@@ -96,7 +97,15 @@ async function fetchQuizQuestions(quizId: string): Promise<QuizPreguntaPreview[]
   return [];
 }
 
-export default function QuizCatalogCard({ quiz, expanded, onToggleExpand, onEdit, onDelete, PuedeManejar}: QuizCatalogCardProps) {
+export default function QuizCatalogCard({
+  quiz,
+  expanded,
+  onToggleExpand,
+  onEdit,
+  onDelete,
+  onViewResults,
+  PuedeManejar,
+}: QuizCatalogCardProps) {
   const [preguntas, setPreguntas] = useState<QuizPreguntaPreview[]>([]);
   const [loadingPreguntas, setLoadingPreguntas] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -162,6 +171,16 @@ export default function QuizCatalogCard({ quiz, expanded, onToggleExpand, onEdit
           <button type="button" className="btn btn-outline-secondary btn-sm" onClick={() => onToggleExpand(quiz.id)}>
             {expanded ? 'Ocultar' : 'Ver preguntas'}
           </button>
+          {estado === 'pasado' && (
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => onViewResults(quiz.id)}
+            >
+              <i className="bi bi-bar-chart-line me-1" />
+              Ver resultados
+            </button>
+          )}
         </article>
       </article>
 

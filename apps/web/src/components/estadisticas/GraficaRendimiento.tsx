@@ -11,6 +11,7 @@ import {
 import type { ChartOptions, TooltipItem } from 'chart.js';
 
 import { Bar } from 'react-chartjs-2';
+import LeyendaGrafica from './LeyendaGrafica';
 
 ChartJS.register(
   CategoryScale,
@@ -136,6 +137,25 @@ export default function GraficaRendimiento({
         <article className="position-relative w-100" style={{ height: '260px' }}>
           <Bar data={data} options={options} />
         </article>
+        <LeyendaGrafica
+          items={[
+            {
+              color: colores.profundo,
+              label: 'Promedio general',
+              description: 'Respuestas correctas respecto de todas las preguntas respondidas.',
+            },
+            {
+              color: colores.azul,
+              label: 'Aprobación',
+              description: 'Intentos con calificación igual o mayor a 70%.',
+            },
+            {
+              color: colores.acero,
+              label: 'Foco limpio',
+              description: 'Intentos finalizados sin cambios de pantalla.',
+            },
+          ]}
+        />
       </article>
     </section>
   );

@@ -6,12 +6,19 @@
 }
 
 .pl-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
   color: var(--ar-nieve);
-  background: var(--ar-profundo);
+  background: linear-gradient(
+    135deg,
+    var(--ar-profundo),
+    color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul))
+  );
 }
 .pl-icon-btn {
   padding: 0.4rem;
@@ -38,7 +45,7 @@
   width: 100%;
   max-width: 72rem;
   margin-inline: auto;
-  padding: 1rem;
+  padding: 1.875rem 1rem 2rem;
 }
 
 .pl-header {
@@ -50,7 +57,7 @@
   background: linear-gradient(
     135deg,
     var(--ar-profundo),
-    color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul))
+    color-mix(in srgb, var(--ar-azul) 75%, var(--ar-acero))
   );
   border-radius: 0.9rem;
 }
@@ -81,9 +88,9 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.65rem 1rem;
+  padding: 0.55rem 1rem;
   font-family: sans-serif;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 700;
   color: var(--seige-superficie);
   background: var(--seige-acento);
@@ -144,7 +151,8 @@
   border-bottom: 0;
 }
 .pl-row-inactivo {
-  opacity: 0.6;
+  opacity: 0.55;
+  background: color-mix(in srgb, var(--ar-neblina) 18%, white);
 }
 .pl-table td {
   padding: 0;
@@ -176,39 +184,34 @@
 
 .pl-acciones {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
 }
 .pl-btn {
-  padding: 0.4rem 0.8rem;
+  padding: 0;
   font-family: sans-serif;
-  font-size: 0.82rem;
-  font-weight: 700;
-  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 520;
+  background: none;
+  border: 0;
   cursor: pointer;
 }
 .pl-btn-neutral {
-  color: var(--seige-texto);
-  background: var(--seige-superficie);
-  border: 1px solid var(--pl-borde-campo);
+  color: var(--ar-azul);
 }
 .pl-btn-neutral:hover {
-  background: color-mix(in srgb, var(--ar-neblina) 25%, white);
+  text-decoration: underline;
 }
 .pl-btn-danger {
   color: var(--seige-error-texto);
-  background: var(--seige-error-fondo);
-  border: 1px solid color-mix(in srgb, var(--seige-error-texto) 35%, transparent);
 }
 .pl-btn-danger:hover {
-  filter: brightness(0.97);
+  text-decoration: underline;
 }
 .pl-btn-success {
-  color: color-mix(in srgb, var(--seige-exito) 65%, black);
-  background: color-mix(in srgb, var(--seige-exito) 14%, white);
-  border: 1px solid color-mix(in srgb, var(--seige-exito) 45%, transparent);
+  color: var(--seige-exito);
 }
 .pl-btn-success:hover {
-  filter: brightness(0.97);
+  text-decoration: underline;
 }
 
 .pl-empty {
@@ -381,7 +384,7 @@
     text-align: left;
     text-transform: uppercase;
     color: var(--pl-texto-suave);
-    background: color-mix(in srgb, var(--ar-neblina) 12%, white);
+    background: color-mix(in srgb, var(--seige-exito) 8%, var(--seige-superficie));
     border-bottom: 1px solid var(--seige-borde);
   }
   .pl-th-acciones {
@@ -395,6 +398,9 @@
     display: table-cell;
     padding: 0.85rem 1rem;
     vertical-align: middle;
+  }
+  .pl-table tbody tr:hover {
+    background: color-mix(in srgb, var(--ar-neblina) 15%, white);
   }
   .pl-acciones {
     justify-content: flex-end;
