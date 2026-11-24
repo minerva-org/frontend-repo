@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
+import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
 import GraficaRendimiento from '../components/estadisticas/GraficaRendimiento';
 import GraficaResultados from '../components/estadisticas/GraficaResultados';
 import KpisGenerales from '../components/estadisticas/KpisGenerales';
@@ -123,6 +124,10 @@ export default function PlantelDashboard() {
       </section>
 
       <ExplicacionIncidenciasFoco />
+      <MinervaMetricsAssistant
+        scope="PLANTEL"
+        entityId={String(datos.plantelId)}
+      />
     </main>
   );
 }

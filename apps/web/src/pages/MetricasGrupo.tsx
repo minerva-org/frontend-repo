@@ -5,6 +5,7 @@ import GraficaResultados from '../components/estadisticas/GraficaResultados';
 import GraficaTendencia from '../components/estadisticas/GraficaTendencia';
 import KpisGenerales from '../components/estadisticas/KpisGenerales';
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
+import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
 import { apiClient } from '../services/ApiClient';
 import {
   obtenerEstadisticasGrupo,
@@ -191,6 +192,8 @@ export default function MetricasGrupo() {
       <section className="mt-4">
         <ExplicacionIncidenciasFoco />
       </section>
+
+      <MinervaMetricsAssistant scope="GRUPO" entityId={code} />
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
+import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
 import VistaDirectorPlantel from '../components/estadisticas/vistas/VistaDirectorPlantel';
 import VistaCoordinador from '../components/estadisticas/vistas/VistaCoordinador';
 import VistaDireccionGeneral from '../components/estadisticas/vistas/VistaDirectorGeneral.tsx';
@@ -277,6 +278,12 @@ export default function MetricasTroncoComun() {
       <section className="mt-4">
         <ExplicacionIncidenciasFoco />
       </section>
+      {(role === 'directorGeneral' || role === 'dev') && (
+        <MinervaMetricsAssistant scope="INSTITUCION" />
+      )}
+      {(role === 'directorPlantel' || role === 'coordinador') && (
+        <MinervaMetricsAssistant scope="PLANTEL" />
+      )}
     </main>
   );
 }

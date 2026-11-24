@@ -5,6 +5,7 @@ import TarjetaEstadistica from '../components/estadisticas/TarjetaEstadistica';
 import GraficaResultados from '../components/estadisticas/GraficaResultados';
 import GraficaIncidenciasPreguntas from '../components/estadisticas/GraficaIncidenciasPreguntas';
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
+import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
 
 interface ResumenQuiz {
   grupoNombre: string;
@@ -412,6 +413,7 @@ export default function ResultadosQuiz() {
           <section className="mt-4">
             <ExplicacionIncidenciasFoco />
           </section>
+          <MinervaMetricsAssistant scope="QUIZ" entityId={quizId} />
         </>
       )}
     </main>
