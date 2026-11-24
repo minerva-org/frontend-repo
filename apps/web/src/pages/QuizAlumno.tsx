@@ -38,8 +38,22 @@ export default function QuizResolve() {
     const [resultado, setResultado] = useState<ResultadoIntento | null>(null);
     const [envioAutomatico, setEnvioAutomatico] = useState(false);
     const finalizacionIniciada = useRef(false);
-    const cargaIntentoRef = useRef<{ quizId: string; promise: Promise<{ quizData: QuizBackend; intento: IntentoResponse; }>;
-    } | null>(null);
+    const cargaIntentoRef = useRef<{ quizId: string; promise: Promise<{ quizData: QuizBackend; intento: IntentoResponse; }>;} | null>(null);
+    const cambiosPantallaRef = useRef<Record<string, number>>({});
+
+    const preguntaId = preguntaActual?.id ?? null;
+
+    useEffect(() =>{
+        if (estado !== 'en_curso' || !preguntaId) return
+
+        const registrarSalida = () => {
+            if(document.hidden){
+                cambiosPantallaRef.current[preguntaId] = (cambiosPantallaRef.current[preguntaId] ?? 0) +1;
+            }
+        };
+        document.addEventListener('visibilitychange', registrarSalida);
+        return () => document.removeEventListener('visibilitychange', registrarSalida);
+    }, [estado, preguntaId]);
 
     useEffect(() => {
         let cancelado = false;
@@ -270,11 +284,12 @@ export default function QuizResolve() {
                 {
                     preguntaId: preguntaActual.id,
                     opcionId: opcionSeleccionada || null,
-                    cambiosPantalla: 0
+                    cambiosPantalla: cambiosPantallaRef.current[preguntaActual.id] ?? 0
                 }
             );
 
             const intento = response.data;
+            delete cambiosPantallaRef.current[preguntaActual.id];
 
             setPreguntasRespondidas(preguntaActual.numero);
 
@@ -332,9 +347,10 @@ export default function QuizResolve() {
                     {
                         preguntaId: preguntaActual.id,
                         opcionId: opcionSeleccionada || null,
-                        cambiosPantalla: 0
+                        cambiosPantalla: cambiosPantallaRef.current[preguntaActual.id] ?? 0
                     }
                 );
+                delete cambiosPantallaRef.current[preguntaActual.id];
             }
 
             const response = await apiClient.post<ResultadoIntento>(

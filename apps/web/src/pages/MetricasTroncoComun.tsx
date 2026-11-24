@@ -368,7 +368,7 @@ export default function MetricasTroncoComun() {
 
             <article className="col-6 col-md">
               <p className="mb-1 text-uppercase fw-semibold" style={estiloEtiqueta}>
-                % Aprobación
+                % Aprobados
               </p>
               <p className="mb-0 h4 fw-bold" style={{ color: 'var(--ar-profundo)' }}>
                 {datos.porcentajeAprobacion.toFixed(1)}%
@@ -377,7 +377,7 @@ export default function MetricasTroncoComun() {
 
             <article className="col-6 col-md">
               <p className="mb-1 text-uppercase fw-semibold" style={estiloEtiqueta}>
-                % Reprobación
+                % Reprobados
               </p>
               <p className="mb-0 h4 fw-bold" style={{ color: 'var(--ar-profundo)' }}>
                 {datos.porcentajeReprobacion.toFixed(1)}%

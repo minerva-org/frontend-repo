@@ -47,7 +47,7 @@ export default function TablaGruposIntegridad({ grupos }: TablaGruposIntegridadP
                   <th className="text-uppercase fw-semibold" style={estiloEncabezado}>Grupo</th>
                   <th className="text-uppercase fw-semibold" style={estiloEncabezado}>Docente</th>
                   <th className="text-uppercase fw-semibold" style={estiloEncabezado}>Materia</th>
-                  <th className="text-uppercase fw-semibold text-end" style={estiloEncabezado}>% Aprobación</th>
+                  <th className="text-uppercase fw-semibold text-end" style={estiloEncabezado}>% Aprobados</th>
                   <th className="text-uppercase fw-semibold text-end" style={estiloEncabezado}>Salidas / alumno</th>
                   <th className="text-uppercase fw-semibold text-end" style={estiloEncabezado}>Intentos</th>
                 </tr>

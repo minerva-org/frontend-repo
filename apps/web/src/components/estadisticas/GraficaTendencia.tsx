@@ -114,14 +114,14 @@ export default function GraficaTendencia({ quizzes }: GraficaTendenciaProps) {
     >
       <article className="card-body p-3">
         <h3 className="h6 fw-bold mb-1" style={{ color: 'var(--ar-profundo)' }}>
-          Tendencia de aprobación
+          Tendencia de aprobados
         </h3>
 
         <p
           className="small mb-3"
           style={{ color: 'var(--seige-texto-secundario)' }}
         >
-          Aprobación de los últimos quizzes cerrados.
+          Aprobados de los últimos quizzes cerrados.
         </p>
 
         <article className="position-relative w-100" style={{ height: '260px' }}>

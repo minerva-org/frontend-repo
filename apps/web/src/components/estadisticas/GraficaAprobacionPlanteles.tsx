@@ -97,7 +97,7 @@ export default function GraficaAprobacionPlanteles({
     >
       <article className="card-body p-3">
         <h3 className="h6 fw-bold mb-1" style={{ color: 'var(--ar-profundo)' }}>
-          Aprobación por plantel
+          Aprobados por plantel
         </h3>
 
         <p className="small mb-3" style={{ color: 'var(--seige-texto-secundario)' }}>
