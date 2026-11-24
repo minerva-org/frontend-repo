@@ -202,10 +202,16 @@ export default function CurriculoCanvasModal({
         estado: taskPolling.status.estado,
         error: taskPolling.status.error,
       });
+      const userMessage =
+        taskPolling.status.error?.includes('merge')
+          ? 'La fuente no agregó información nueva al currículo. Puedes revisar o subir otra fuente.'
+          : taskPolling.status.error?.includes('invalid JSON')
+            || taskPolling.status.error?.includes('JSON')
+            ? 'El modelo no pudo interpretar la fuente. Intenta generar el contenido nuevamente.'
+            : 'No se pudo generar el contenido de la fuente. Intenta nuevamente.';
       setToast({
         tipo: 'error',
-        mensaje: taskPolling.status.error
-          || 'La generación terminó con un error.',
+        mensaje: userMessage,
       });
       void taskPolling.cancel();
     }
