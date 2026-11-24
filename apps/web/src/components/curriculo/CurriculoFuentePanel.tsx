@@ -10,6 +10,8 @@ interface Props {
   sources: CurriculoSourceEntry[];
   puedeEditar: boolean;
   hasNewSource: boolean;
+  uploading: boolean;
+  uploadError: string | null;
   generating: boolean;
   fileInputRef: RefObject<HTMLInputElement | null>;
   onAddSource: (file?: File) => void;
@@ -23,6 +25,8 @@ export default function CurriculoFuentePanel({
   puedeEditar,
   hasNewSource,
   generating,
+  uploading,
+  uploadError,
   fileInputRef,
   onAddSource,
   onGenerate,
@@ -89,11 +93,26 @@ export default function CurriculoFuentePanel({
           type="button"
           className="btn btn-outline-secondary curriculo-add-source"
           onClick={onOpenFilePicker}
+          disabled={uploading || generating}
         >
-          <i className="bi bi-plus-lg me-2" />
-          Agregar fuente
+          {uploading ? (
+            <>
+              <span className="spinner-border spinner-border-sm me-2" role="status" />
+              Subiendo fuente...
+            </>
+          ) : (
+            <>
+              <i className="bi bi-plus-lg me-2" />
+              Agregar fuente
+            </>
+          )}
         </button>
       )}
+          {uploadError && (
+            <small className="text-danger" role="alert">
+              {uploadError}
+            </small>
+          )}
       {puedeEditar && (
         <button
           type="button"

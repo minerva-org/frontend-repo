@@ -9,6 +9,8 @@ import {
 export function useCurriculoSources(grupoId: string) {
   const [sources, setSources] = useState<CurriculoSourceEntry[]>([]);
   const [generating, setGenerating] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [sourceName, setSourceName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newFiles, setNewFiles] = useState<Array<{
@@ -44,31 +46,46 @@ export function useCurriculoSources(grupoId: string) {
 
   const addSource = async (file?: File) => {
     if (!file) return;
+    setUploading(true);
+    setUploadError(null);
     setSourceName(file.name);
-    const document = await uploadFuente(grupoId, file);
-    setSources((current) => [
-      ...current.filter((source) => source.id !== document.id),
-      {
-        id: document.id,
-        name: document.originalFilename,
-        status: 'nueva',
-      },
-    ]);
-    setNewFiles((current) => [
-      ...current,
-      {
-        documentoId: document.id,
-        checksumSha256: document.checksumSha256,
-        nombre: document.originalFilename,
-        file,
-      },
-    ]);
+    try {
+      const document = await uploadFuente(grupoId, file);
+      setSources((current) => [
+        ...current.filter((source) => source.id !== document.id),
+        {
+          id: document.id,
+          name: document.originalFilename,
+          status: 'nueva',
+        },
+      ]);
+      setNewFiles((current) => [
+        ...current.filter((entry) => entry.documentoId !== document.id),
+        {
+          documentoId: document.id,
+          checksumSha256: document.checksumSha256,
+          nombre: document.originalFilename,
+          file,
+        },
+      ]);
+    } catch (caught) {
+      setUploadError(
+        caught instanceof Error
+          ? caught.message
+          : 'No se pudo subir la fuente.',
+      );
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removeSource = async (documentoId: string) => {
     await removeFuente(grupoId, documentoId);
     setSources((current) =>
       current.filter((source) => source.id !== documentoId),
+    );
+    setNewFiles((current) =>
+      current.filter((entry) => entry.documentoId !== documentoId),
     );
   };
 
@@ -81,19 +98,23 @@ export function useCurriculoSources(grupoId: string) {
       ),
     );
     setNewFiles([]);
+    setGenerating(false);
   };
 
   const generate = () => {
     if (!hasNewSource) return;
     setGenerating(true);
-    window.setTimeout(() => setGenerating(false), 900);
   };
+
+  const stopGenerating = () => setGenerating(false);
 
   const openFilePicker = () => fileInputRef.current?.click();
 
   return {
     sources,
     generating,
+    uploading,
+    uploadError,
     sourceName,
     hasNewSource,
     fileInputRef,
@@ -103,5 +124,6 @@ export function useCurriculoSources(grupoId: string) {
     removeSource,
     newFiles,
     markNewSourcesProcessed,
+    stopGenerating,
   };
 }

@@ -381,6 +381,7 @@ export default function CurriculoCanvasModal({
       const tareaId = await createCurriculumTask(grupoId, request);
       taskPolling.start(tareaId);
     } catch (caught) {
+      sources.stopGenerating();
       setToast({
         tipo: 'error',
         mensaje:
@@ -419,6 +420,8 @@ export default function CurriculoCanvasModal({
           sources={sources.sources}
           puedeEditar={puedeEditar}
           hasNewSource={sources.hasNewSource}
+          uploading={sources.uploading}
+          uploadError={sources.uploadError}
           generating={
             sources.generating
             || taskPolling.status?.estado === 'EN_COLA'
