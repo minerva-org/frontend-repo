@@ -25,11 +25,18 @@ interface QuizBackend {
   Realizado?: boolean;
 }
 
+interface IntentoEstado {
+  quizId: string;
+  intentoId: string;
+  finalizado: boolean;
+}
+
 type QuizEstado = 'activo' | 'proximo' | 'pasado';
 type QuizTab = 'activos' | 'proximos' | 'pasados';
 
 interface QuizAlumnoDetalle extends QuizBackend {
   estado: QuizEstado;
+  intento?: IntentoEstado;
 }
 
 function getQuizEstado(quiz: QuizBackend): QuizEstado {
@@ -87,6 +94,8 @@ export default function GrupoDetalleAlumno({
 
   const [quizTab, setQuizTab] = useState<QuizTab>('activos');
 
+  const [intentos, setIntentos] = useState<IntentoEstado[]>([]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -95,9 +104,10 @@ export default function GrupoDetalleAlumno({
         setLoading(true);
         setError(null);
 
-        const [grupoResponse, quizzesResponse] = await Promise.all([
+        const [grupoResponse, quizzesResponse, intentosResponse] = await Promise.all([
           apiClient.get<GrupoDetalleBackend>(`/api/grupos/${code}`),
           apiClient.get<QuizBackend[]>('/api/quizzes'),
+          apiClient.get<IntentoEstado[]>('/api/quizzes/mis-intentos'),
         ]);
 
         if (cancelled) return;
@@ -105,6 +115,7 @@ export default function GrupoDetalleAlumno({
         const grupoData = grupoResponse.data;
 
         setGrupo(grupoData);
+        setIntentos(intentosResponse.data ?? []);
 
         const quizzesDelGrupo = (
           quizzesResponse.data ?? []
@@ -132,7 +143,7 @@ export default function GrupoDetalleAlumno({
         }
       }
     }
-
+    
     void cargarDetalle();
 
     return () => {
@@ -145,6 +156,7 @@ export default function GrupoDetalleAlumno({
       .map((quiz) => ({
         ...quiz,
         estado: getQuizEstado(quiz),
+        intento:intentos.find((i) => i.quizId ===quiz.id),
       }))
       .sort((a, b) => {
         const fechaA = a.fechaInicio
@@ -157,7 +169,7 @@ export default function GrupoDetalleAlumno({
 
         return fechaB - fechaA;
       });
-  }, [quizzes]);
+  }, [quizzes, intentos]);
 
   const quizGroups = useMemo(() => {
     return {
@@ -318,19 +330,31 @@ export default function GrupoDetalleAlumno({
                           : 'Finalizado'}
                     </span>
 
-                    {quiz.estado === 'activo' && (
+                    {quiz.intento?.finalizado ? (
                       <button
                         type="button"
                         className="btn btn-primary btn-sm"
-                        onClick={() =>
-                          navigate(
-                            `/grupos/${code}/quizzes/${quiz.id}/resolver`,
-                          )
-                        }
+                        title="Pantalla de resultados pendiente"
+                        onClick={() =>{
+                          navigate(`/grupos/${code}/quizzes/${quiz.id}/resolver`)
+                        }}
                       >
-                        <i className="bi bi-pencil-square me-1"></i>
-                        Resolver
+                        <i className="bi bi-bar-chart me-1"></i>
+                        Ver resultados
                       </button>
+                    ) : (
+                      quiz.estado === 'activo' && (
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          onClick={() =>
+                            navigate(`/grupos/${code}/quizzes/${quiz.id}/resolver`)
+                          }
+                        >
+                          <i className="bi bi-pencil-square me-1"></i>
+                          {quiz.intento ? 'Continuar' : 'Iniciar Quiz'}
+                        </button>
+                      )
                     )}
                   </article>
                 </article>

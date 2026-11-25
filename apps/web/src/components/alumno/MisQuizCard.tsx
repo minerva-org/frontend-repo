@@ -26,14 +26,13 @@ export default function MisQuizCard({
   titulo,
   grupoCode,
   grupoNombre,
-  preguntas,
-  segundosPorPregunta,
   abre,
   cierra,
   activo,
   ahora,
   onOpenGroup,
   onStartQuiz,
+  intento,
 }: MisQuizCardProps) {
   return (
     <article className={`al-card ${activo ? 'al-card-activo' : ''}`}>
@@ -50,19 +49,23 @@ export default function MisQuizCard({
       <h3 className="al-card-title">{titulo}</h3>
 
       <p className="al-card-meta">
-        {preguntas} preguntas · {segundosPorPregunta} s por pregunta ·{' '}
         {activo
           ? `Cierra en ${formatRestante(cierra - ahora)} · ${formatFecha(cierra)}`
           : `Se habilita el ${formatFecha(abre)}`}
       </p>
 
-      <button
-        className={`al-btn ${activo ? 'al-btn-primary' : ''}`}
-        disabled={!activo}
-        onClick={() => onStartQuiz(grupoCode, id)}
-      >
-        {activo ? 'Iniciar quiz' : 'Aún no disponible'}
-      </button>
+            <button
+              className={`al-btn ${activo || intento?.finalizado ? 'al-btn-primary' : ''}`}
+              disabled={!activo && !intento?.finalizado}
+              onClick={() => onStartQuiz(grupoCode, id)}>
+              {intento?.finalizado
+                ? 'Ver resultados'
+                : !activo
+                  ? 'Aún no disponible'
+                  : intento
+                    ? 'Continuar'
+                    : 'Iniciar quiz'}
+            </button>
     </article>
   );
 }
