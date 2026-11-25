@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
@@ -6,14 +6,13 @@ import { useSidebar } from '../context/SidebarContext.tsx';
 import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import type { GrupoAlumnoBackend, QuizAlumnoBackend} from '../types/AlumnoTypes';
+import MisQuizCard from '../components/alumno/MisQuizCard.tsx';
 
 interface QuizAlumno {
   id: string;
   titulo: string;
   grupoCode: string;
   grupoNombre: string;
-  preguntas: number;
-  segundosPorPregunta: number;
   abre: number;   
   cierra: number;
 }
@@ -22,24 +21,7 @@ const MIN = 60_000;
 
 
 
-const DIAS_SEMANA = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
-const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-function formatFecha(ts: number): string {
-  const d = new Date(ts);
-  const h = d.getHours();
-  const h12 = h % 12 || 12;
-  const min = String(d.getMinutes()).padStart(2, '0');
-  return `${DIAS_SEMANA[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}, ${h12}:${min} ${h < 12 ? 'a.m.' : 'p.m.'}`;
-}
-
-function formatRestante(ms: number): string {
-  const totalMin = Math.max(0, Math.floor(ms / MIN));
-  const dias = Math.floor(totalMin / 1440);
-  const horas = Math.floor((totalMin % 1440) / 60);
-  const minutos = totalMin % 60;
-  return dias > 0 ? `${dias} d ${horas} h` : `${horas} h ${minutos} min`;
-}
 
 
 
@@ -58,6 +40,7 @@ export default function AlumnoInicio() {
   const [quizzes, setQuizzes] = useState<QuizAlumno[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+    const [intentos, setIntentos] = useState<{ quizId: string; intentoId: string; finalizado: boolean }[]>([]);
 
   useEffect(() => {
     const id = setInterval(() => setAhora(Date.now()), MIN);
@@ -82,6 +65,11 @@ export default function AlumnoInicio() {
         '/api/quizzes'
       );
 
+      const intentosResponse = await apiClient.get<
+        { quizId: string; intentoId: string; finalizado: boolean }[]
+      >('/api/quizzes/mis-intentos');
+      setIntentos(intentosResponse.data ?? []);
+
       const quizzesFiltrados = (quizzesResponse.data ?? []).filter(
         (quiz) =>
           quiz.grupoId != null &&
@@ -98,9 +86,6 @@ export default function AlumnoInicio() {
           titulo: quiz.nombre ?? quiz.titulo ?? 'Quiz sin título',
           grupoCode: grupo?.claveGrupo ?? '',
           grupoNombre: grupo?.nombre ?? grupo?.claveGrupo ?? 'Grupo',
-          preguntas: quiz.totalPreguntas ?? quiz.preguntas ?? 0,
-          segundosPorPregunta:
-            quiz.duracionSegundos ?? quiz.segundosPorPregunta ?? 0,
           abre: quiz.fechaInicio
             ? Date.parse(String(quiz.fechaInicio))
             : quiz.abre
@@ -131,9 +116,10 @@ export default function AlumnoInicio() {
     activo: q.abre <= ahora,
   }));
 
-  const activos = vigentes.filter((q) => q.activo).sort((a, b) => a.cierra - b.cierra);
+  const activos = vigentes.filter((q) => 
+    q.activo && !intentos.find((i) => i.quizId === q.id)?.finalizado).sort((a, b) => a.cierra - b.cierra);
   const proximos = vigentes.filter((q) => !q.activo).sort((a, b) => a.abre - b.abre);
-  const ordenados = useMemo(() => [...activos, ...proximos], [activos, proximos]);
+   const ordenados = [ ...vigentes.filter((q) => q.activo).sort((a, b) => a.cierra - b.cierra), ...proximos, ];
 
   return (
     <article className="al-screen">
@@ -164,35 +150,23 @@ export default function AlumnoInicio() {
 
         {!loading && !error && (
           <article className="al-list">
-            {ordenados.map((q) => (
-              <article key={`${q.grupoCode}-${q.id}`} className={`al-card ${q.activo ? 'al-card-activo' : ''}`}>
-                <article className="al-card-top">
-                  <span className={`al-status ${q.activo ? 'al-status-activo' : 'al-status-proximo'}`}>
-                    {q.activo && <i className="bi bi-circle-fill"></i>}
-                    {q.activo ? 'ACTIVO' : 'PRÓXIMO'}
-                  </span>
-                  <button className="al-group-link" onClick={() => navigate(`/grupos/${q.grupoCode}`)}>
-                    {q.grupoNombre} →
-                  </button>
-                </article>
-
-                <h3 className="al-card-title">{q.titulo}</h3>
-
-                <p className="al-card-meta">
-                  {q.preguntas} preguntas · {q.segundosPorPregunta} s por pregunta ·{' '}
-                  {q.activo
-                    ? `Cierra en ${formatRestante(q.cierra - ahora)} · ${formatFecha(q.cierra)}`
-                    : `Se habilita el ${formatFecha(q.abre)}`}
-                </p>
-
-                <button
-                  className={`al-btn ${q.activo ? 'al-btn-primary' : ''}`}
-                  disabled={!q.activo}
-                  onClick={() => navigate(`/grupos/${q.grupoCode}/quizzes/${q.id}/resolver`)}
-                >
-                  {q.activo ? 'Iniciar quiz' : 'Aún no disponible'}
-                </button>
-              </article>
+                        {ordenados.map((q) => (
+              <MisQuizCard
+                key={`${q.grupoCode}-${q.id}`}
+                id={q.id}
+                titulo={q.titulo}
+                grupoCode={q.grupoCode}
+                grupoNombre={q.grupoNombre}
+                abre={q.abre}
+                cierra={q.cierra}
+                activo={q.activo}
+                ahora={ahora}
+                intento={intentos.find((i) => i.quizId === q.id)}
+                onOpenGroup={(code) => navigate(`/grupos/${code}`)}
+                onStartQuiz={(code, quizId) =>
+                  navigate(`/grupos/${code}/quizzes/${quizId}/resolver`)
+                }
+              />
             ))}
           </article>
         )}

@@ -75,14 +75,15 @@ export interface MisQuizCardProps {
   titulo: string;
   grupoCode: string;
   grupoNombre: string;
-  preguntas: number;
-  segundosPorPregunta: number;
+  preguntas?: number;
+  segundosPorPregunta?: number;
   abre: number;
   cierra: number;
   activo: boolean;
   ahora: number;
   onOpenGroup: (grupoCode: string) => void;
   onStartQuiz: (grupoCode: string, quizId: string) => void;
+  intento?: {finalizado:boolean};
 }
 
 export interface MisGrupoCardProps {
