@@ -6,7 +6,8 @@ import type {
     QuizBackend,
     IntentoResponse,
     PreguntaAlumno,
-    ResultadoIntento
+    ResultadoIntento,
+    DesgloseResultadoAlumno,
 } from '../types/QuizTypes.ts';
 
 import '../styles/QuizAlumno.css';
@@ -36,6 +37,8 @@ export default function QuizResolve() {
     const [mostrarConfirmacion, setMostrarConfirmacion] = useState(false);
     const [tiempoRestante, setTiempoRestante] = useState(0);
     const [resultado, setResultado] = useState<ResultadoIntento | null>(null);
+    const [detalleResultados, setDetalleResultados] =
+        useState<DesgloseResultadoAlumno | null>(null);
     const [envioAutomatico, setEnvioAutomatico] = useState(false);
     const finalizacionIniciada = useRef(false);
     const cargaIntentoRef = useRef<{ quizId: string; promise: Promise<{ quizData: QuizBackend; intento: IntentoResponse; }>;} | null>(null);
@@ -121,6 +124,14 @@ export default function QuizResolve() {
 
                     setResultado(resultadoResponse.data);
                     setEstado('confirmado');
+                    if (quizData.fechaFinalizacion
+                            && new Date(quizData.fechaFinalizacion).getTime()
+                                <= Date.now()) {
+                        const detalle = await apiClient.get<DesgloseResultadoAlumno>(
+                            `/api/quizzes/${quizId}/intentos/${intento.intentoId}/detalle-resultados`,
+                        );
+                        if (!cancelado) setDetalleResultados(detalle.data);
+                    }
                 } else {
                     setEstado('en_curso');
                 }
@@ -476,6 +487,56 @@ export default function QuizResolve() {
                                         Total de preguntas
                                     </span>
                                 </article>
+                            </section>
+                        )}
+
+                        {detalleResultados && (
+                            <section className="mt-4 text-start">
+                                <h2 className="h5 fw-bold mb-3">
+                                    Desglose por pregunta
+                                </h2>
+                                {detalleResultados.respuestas.map((respuesta) => (
+                                    <article
+                                        className={`border rounded-3 p-3 mb-3 ${
+                                            respuesta.resultado === 'CORRECTA'
+                                                ? 'bg-success-subtle border-success-subtle'
+                                                : respuesta.resultado === 'EN_BLANCO'
+                                                    ? 'bg-secondary-subtle border-secondary-subtle'
+                                                    : 'bg-danger-subtle border-danger-subtle'
+                                        }`}
+                                        key={respuesta.preguntaId}
+                                    >
+                                        <article className="d-flex justify-content-between gap-3 mb-2">
+                                            <strong className="d-flex align-items-start gap-2">
+                                                <i className={`bi ${
+                                                    respuesta.resultado === 'CORRECTA'
+                                                        ? 'bi-check-circle-fill text-success'
+                                                        : respuesta.resultado === 'EN_BLANCO'
+                                                            ? 'bi-dash-circle-fill text-secondary'
+                                                            : 'bi-x-circle-fill text-danger'
+                                                } mt-1 flex-shrink-0`} />
+                                                <span>{respuesta.numero}. {respuesta.pregunta}</span>
+                                            </strong>
+                                            <span className={`badge ${
+                                                respuesta.resultado === 'CORRECTA'
+                                                    ? 'text-bg-success'
+                                                    : respuesta.resultado === 'EN_BLANCO'
+                                                        ? 'text-bg-secondary'
+                                                        : 'text-bg-danger'
+                                            }`}>
+
+                                            </span>
+                                        </article>
+                                        <p className="small mb-1">
+                                            <strong>Tu respuesta:</strong>{' '}
+                                            {respuesta.opcionElegida ?? 'Sin respuesta'}
+                                        </p>
+                                        <p className="small mb-0">
+                                            <strong>Respuesta correcta:</strong>{' '}
+                                            {respuesta.opcionCorrecta}
+                                        </p>
+                                    </article>
+                                ))}
                             </section>
                         )}
 

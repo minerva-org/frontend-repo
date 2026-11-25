@@ -162,6 +162,32 @@ export interface ResultadoIntento {
   total: number;
 }
 
+export interface ResultadoPreguntaAlumno {
+  numero: number;
+  preguntaId: string;
+  pregunta: string;
+  conceptoId: string;
+  conceptoDescripcion: string;
+  opcionElegida: string | null;
+  opcionCorrecta: string;
+  resultado: 'CORRECTA' | 'INCORRECTA' | 'EN_BLANCO';
+  cambiosPantalla: number;
+}
+
+export interface DesgloseResultadoAlumno {
+  alumnoId: string;
+  alumnoNombre: string;
+  grupoId: string;
+  grupoClave: string;
+  grupoNombre: string;
+  intentoId: string;
+  finalizado: boolean;
+  correctas: number;
+  total: number;
+  calificacion: number;
+  respuestas: ResultadoPreguntaAlumno[];
+}
+
 export interface QuizGenerationOption {
   text: string;
   isCorrect: boolean;
