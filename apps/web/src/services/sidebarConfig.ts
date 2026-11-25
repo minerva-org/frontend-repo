@@ -122,8 +122,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
     {
       label: 'Listado',
       items: [
-        { to: '/alumno', label: 'Inicio', icon: 'bi-house', end:true},
-        { to: '/alumno/grupos', label: 'Mis Grupos', icon: 'bi-collection' },
+        { to: '/alumno', label: 'Inicio y grupos', icon: 'bi-house', end:true},
       ],
     },
   ],

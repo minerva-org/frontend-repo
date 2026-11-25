@@ -9,7 +9,6 @@ import QuizNuevo from './pages/QuizNuevo.tsx';
 import GroupDetail from './pages/DetalleGrupo.tsx';
 import Materias from './pages/Materias.tsx';
 import AppLayout from './components/AppLayout.tsx';
-import MisGrupos from './pages/MisGrupos.tsx';
 import PlantelDashboard from './pages/PlantelDashboard.tsx';
 import Planteles from './pages/Planteles.tsx';
 import DirectoresPlanteles from './pages/DirectoresPlanteles.tsx';
@@ -79,11 +78,7 @@ export default function App() {
               </ProtectedRoute>
             } />
 
-            <Route path="/alumno/grupos" element={
-              <ProtectedRoute allowedRoles={['alumno']}>
-                <MisGrupos />
-              </ProtectedRoute>
-            } />
+            <Route path="/alumno/grupos" element={<Navigate to="/alumno" replace />} />
 
             <Route path="/grupos/:code/quizzes/:quizId/resolver" element={
               <ProtectedRoute allowedRoles={['alumno']}>

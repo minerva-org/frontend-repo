@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiClient } from '../services/ApiClient';
 import '../styles/Alumno.css';
@@ -7,6 +7,7 @@ import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import type { GrupoAlumnoBackend, QuizAlumnoBackend} from '../types/AlumnoTypes';
 import MisQuizCard from '../components/alumno/MisQuizCard.tsx';
+import '../styles/MisGrupos.css';
 
 interface QuizAlumno {
   id: string;
@@ -38,6 +39,7 @@ export default function AlumnoInicio() {
   const nombreAlumno = `${user?.nombre ?? ''} ${user?.apellido ?? ''}`.trim() || user?.email || 'Alumno';
   const [ahora, setAhora] = useState(() => Date.now());
   const [quizzes, setQuizzes] = useState<QuizAlumno[]>([]);
+  const [grupos, setGrupos] = useState<GrupoAlumnoBackend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
     const [intentos, setIntentos] = useState<{ quizId: string; intentoId: string; finalizado: boolean }[]>([]);
@@ -56,6 +58,7 @@ export default function AlumnoInicio() {
       );
 
       const misGrupos = gruposResponse.data ?? [];
+      setGrupos(misGrupos);
 
       const gruposIds = new Set(
         misGrupos.map((grupo) => String(grupo.id))
@@ -84,7 +87,7 @@ export default function AlumnoInicio() {
         return {
           id: String(quiz.id ?? ''),
           titulo: quiz.nombre ?? quiz.titulo ?? 'Quiz sin título',
-          grupoCode: grupo?.claveGrupo ?? '',
+          grupoCode: String(grupo?.id ?? quiz.grupoId ?? ''),
           grupoNombre: grupo?.nombre ?? grupo?.claveGrupo ?? 'Grupo',
           abre: quiz.fechaInicio
             ? Date.parse(String(quiz.fechaInicio))
@@ -121,6 +124,22 @@ export default function AlumnoInicio() {
   const proximos = vigentes.filter((q) => !q.activo).sort((a, b) => a.abre - b.abre);
    const ordenados = [ ...vigentes.filter((q) => q.activo).sort((a, b) => a.cierra - b.cierra), ...proximos, ];
 
+   const gruposConConteos = useMemo(() => grupos
+     .filter((grupo) => grupo.activo !== false)
+     .map((grupo) => ({
+       grupo,
+       activos: quizzes.filter((quiz) =>
+         quiz.grupoCode === grupo.id
+         && quiz.abre <= ahora
+         && quiz.cierra >= ahora).length,
+       proximos: quizzes.filter((quiz) =>
+         quiz.grupoCode === grupo.id
+         && quiz.abre > ahora).length,
+       pasados: quizzes.filter((quiz) =>
+         quiz.grupoCode === grupo.id
+         && quiz.cierra < ahora).length,
+     })), [ahora, grupos, quizzes]);
+
   return (
     <article className="al-screen">
       <header className="al-topbar">
@@ -144,6 +163,52 @@ export default function AlumnoInicio() {
             <span className="al-counter">Próximos <strong>{proximos.length}</strong></span>
           </article>
         </section>
+
+        {!loading && !error && (
+          <section className="mb-3">
+            <article className="d-flex align-items-center justify-content-between gap-3 mb-3">
+              <h2 className="h5 fw-bold mb-0">Mis grupos</h2>
+              <span className="text-secondary small">
+                {gruposConConteos.length} {gruposConConteos.length === 1 ? 'grupo' : 'grupos'}
+              </span>
+            </article>
+            {gruposConConteos.length === 0 ? (
+              <p className="al-empty">Todavía no perteneces a ningún grupo.</p>
+            ) : (
+              <article className="mg-grid">
+                {gruposConConteos.map(({ grupo, activos: activosGrupo, proximos: proximosGrupo, pasados }) => (
+                  <button
+                    type="button"
+                    key={grupo.id}
+                    className="mg-card"
+                    onClick={() => navigate(`/grupos/${grupo.id}`)}
+                  >
+                    <h2 className="mg-card-title">{grupo.nombre}</h2>
+                    <p className="mg-card-meta">
+                      {grupo.semestre} · {grupo.alumnosIds?.length || 0} alumnos
+                    </p>
+                    <article className="mg-pills">
+                      <span className="mg-pill mg-pill-activo">
+                        <i className="bi bi-circle-fill" /> Grupo activo
+                      </span>
+                    </article>
+                    <article className="mg-pills">
+                      <span className="mg-pill">
+                        <i className="bi bi-play-circle" /> Activas: {activosGrupo}
+                      </span>
+                      <span className="mg-pill">
+                        <i className="bi bi-clock" /> Próximas: {proximosGrupo}
+                      </span>
+                      <span className="mg-pill">
+                        <i className="bi bi-check-circle" /> Pasadas: {pasados}
+                      </span>
+                    </article>
+                  </button>
+                ))}
+              </article>
+            )}
+          </section>
+        )}
 
         {loading && <p className="al-empty">Cargando quizzes...</p>}
         {error && <p className="al-empty">{error}</p>}

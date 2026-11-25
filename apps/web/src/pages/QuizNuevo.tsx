@@ -555,6 +555,7 @@ export default function QuizNuevo() {
         return;
       }
 
+      let createdQuizId: string | null = null;
       try {
         setError(null);
 
@@ -578,7 +579,7 @@ export default function QuizNuevo() {
           ? await apiClient.patch(`/api/quizzes/${quizId}`, payloadQuiz)
           : await apiClient.post('/api/quizzes', payloadQuiz);
 
-        const createdQuizId =
+        createdQuizId =
           (quizResponse.data as { id?: string }).id ?? quizId ?? payloadQuiz.id;
 
         if (!esEdicion) {
@@ -656,6 +657,13 @@ export default function QuizNuevo() {
 
       } catch (requestError) {
         console.error('Error saving quiz:', requestError);
+        if (!esEdicion && createdQuizId) {
+          try {
+            await apiClient.delete(`/api/quizzes/${createdQuizId}`);
+          } catch (cleanupError) {
+            console.error('Error cleaning incomplete quiz:', cleanupError);
+          }
+        }
         setError('Ocurrió un error al guardar el quiz. Intenta nuevamente más tarde.');
       }
   }
