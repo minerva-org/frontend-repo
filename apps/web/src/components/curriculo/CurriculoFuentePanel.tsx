@@ -114,15 +114,21 @@ export default function CurriculoFuentePanel({
             </small>
           )}
       {puedeEditar && (
-        <button
-          type="button"
-          className="btn btn-secondary curriculo-generate"
-          disabled={!hasNewSource || generating}
-          onClick={onGenerate}
-        >
-          <i className="bi bi-stars me-2" />
-          Generar contenido
-        </button>
+        <>
+          <button
+            type="button"
+            className="btn btn-secondary curriculo-generate"
+            disabled={!hasNewSource || generating}
+            onClick={onGenerate}
+          >
+            <i className="bi bi-stars me-2" />
+            Generar contenido
+          </button>
+          <small className="text-secondary">
+            Recomendación: agrega 2 o más fuentes antes de generar. Si el
+            modelo no devuelve respuesta útil, intenta un segundo recorrido.
+          </small>
+        </>
       )}
     </aside>
   );

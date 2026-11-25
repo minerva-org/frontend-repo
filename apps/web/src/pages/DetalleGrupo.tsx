@@ -22,7 +22,9 @@ export default function GroupDetail() {
           <button className="btn btn-link text-light p-0 text-decoration-none" onClick={toggleSidebar} title="Mostrar u ocultar menú" aria-label="Mostrar u ocultar menú">
             <SidebarToggleIcon className="fs-4" />
           </button>
-          <span className="fs-5 fw-bold">{isStudent ? 'Alumno' : 'Docente'}</span>
+          <span className="fs-5 fw-bold">
+            {isStudent ? 'Alumno' : 'Grupos'}
+          </span>
         </article>
       </header>
 
