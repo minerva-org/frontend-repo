@@ -85,7 +85,6 @@ export default function QuizNuevo() {
   const [horaApertura, setHoraApertura] = useState('');
   const [fechaCierre, setFechaCierre] = useState('');
   const [horaCierre, setHoraCierre] = useState('');
-  const [verRespuestasAntesCierre, setVerRespuestasAntesCierre] = useState(false);
   const [preguntas, setPreguntas] = useState<Pregunta[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
