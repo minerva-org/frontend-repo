@@ -4,6 +4,7 @@ import { useSidebar } from '../context/SidebarContext.tsx';
 import { useAuth } from '../context/AuthContext.tsx';
 import SidebarToggleIcon from '../components/common/SidebarToggleIcon.tsx';
 import TaskGeneratingOverlay from '../components/common/TaskGeneratingOverlay.tsx';
+import Toast, { type ToastData } from '../components/common/Toast.tsx';
 import { apiClient } from '../services/ApiClient';
 import '../styles/QuizNuevo.css';
 import { mapearCurriculoQuiz } from '../utils/quizCurriculo';
@@ -794,12 +795,6 @@ export default function QuizNuevo() {
             </label>
           </article>
 
-          <article className="qn-toggle-row">
-            <span className="qn-field-label">El alumno puede ver sus respuestas antes del cierre</span>
-            <button type="button" role="switch" aria-checked={verRespuestasAntesCierre} className={`qn-switch ${verRespuestasAntesCierre ? 'on' : ''}`} onClick={() => setVerRespuestasAntesCierre((valor) => !valor)}>
-              <span className="qn-switch-knob"></span>
-            </button>
-          </article>
         </section>
 
         <section className="qn-section">
@@ -918,8 +913,6 @@ export default function QuizNuevo() {
           </button>
         </section>
 
-        {error && <p role="alert" className="qn-error">{error}</p>}
-
         <footer className="qn-footer">
           <button type="button" className="qn-btn-secondary" onClick={() => navigate(`/grupos/${code}`)}>
             Cancelar
@@ -936,6 +929,12 @@ export default function QuizNuevo() {
         subtitle={quizPolling.status?.progreso
           || 'Esto puede tardar unos minutos'}
         onCancel={() => void quizPolling.cancel()}
+      />
+      <Toast
+        toast={error
+          ? { tipo: 'error', mensaje: error } satisfies ToastData
+          : null}
+        onCerrar={() => setError(null)}
       />
     </article>
   );
