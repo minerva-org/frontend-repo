@@ -53,7 +53,7 @@ export default function MiPerfil() {
   const cerrarToast = useCallback(() => { setToast(null);}, []);
 
   // Controla cuál contraseña está visible
-  const [passwordActualVisible, setPasswordVisible] = useState(false);
+  const [passwordActualVisible, setPasswordActualVisible] = useState(false);
   const [passwordNuevaVisible,setPasswordNuevaVisible] = useState(false);
   const [passwordNueva2Visible,setPasswordNueva2Visible] = useState(false);
   
@@ -206,7 +206,9 @@ export default function MiPerfil() {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setPasswordVisible(null);
+      setPasswordActualVisible(false);
+      setPasswordNuevaVisible(false);
+      setPasswordNueva2Visible(false);
       setToast({
         mensaje: '¡Tu contraseña se cambió correctamente!',
         tipo: 'exito',
@@ -227,7 +229,9 @@ export default function MiPerfil() {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
-    setPasswordVisible(null);
+    setPasswordActualVisible(false);
+    setPasswordNuevaVisible(false);
+    setPasswordNueva2Visible(false);
     setErrorPassword(null);
   }
 
@@ -464,7 +468,9 @@ export default function MiPerfil() {
                   setNewPassword('');
                   setConfirmPassword('');
                   setPasswordValidada(false);
-                  setPasswordVisible(null);
+                  setPasswordActualVisible(false);
+                  setPasswordNuevaVisible(false);
+                  setPasswordNueva2Visible(false);
                   setErrorPassword(null);
                   setMostrarModalPassword(true);
                 }}
@@ -528,7 +534,7 @@ export default function MiPerfil() {
                             : 'Mostrar contraseña actual'
                         }
                         onClick={() =>
-                          setPasswordVisible(!passwordActualVisible)
+                          setPasswordActualVisible(!passwordActualVisible)
                         }
                       >
                         <i className={`bi ${passwordActualVisible ? 'bi-eye-slash' : 'bi-eye'}`}></i>
@@ -564,12 +570,12 @@ export default function MiPerfil() {
                             type="button"
                             className="btn bg-primary text-light"
                             aria-label={
-                              passwordActualVisible 
+                              passwordNuevaVisible 
                                 ? 'Ocultar nueva contraseña'
                                 : 'Mostrar nueva contraseña'
                             }
                             onClick={() =>
-                              setPasswordNuevaVisible(!passwordActualVisible)}>
+                              setPasswordNuevaVisible(!passwordNuevaVisible)}>
                             <i className={`bi ${passwordNuevaVisible ? 'bi-eye-slash' : 'bi-eye'}`}></i>
                           </button>
                         </article>
