@@ -146,13 +146,8 @@ export default function CurriculoCanvasModal({
         estado: taskPolling.status.estado,
         error: taskPolling.status.error,
       });
-      const userMessage =
-        taskPolling.status.error?.includes('merge')
-          ? 'La fuente no agregó información nueva al currículo. Puedes revisar o subir otra fuente.'
-          : taskPolling.status.error?.includes('invalid JSON')
-            || taskPolling.status.error?.includes('JSON')
-            ? 'El modelo no pudo interpretar la fuente. Intenta generar el contenido nuevamente.'
-            : 'No se pudo generar el contenido de la fuente. Intenta nuevamente.';
+      const userMessage = taskPolling.status.error?.trim()
+        || 'No se pudo generar el contenido de la fuente. Intenta nuevamente.';
       setToast({
         tipo: 'error',
         mensaje: userMessage,
@@ -216,21 +211,6 @@ export default function CurriculoCanvasModal({
     if (sources.newFiles.length === 0) return;
     sources.generate();
     try {
-      const archivos = await Promise.all(
-        sources.newFiles.map(async (entry) => {
-          const buffer = await entry.file.arrayBuffer();
-          const bytes = new Uint8Array(buffer);
-          let binary = '';
-          bytes.forEach((byte) => {
-            binary += String.fromCharCode(byte);
-          });
-          return {
-            nombre: entry.nombre,
-            contenidoBase64: window.btoa(binary),
-          };
-        }),
-      );
-
       const request: CurriculumGenerationRequest = {
         grupoId,
         materiaNombre,
@@ -242,7 +222,6 @@ export default function CurriculoCanvasModal({
         })),
         fuentesProcesadas: [],
         modoFusion: 'conservadora',
-        archivos,
       };
 
       const tareaId = await createCurriculumTask(grupoId, request);

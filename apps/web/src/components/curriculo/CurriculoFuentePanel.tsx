@@ -84,7 +84,7 @@ export default function CurriculoFuentePanel({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,application/pdf"
+        accept=".pdf,application/pdf,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
         hidden
         onChange={(event) => onAddSource(event.target.files?.[0])}
       />

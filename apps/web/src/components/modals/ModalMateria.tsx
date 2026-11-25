@@ -225,7 +225,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
     if (!archivo) {
       setToast({
         tipo: 'advertencia',
-        mensaje: 'Selecciona el plan de estudio PDF.',
+        mensaje: 'Selecciona el plan de estudio PDF o PPTX.',
       });
       return;
     }

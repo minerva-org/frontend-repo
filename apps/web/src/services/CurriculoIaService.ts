@@ -18,10 +18,6 @@ export interface CurriculumGenerationRequest {
   fuentes: CurriculumGenerationSource[];
   fuentesProcesadas: CurriculumProcessedSource[];
   modoFusion: 'conservadora';
-  archivos: Array<{
-    nombre: string;
-    contenidoBase64: string;
-  }>;
 }
 
 export interface CurriculumTaskStatus {

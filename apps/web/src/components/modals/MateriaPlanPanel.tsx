@@ -55,7 +55,7 @@ export default function MateriaPlanPanel({
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,application/pdf"
+        accept=".pdf,application/pdf,.pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation"
         hidden
         onChange={(event) =>
           onFileChange(event.target.files?.[0] ?? null)

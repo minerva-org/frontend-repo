@@ -1,6 +1,9 @@
 import { isAxiosError } from 'axios';
 import { apiClient } from './ApiClient';
 
+const isSupportedStudyFile = (name: string) =>
+  /\.(pdf|pptx)$/i.test(name);
+
 export interface DocumentoMateriaDTO {
   id: string;
   objectKey: string;
@@ -53,10 +56,10 @@ export function materiaExtraccionErrorMessage(error: unknown): string {
       return 'La estructura extraída está incompleta. Revisa unidades, temas y conceptos.';
     }
     if (code === 'NO_EXTRACTABLE_TEXT') {
-      return 'No se pudo extraer texto del PDF. Verifica que contenga texto seleccionable.';
+      return 'No se pudo extraer texto del documento. Verifica que contenga texto seleccionable.';
     }
     if (code === 'PDF_INVALID') {
-      return 'El archivo no es un PDF válido.';
+      return 'El archivo no es un PDF o PPTX válido.';
     }
     if (code === 'EXTRACTED_TEXT_TOO_LARGE') {
       return 'El contenido extraído supera el límite permitido.';
@@ -78,7 +81,7 @@ export function materiaExtraccionErrorMessage(error: unknown): string {
       return 'El archivo supera el límite permitido de 10 MiB.';
     }
     if (error.response?.status === 415) {
-      return 'El archivo no tiene un formato PDF válido.';
+      return 'El archivo no tiene un formato PDF o PPTX válido.';
     }
     if (error.response?.status === 422) {
       return 'No fue posible extraer una estructura válida del archivo.';
@@ -105,11 +108,11 @@ export async function extraerConceptosMateria(
   file: File,
   signal?: AbortSignal,
 ): Promise<ExtraccionMateriaTree> {
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    throw new Error('Solo se permiten archivos PDF.');
+  if (!isSupportedStudyFile(file.name)) {
+    throw new Error('Solo se permiten archivos PDF o presentaciones PPTX.');
   }
   if (file.size <= 0) {
-    throw new Error('El archivo PDF está vacío.');
+    throw new Error('El archivo está vacío.');
   }
   if (file.size > 10 * 1024 * 1024) {
     throw new Error('El archivo supera el límite de 10 MiB.');
@@ -187,7 +190,7 @@ export function materiaDocumentoErrorMessage(
       return 'El archivo supera el límite permitido de 10 MiB.';
     }
     if (error.response?.status === 415) {
-      return 'El archivo no tiene un formato PDF válido.';
+      return 'El archivo debe ser un PDF o una presentación PPTX válida.';
     }
     if (error.response?.status === 403) {
       return 'No tienes permiso para subir el plan de estudio de esta materia.';
@@ -196,7 +199,7 @@ export function materiaDocumentoErrorMessage(
       return 'Tu sesión venció. Inicia sesión nuevamente.';
     }
     if (error.response?.status === 400) {
-      return 'El servidor no pudo procesar el archivo PDF seleccionado.';
+      return 'El servidor no pudo procesar el documento seleccionado.';
     }
     if (error.response?.status === 503) {
       return 'No se pudo guardar el archivo. Intenta nuevamente.';
@@ -216,11 +219,11 @@ export function materiaDocumentoErrorMessage(
 export async function uploadArchivoTemporal(
   file: File,
 ): Promise<FileUploadDTO> {
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    throw new Error('Solo se permiten archivos PDF.');
+  if (!isSupportedStudyFile(file.name)) {
+    throw new Error('Solo se permiten archivos PDF o presentaciones PPTX.');
   }
   if (file.size <= 0) {
-    throw new Error('El archivo PDF está vacío.');
+    throw new Error('El archivo está vacío.');
   }
   if (file.size > 10 * 1024 * 1024) {
     throw new Error('El archivo supera el límite de 10 MiB.');
@@ -244,11 +247,11 @@ export async function uploadPlanMateria(
   materiaId: string,
   file: File,
 ): Promise<DocumentoMateriaUploadDTO> {
-  if (!file.name.toLowerCase().endsWith('.pdf')) {
-    throw new Error('Solo se permiten archivos PDF.');
+  if (!isSupportedStudyFile(file.name)) {
+    throw new Error('Solo se permiten archivos PDF o presentaciones PPTX.');
   }
   if (file.size <= 0) {
-    throw new Error('El archivo PDF está vacío.');
+    throw new Error('El archivo está vacío.');
   }
   if (file.size > 10 * 1024 * 1024) {
     throw new Error('El archivo supera el límite de 10 MiB.');
