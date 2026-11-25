@@ -12,6 +12,7 @@ import AgregarAlumnosForm from '../grupos/AgregarAlumnosForm.tsx';
 import { useAuth } from '../../context/AuthContext.tsx';
 import Toast, {type ToastData} from '../common/Toast';
 import CurriculoCanvasModal from '../curriculo/CurriculoCanvasModal.tsx';
+import SolicitudesPendientes from '../grupos/SolicitudesPendientes.tsx';
 
 function toDateValue(value?: string | null): number {
   if (!value) return 0;
@@ -361,6 +362,39 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
         mensaje: agregados.length > 0
           ? `Se guardaron ${agregados.length} alumnos, pero algunos no pudieron agregarse.`
           : 'No se pudieron agregar los alumnos. Intenta nuevamente.',
+        tipo: 'error',
+      });
+    }
+  }
+
+  async function recargarAlumnos() {
+    if (!grupo) return;
+
+    try {
+      const { data } = await apiClient.get<GrupoDetalleBackend>(`/api/grupos/${code}`);
+
+      if (data.plantelId === null) return;
+
+      const alumnosResponse = await fetchPersonasByPlantelAndRol(data.plantelId, 'ALUMNO');
+      const ids = data.alumnosIds ?? [];
+      const personas = alumnosResponse.data ?? [];
+
+      setGrupo(data);
+      setAlumnos(
+        personas
+          .filter((persona) => ids.includes(persona.id))
+          .map((persona) => ({
+            id: persona.id,
+            nombre: `${persona.nombre} ${persona.apellidoPaterno} ${persona.apellidoMaterno ?? ''}`.trim(),
+            estado: 'normal' as const,
+          })),
+      );
+      setAlumnosDisponibles(
+        personas.filter((persona) => persona.activo && !ids.includes(persona.id)),
+      );
+    } catch {
+      setToast({
+        mensaje: 'El alumno se aceptó, pero no se pudo actualizar la lista. Recarga la página.',
         tipo: 'error',
       });
     }
@@ -732,14 +766,23 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                   </span>
                 </h2>
 
-                <button
-                  type="button"
-                  className="btn btn-outline-primary btn-sm"
-                  onClick={() => setModalAgregarAlumnos(true)}
-                >
-                  <i className="bi bi-plus-lg me-1" />
-                  Agregar
-                </button>
+                <article className="d-flex align-items-center gap-2">
+                  {role === 'docente' && (
+                    <SolicitudesPendientes
+                      grupoId={grupo.id}
+                      onAceptada={() => void recargarAlumnos()}
+                    />
+                  )}
+
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm"
+                    onClick={() => setModalAgregarAlumnos(true)}
+                  >
+                    <i className="bi bi-plus-lg me-1" />
+                    Agregar
+                  </button>
+                </article>
               </article>
 
               {alumnos.length > 0 ? (
