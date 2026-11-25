@@ -110,7 +110,14 @@ export default function NodoCurricular({
           className="curriculo-name-input"
           defaultValue={nodo.nombre}
           autoFocus
-          onBlur={() => onCancelEdit()}
+          onBlur={(event) => {
+            const nextName = event.currentTarget.value.trim();
+            if (nextName && nextName !== nodo.nombre) {
+              onFinishEdit(nodo.id, nextName);
+            } else {
+              onCancelEdit();
+            }
+          }}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
               onFinishEdit(nodo.id, event.currentTarget.value);
@@ -123,7 +130,16 @@ export default function NodoCurricular({
       ) : (
         <>
           <i className={`bi ${nodeIcon(nodo.tipo)} curriculo-node-icon`} />
-          <span className="curriculo-node-name">{nodo.nombre}</span>
+          <span
+            className="curriculo-node-name"
+            title={editable ? 'Doble clic para editar el nombre' : undefined}
+            onDoubleClick={(event) => {
+              event.stopPropagation();
+              if (editable) onEdit(nodo.id);
+            }}
+          >
+            {nodo.nombre}
+          </span>
           {hasChildren && nodo.tipo !== 'materia' && (
             <button
               type="button"

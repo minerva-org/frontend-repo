@@ -28,8 +28,11 @@ const NODE_HEIGHT = 44;
 const ROW_HEIGHT = 112;
 const ROOT_Y = 20;
 const HORIZONTAL_GAP = 28;
-const SLOT_WIDTH = 220;
 const HORIZONTAL_PADDING = 300;
+
+export interface CurriculoCanvasLayoutOptions {
+  slotWidth?: number;
+}
 
 function nodeWidth(node: NodoCurricular): number {
   if (node.tipo === 'materia') return 220;
@@ -41,8 +44,10 @@ function nodeWidth(node: NodoCurricular): number {
 export function calculateCurriculoCanvasLayout(
   tree: NodoCurricular,
   expandedIds: Set<string>,
+  options: CurriculoCanvasLayoutOptions = {},
 ): CurriculoCanvasLayoutResult {
   const positions = new Map<string, NodePosition>();
+  const slotWidth = options.slotWidth ?? 600;
   let leafCursor = 0;
 
   const place = (node: NodoCurricular, depth: number): NodePosition => {
@@ -52,7 +57,7 @@ export function calculateCurriculoCanvasLayout(
 
     let x: number;
     if (!visibleChildren.length) {
-      x = leafCursor * (SLOT_WIDTH + HORIZONTAL_GAP);
+      x = leafCursor * (slotWidth + HORIZONTAL_GAP);
       leafCursor++;
     } else {
       const childPositions = visibleChildren.map((child) => place(child, depth + 1));

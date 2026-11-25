@@ -2,7 +2,6 @@ import {
   useEffect,
   useRef,
   useState,
-  type DragEvent,
 } from 'react';
 import type { Materia } from '../../types/types.ts';
 import type { NodoCurricular } from '../../types/CurriculoCanvasTypes.ts';
@@ -11,33 +10,13 @@ import {
   materiaExtraccionErrorMessage,
   materiaDocumentoErrorMessage,
 } from '../../services/materiaDocumentoService.ts';
-import {
-  attachCurriculoDraftNode,
-  cloneCurriculoTree,
-  findCurriculoNode,
-  invalidCurriculoAssociationMessage,
-  isValidCurriculoDraftDrop,
-  isValidCurriculoDrop,
-  moveCurriculoNode,
-  renameCurriculoNode,
-} from '../curriculo/CurriculoCanvasOperations.ts';
-import CurriculoCanvasNodeLayer from '../curriculo/CurriculoCanvasNodeLayer.tsx';
-import CurriculoCanvasConnectors from '../curriculo/CurriculoCanvasConnectors.tsx';
-import CurriculoDraftNode from '../curriculo/CurriculoDraftNode.tsx';
-import CurriculoNodeTypeSelector from '../curriculo/CurriculoNodeTypeSelector.tsx';
-import { useCurriculoDraftNode } from '../curriculo/useCurriculoDraftNode.ts';
-import { useCurriculoCanvasPan } from '../curriculo/useCurriculoCanvasPan.ts';
-import CurriculoCanvasLegend from '../curriculo/CurriculoCanvasLegend.tsx';
-import CurriculoZoomControls from '../curriculo/CurriculoZoomControls.tsx';
-import CurriculoBackConfirm from '../curriculo/CurriculoBackConfirm.tsx';
-import CurriculoDiscardConfirm from '../curriculo/CurriculoDiscardConfirm.tsx';
-import CurriculoCanvasHeader from '../curriculo/CurriculoCanvasHeader.tsx';
+import { cloneCurriculoTree } from '../curriculo/CurriculoCanvasOperations.ts';
 import { useCurriculoCanvasState } from '../curriculo/useCurriculoCanvasState.ts';
 import MateriaMetadataModal from './MateriaMetadataModal.tsx';
 import MateriaPlanPanel from './MateriaPlanPanel.tsx';
-import CurriculoDeleteConfirm from '../curriculo/CurriculoDeleteConfirm.tsx';
-import { removeCurriculoNode } from '../curriculo/CurriculoCanvasOperations.ts';
 import TaskGeneratingOverlay from '../common/TaskGeneratingOverlay.tsx';
+import { type ToastData } from '../common/Toast.tsx';
+import CurriculoCanvasEditor from '../curriculo/CurriculoCanvasEditor.tsx';
 import '../../styles/ModalMateria.css';
 import '../../styles/CurriculoCanvas.css';
 
@@ -177,21 +156,16 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
     materia?.documentoMateriaNombre?.trim() || '',
   );
   const [archivoEliminado, setArchivoEliminado] = useState(false);
-  const canvasState = useCurriculoCanvasState(buildTree(materia));
+  const canvasState = useCurriculoCanvasState(
+    buildTree(materia),
+    24,
+    { slotWidth: 500},
+  );
   const {
     tree,
     setTree,
-    selectedId,
     setSelectedId,
-    editingId,
-    setEditingId,
-    expandedIds,
     setExpandedIds,
-    zoom,
-    changeZoom,
-    canvasRef,
-    canvasLayout,
-    toggleExpanded,
     replaceTree,
   } = canvasState;
   const [baselineTree, setBaselineTree] = useState<NodoCurricular>(() =>
@@ -201,13 +175,9 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
   const [guardando, setGuardando] = useState(false);
   const [generando, setGenerando] = useState(false);
   const [error, setError] = useState('');
-  const [showBackConfirm, setShowBackConfirm] = useState(false);
-  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
-  const [deleteNodeId, setDeleteNodeId] = useState<string | null>(null);
+  const [toast, setToast] = useState<ToastData | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const extraccionControllerRef = useRef<AbortController | null>(null);
-  const draft = useCurriculoDraftNode();
-  const canvasPan = useCurriculoCanvasPan();
 
   const prefijoFinal = `${prefijo}${numero}`;
   const datosInicialesValidos =
@@ -246,11 +216,17 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
 
   const generarDesdePlan = async () => {
     if (!datosInicialesValidos) {
-      setError('Ingresa el nombre de la materia y el prefijo.');
+      setToast({
+        tipo: 'advertencia',
+        mensaje: 'Ingresa el nombre de la materia y el prefijo.',
+      });
       return;
     }
     if (!archivo) {
-      setError('Selecciona el plan de estudio PDF.');
+      setToast({
+        tipo: 'advertencia',
+        mensaje: 'Selecciona el plan de estudio PDF.',
+      });
       return;
     }
     if ((tree.hijos ?? []).length > 0
@@ -261,6 +237,7 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
     }
 
     setError('');
+    setToast(null);
     setGenerando(true);
     const controller = new AbortController();
     extraccionControllerRef.current = controller;
@@ -307,54 +284,23 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           && (caught.name === 'AbortError' || caught.name === 'CanceledError')) {
         return;
       }
-      setError(materiaExtraccionErrorMessage(caught));
+      setToast({
+        tipo: 'error',
+        mensaje: materiaExtraccionErrorMessage(caught),
+      });
     } finally {
       extraccionControllerRef.current = null;
       setGenerando(false);
     }
   };
 
-  const updateName = (nodeId: string, name: string) => {
-    if (!name.trim()) return;
-    setTree((current) => renameCurriculoNode(current, nodeId, name.trim()));
-    setDirty(true);
-    setEditingId(null);
-  };
-
-  const handleDrop = (event: DragEvent<HTMLElement>, targetId: string) => {
-    event.preventDefault();
-    const movedId = event.dataTransfer.getData('text/plain');
-    if (!movedId) return;
-    if (draft.draftNode && movedId === draft.draftNode.id) {
-      const target = findCurriculoNode(tree, targetId);
-      if (!target
-          || !isValidCurriculoDraftDrop(draft.draftNode, target)) {
-        setError(invalidCurriculoAssociationMessage(draft.draftNode, target ?? tree));
-        return;
-      }
-      setTree((current) =>
-        attachCurriculoDraftNode(current, draft.draftNode!, targetId),
-      );
-      setDirty(true);
-      draft.discard();
-      return;
-    }
-    const dragged = findCurriculoNode(tree, movedId);
-    const target = findCurriculoNode(tree, targetId);
-    if (!dragged || !target || !isValidCurriculoDrop(dragged, target)) {
-      if (dragged && target) {
-        setError(invalidCurriculoAssociationMessage(dragged, target));
-      }
-      return;
-    }
-    setTree((current) => moveCurriculoNode(current, movedId, targetId));
-    setDirty(true);
-  };
-
   const guardar = async () => {
     if (!datosInicialesValidos) {
-      setError('Ingresa el nombre de la materia y el prefijo.');
-      return;
+      setToast({
+        tipo: 'advertencia',
+        mensaje: 'Ingresa el nombre de la materia y el prefijo.',
+      });
+      return false;
     }
     setGuardando(true);
     setError('');
@@ -371,11 +317,16 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
       });
       setBaselineTree(cloneCurriculoTree(tree));
       setDirty(false);
+      return true;
     } catch (caught) {
-      setError(materiaDocumentoErrorMessage(
-        caught,
-        'No se pudo guardar la materia.',
-      ));
+      setToast({
+        tipo: 'error',
+        mensaje: materiaDocumentoErrorMessage(
+          caught,
+          'No se pudo guardar la materia.',
+        ),
+      });
+      return false;
     } finally {
       setGuardando(false);
     }
@@ -383,8 +334,13 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
 
   const descartar = () => {
     replaceTree(baselineTree);
+    setNombre(materia?.nombre ?? '');
+    setPrefijo(materia?.prefijo?.replace(/\d$/, '') ?? '');
+    setNumero(extraerNumeroDesdePrefijo(materia?.prefijo));
+    setArchivo(null);
+    setArchivoEliminado(false);
+    setPrefijoModificado(false);
     setDirty(false);
-    setShowDiscardConfirm(false);
   };
 
   const cerrar = () => {
@@ -436,6 +392,10 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
           onClose={cerrarMetadatos}
           onConfirm={() => {
             if (!datosInicialesValidos) return;
+            const metadataChanged =
+              !esEdicion
+              || nombre.trim() !== materia?.nombre?.trim()
+              || prefijoFinal !== materia?.prefijo;
             setSelectedId(id);
             setExpandedIds(new Set([id]));
             setError('');
@@ -444,38 +404,27 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
             setTree((current) => ({
               ...current,
               nombre: nombre.trim(),
-              revisionEstado: 'modificado',
+              revisionEstado: metadataChanged
+                ? 'modificado'
+                : current.revisionEstado,
             }));
-            setDirty(true);
+            if (metadataChanged) setDirty(true);
           }}
         />
       )}
-      <TaskGeneratingOverlay
-        visible={generando}
-        title="Generando estructura curricular"
-        subtitle={archivo?.name}
-        onCancel={() => extraccionControllerRef.current?.abort()}
-      />
-      <article
-        className="materia-canvas-modal"
-        role="dialog"
-        aria-modal={!datosInicialesValidos ? undefined : true}
-        inert={!metadataConfirmada ? true : undefined}
-      >
-        <CurriculoCanvasHeader
-          title={prefijoFinal}
-          subtitle={nombre.trim()}
-          dirty={dirty}
-          onEditMetadata={() => {
-            setEditandoMetadatos(true);
-            setMetadataConfirmada(false);
-          }}
-          onBack={() => setShowBackConfirm(true)}
-          onDiscard={() => setShowDiscardConfirm(true)}
-          onSave={() => void guardar()}
-        />
-
-        <section className="materia-canvas-layout">
+      <CurriculoCanvasEditor
+        canvas={canvasState}
+        title={prefijoFinal}
+        subtitle={nombre.trim()}
+        dirty={dirty}
+        editable
+        addDisabled={generando || guardando || !metadataConfirmada}
+        variant="materia"
+        onEditMetadata={() => {
+          setEditandoMetadatos(true);
+          setMetadataConfirmada(false);
+        }}
+        leftPanel={
           <MateriaPlanPanel
             archivo={archivo}
             archivoExistenteId={archivoExistenteId}
@@ -486,173 +435,26 @@ export default function ModalMateria({ materia, onCerrar, onGuardar }: Props) {
             onFileChange={(next) => {
               setArchivo(next);
               if (next) setArchivoEliminado(false);
+              setDirty(true);
             }}
             onGenerate={() => void generarDesdePlan()}
           />
-
-          <main
-            className="curriculo-canvas materia-canvas"
-            ref={canvasRef}
-            onWheel={(event) => {
-              event.preventDefault();
-              const factor = event.deltaY < 0 ? 1.1 : 0.9;
-              changeZoom(zoom * factor);
-            }}
-            onPointerDown={(event) =>
-              canvasPan.onPointerDown(event, canvasRef.current)
-            }
-            onPointerMove={(event) =>
-              canvasPan.onPointerMove(event, canvasRef.current)
-            }
-            onPointerUp={(event) =>
-              canvasPan.onPointerEnd(event, canvasRef.current)
-            }
-            onPointerCancel={() =>
-              canvasPan.onPointerCancel(canvasRef.current)
-            }
-            onDragOver={(event) =>
-              canvasPan.onDragOver(event, canvasRef.current)
-            }
-            onClick={(event) => {
-              const target = event.target as HTMLElement;
-              if (!target.closest(
-                '.curriculo-node, .curriculo-draft-node, .curriculo-canvas-toolbar, .curriculo-legend',
-              )) {
-                setSelectedId(null);
-              }
-            }}
-          >
-            <CurriculoNodeTypeSelector
-              open={draft.showTypeSelector}
-              disabled={
-                !metadataConfirmada
-                || generando
-                || guardando
-              }
-              onToggle={draft.toggleTypeSelector}
-              onSelect={(tipo) => {
-                draft.selectType(tipo);
-                setDirty(true);
-              }}
-            />
-            {draft.draftNode && (
-              <CurriculoDraftNode
-                node={draft.draftNode}
-                onChangeName={draft.changeName}
-                onEmpty={draft.discard}
-                onCancel={draft.discard}
-                onDragStart={(event) =>
-                  event.dataTransfer.setData('text/plain', draft.draftNode!.id)
-                }
-              />
-            )}
-            <div
-              className="curriculo-tree-viewport"
-              style={{
-                width: canvasLayout.width * zoom,
-                height: canvasLayout.height * zoom,
-              }}
-            >
-              <section
-                className="curriculo-tree"
-                style={{
-                  width: canvasLayout.width,
-                  height: canvasLayout.height,
-                  transform: `scale(${zoom})`,
-                  transformOrigin: 'top left',
-                }}
-              >
-                <CurriculoCanvasConnectors
-                  connectors={canvasLayout.connectors}
-                  width={canvasLayout.width}
-                  height={canvasLayout.height}
-                />
-                <CurriculoCanvasNodeLayer
-                  positions={canvasLayout.nodes}
-                  selectedId={selectedId}
-                  editingId={editingId}
-                  expandedIds={expandedIds}
-                  editable={true}
-                  estadoConcepto={() => 'sin_contenido'}
-                  onSelect={setSelectedId}
-                  onEdit={setEditingId}
-                  onFinishEdit={updateName}
-                  onCancelEdit={() => setEditingId(null)}
-                  onToggle={(id) => {
-                    toggleExpanded(id);
-                  }}
-                  onDragStart={(event, id) =>
-                    event.dataTransfer.setData('text/plain', id)
-                  }
-                  onDrop={handleDrop}
-                  onDelete={setDeleteNodeId}
-                  setRef={() => undefined}
-                />
-              </section>
-            </div>
-
-            <CurriculoZoomControls
-              zoom={zoom}
-              onChange={changeZoom}
-            />
-            <CurriculoCanvasLegend variant="materia" />
-          </main>
-        </section>
-      </article>
-
-      {showDiscardConfirm && (
-        <CurriculoDiscardConfirm
-          open
-          onConfirm={descartar}
-          onCancel={() => setShowDiscardConfirm(false)}
+        }
+        estadoConcepto={() => 'sin_contenido'}
+        toast={toast}
+        onToastChange={setToast}
+        onDirty={() => setDirty(true)}
+        onClose={cerrar}
+        onSave={guardar}
+        onDiscard={descartar}
+      >
+        <TaskGeneratingOverlay
+          visible={generando}
+          title="Generando estructura curricular"
+          subtitle={archivo?.name}
+          onCancel={() => extraccionControllerRef.current?.abort()}
         />
-      )}
-
-      {showBackConfirm && (
-        <CurriculoBackConfirm
-          open
-          onContinue={() => setShowBackConfirm(false)}
-          onDiscardAndExit={cerrar}
-          onSaveAndExit={() => void guardar().then(cerrar)}
-        />
-      )}
-      {deleteNodeId && (
-        <CurriculoDeleteConfirm
-          open
-          name={findCurriculoNode(tree, deleteNodeId)?.nombre ?? ''}
-          descendants={
-            (() => {
-              const node = findCurriculoNode(tree, deleteNodeId);
-              const count = (item: NodoCurricular | null): number =>
-                item
-                  ? (item.hijos ?? []).reduce(
-                      (total, child) => total + 1 + count(child),
-                      0,
-                    )
-                  : 0;
-              return count(node);
-            })()
-          }
-          onConfirm={() => {
-            setTree((current) =>
-              removeCurriculoNode(current, deleteNodeId),
-            );
-            setSelectedId((current) =>
-              current === deleteNodeId ? null : current,
-            );
-            setEditingId(null);
-            setDirty(true);
-            setDeleteNodeId(null);
-          }}
-          onCancel={() => setDeleteNodeId(null)}
-        />
-      )}
-      {error && (
-        <article className="materia-canvas-error">
-          <span>{error}</span>
-          <button type="button" onClick={() => setError('')}>×</button>
-        </article>
-      )}
+      </CurriculoCanvasEditor>
     </article>
   );
 }

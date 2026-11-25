@@ -297,3 +297,34 @@ export async function deleteArchivoTemporal(fileId: string): Promise<void> {
 export function construirUrlDescargaDocumento(documentoMateriaId: string): string {
   return `/api/files/${encodeURIComponent(documentoMateriaId)}`;
 }
+
+export async function descargarDocumentoMateria(
+  documentoMateriaId: string,
+  fallbackFilename: string,
+  onProgress?: (percent: number) => void,
+): Promise<void> {
+  const { data, headers } = await apiClient.get<Blob>(
+    construirUrlDescargaDocumento(documentoMateriaId),
+    {
+      responseType: 'blob',
+      onDownloadProgress: (event) => {
+        if (!event.total) return;
+        onProgress?.(Math.round((event.loaded * 100) / event.total));
+      },
+    },
+  );
+  const disposition = headers['content-disposition'] as string | undefined;
+  const encodedName = disposition?.match(/filename\\*=UTF-8''([^;]+)/i)?.[1];
+  const plainName = disposition?.match(/filename=\"?([^\";]+)\"?/i)?.[1];
+  const filename = encodedName
+    ? decodeURIComponent(encodedName)
+    : plainName || fallbackFilename;
+  const url = URL.createObjectURL(data);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}

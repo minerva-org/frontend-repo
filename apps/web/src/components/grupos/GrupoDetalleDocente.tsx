@@ -686,7 +686,11 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                   onClick={() => setQuizTab('proximos')}
                 >
                   Próximos
-                  <span className="badge bg-white bg-opacity-25 ms-2">
+                  <span className={`badge ms-2 ${
+                    quizTab === 'proximos'
+                      ? 'bg-white bg-opacity-25'
+                      : 'bg-white bg-opacity-25 text-dark'
+                  }`}>
                     {quizzesProximos.length}
                   </span>
                 </button>
@@ -696,7 +700,11 @@ export default function GrupoDetalleDocente({ code }: { code: string }) {
                   className={`nav-link ${quizTab === 'pasados' ? 'active bg-secondary' : 'text-body'}`}
                   onClick={() => setQuizTab('pasados')} >
                   Pasados
-                  <span className="badge bg-white bg-opacity-25 ms-2">
+                  <span className={`badge ms-2 ${
+                    quizTab === 'pasados'
+                      ? 'bg-white bg-opacity-25'
+                      : 'bg-white bg-opacity-25 text-dark'
+                  }`}>
                     {quizzesPasados.length}
                   </span>
                 </button>

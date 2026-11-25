@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { NodoCurricular } from '../../types/CurriculoCanvasTypes.ts';
-import { calculateCurriculoCanvasLayout } from './CurriculoCanvasLayout.ts';
+import {
+  calculateCurriculoCanvasLayout,
+  type CurriculoCanvasLayoutOptions,
+} from './CurriculoCanvasLayout.ts';
 import { cloneCurriculoTree, findCurriculoNode } from './CurriculoCanvasOperations.ts';
 
 export function expandAllCurriculoNodes(tree: NodoCurricular): Set<string> {
@@ -16,6 +19,7 @@ export function expandAllCurriculoNodes(tree: NodoCurricular): Set<string> {
 export function useCurriculoCanvasState(
   initialTree: NodoCurricular,
   rootOffsetPixels = 24,
+  layoutOptions: CurriculoCanvasLayoutOptions = {},
 ) {
   const [tree, setTree] = useState(() => cloneCurriculoTree(initialTree));
   const [selectedId, setSelectedId] = useState<string | null>(initialTree.id);
@@ -27,8 +31,12 @@ export function useCurriculoCanvasState(
   const canvasRef = useRef<HTMLElement>(null);
 
   const canvasLayout = useMemo(
-    () => calculateCurriculoCanvasLayout(tree, expandedIds),
-    [tree, expandedIds],
+    () => calculateCurriculoCanvasLayout(
+      tree,
+      expandedIds,
+      layoutOptions,
+    ),
+    [tree, expandedIds, layoutOptions.slotWidth],
   );
 
   const changeZoom = (nextZoom: number) => {

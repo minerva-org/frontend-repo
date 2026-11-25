@@ -171,15 +171,26 @@
 
 .mat-plan { display: inline-flex; align-items: center; gap: 0.4rem; }
 .mat-plan-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   max-width: 16rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--ar-azul);
   text-decoration: underline;
+  font: inherit;
+  background: transparent;
+  border: 0;
+  padding: 0;
   cursor: pointer;
 }
 .mat-plan-link:hover { color: var(--seige-acento); }
+.mat-plan-link:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
 .mat-plan-vacio { color: var(--mat-suave); font-family: sans-serif; }
 
 .mat-badge {
