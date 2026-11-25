@@ -158,7 +158,7 @@ export default function Sidebar({
     ? `offcanvas offcanvas-start ${mobileOpen ? 'show' : ''}`
     : esTablet
       ? 'position-fixed top-0 bottom-0'
-      : 'sticky-top align-self-start vh-100';
+      : 'align-self-start vh-100';
 
   const estiloAside: CSSProperties = esMovil
     ? ({
@@ -166,7 +166,7 @@ export default function Sidebar({
       } as CSSProperties)
     : esTablet
       ? { zIndex: 1045 }
-      : {};
+      : { position: 'sticky', top:0, zIndex:40};
 
   return (
     <>
