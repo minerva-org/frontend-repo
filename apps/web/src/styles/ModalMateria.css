@@ -445,7 +445,7 @@
   border-top: 0;
 }
 
-.materia-canvas-setup-open .materia-canvas-modal {
+.materia-canvas-setup-open .curriculo-modal-materia {
   filter: grayscale(0.55) brightness(0.72);
   pointer-events: none;
   user-select: none;

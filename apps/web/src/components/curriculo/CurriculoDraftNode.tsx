@@ -30,6 +30,11 @@ export default function CurriculoDraftNode({
       className={`curriculo-draft-node curriculo-node-${node.tipo}`}
       draggable={node.nombre.trim().length > 0}
       onDragStart={(event) => {
+        const target = event.target as HTMLElement;
+        if (target.closest('input, button')) {
+          event.preventDefault();
+          return;
+        }
         event.stopPropagation();
         onDragStart(event);
       }}
@@ -40,7 +45,7 @@ export default function CurriculoDraftNode({
       {editing ? (
         <input
           className="curriculo-name-input"
-          defaultValue={node.nombre}
+          value={node.nombre}
           placeholder={`Nombre de ${node.tipo}`}
           autoFocus
           onChange={(event) => onChangeName(event.currentTarget.value)}
@@ -58,13 +63,25 @@ export default function CurriculoDraftNode({
           }}
         />
       ) : (
-        <span
-          className="curriculo-node-name"
-          onDoubleClick={() => setEditing(true)}
+        <button
+          type="button"
+          className="curriculo-node-name curriculo-draft-edit"
+          onClick={() => setEditing(true)}
+          title="Editar nombre del nodo"
         >
-          {node.nombre}
-        </span>
+          {node.nombre || `Nombre de ${node.tipo}`}
+        </button>
       )}
+      <button
+        type="button"
+        className="btn btn-link btn-sm curriculo-draft-cancel"
+        onPointerDown={(event) => event.stopPropagation()}
+        onClick={onCancel}
+        aria-label="Cancelar nodo nuevo"
+        title="Cancelar nodo nuevo"
+      >
+        <i className="bi bi-x-lg" />
+      </button>
     </article>
   );
 }

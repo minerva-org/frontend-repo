@@ -7,7 +7,9 @@ export function useCurriculoDraftNode() {
   const [draftNode, setDraftNode] = useState<NodoCurricular | null>(null);
 
   const selectType = (tipo: NodoCurricular['tipo']) => {
-    setDraftNode(createCurriculoDraftNode(tipo));
+    setDraftNode((current) =>
+      current ?? createCurriculoDraftNode(tipo),
+    );
     setShowTypeSelector(false);
   };
 
@@ -23,6 +25,8 @@ export function useCurriculoDraftNode() {
     setShowTypeSelector((current) => !current);
   };
 
+  const closeTypeSelector = () => setShowTypeSelector(false);
+
   return {
     draftNode,
     showTypeSelector,
@@ -30,5 +34,6 @@ export function useCurriculoDraftNode() {
     changeName,
     discard,
     toggleTypeSelector,
+    closeTypeSelector,
   };
 }

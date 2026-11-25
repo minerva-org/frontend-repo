@@ -8,7 +8,7 @@ import { apiClient } from '../services/ApiClient.ts';
 import '../styles/Materias.css';
 import { useAuth } from '../context/AuthContext.tsx';
 import {
-  construirUrlDescargaDocumento,
+  descargarDocumentoMateria,
   deleteArchivoTemporal,
   uploadArchivoTemporal,
 } from '../services/materiaDocumentoService.ts';
@@ -30,6 +30,8 @@ export default function Materias() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<ToastData | null>(null);
+  const [documentoDescargando, setDocumentoDescargando] = useState<string | null>(null);
+  const [progresoDescarga, setProgresoDescarga] = useState(0);
   const cerrarToast = useCallback(() => { setToast(null);}, []);
   const { role, selectedPlantel } = useAuth();
 
@@ -186,9 +188,6 @@ export default function Materias() {
         }
       }
       const message = extractErrorMessage(err, 'No se pudo guardar la materia.');
-      setToast({
-        mensaje:message,
-        tipo:'error'});
       setError(message);
       throw err;
     }
@@ -343,14 +342,45 @@ export default function Materias() {
                           <span className="mat-plan">
                             <i className="bi bi-folder2-open"></i>{' '}
                             {m.documentoMateriaId ? (
-                              <a
-                                href={construirUrlDescargaDocumento(m.documentoMateriaId)}
+                              <button
+                                type="button"
                                 title={nombreVisibleMateria(m)}
-                                download={nombreVisibleMateria(m)}
                                 className="mat-plan-link"
+                                disabled={documentoDescargando !== null}
+                                onClick={async () => {
+                                  const documentoId = m.documentoMateriaId!;
+                                  setDocumentoDescargando(documentoId);
+                                  setProgresoDescarga(0);
+                                  try {
+                                    await descargarDocumentoMateria(
+                                      documentoId,
+                                      nombreVisibleMateria(m),
+                                      setProgresoDescarga,
+                                    );
+                                  } catch {
+                                    setToast({
+                                      mensaje: 'No se pudo descargar el plan de estudio.',
+                                      tipo: 'error',
+                                    });
+                                  } finally {
+                                    setDocumentoDescargando(null);
+                                    setProgresoDescarga(0);
+                                  }
+                                }}
                               >
-                                {acortarNombreArchivo(nombreVisibleMateria(m))}
-                              </a>
+                                {documentoDescargando === m.documentoMateriaId ? (
+                                  <>
+                                    <span
+                                      className="spinner-border spinner-border-sm"
+                                      role="status"
+                                      aria-hidden="true"
+                                    />
+                                    Descargando {progresoDescarga}%
+                                  </>
+                                ) : (
+                                  acortarNombreArchivo(nombreVisibleMateria(m))
+                                )}
+                              </button>
                             ) : (
                               <span title={nombreVisibleMateria(m)}>
                                 {acortarNombreArchivo(nombreVisibleMateria(m))}
