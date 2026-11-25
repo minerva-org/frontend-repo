@@ -1,0 +1,37 @@
+.app-page-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--ar-nieve);
+  background: linear-gradient(
+    135deg,
+    var(--ar-profundo),
+    color-mix(in srgb, var(--ar-profundo) 60%, var(--ar-azul))
+  );
+}
+
+.app-page-header-toggle {
+  display: inline-grid;
+  place-items: center;
+  padding: 0.4rem;
+  color: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  background: transparent;
+  border: 0;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+.app-page-header-toggle:hover {
+  background: color-mix(in srgb, white 15%, transparent);
+}
+
+.app-page-header-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+}

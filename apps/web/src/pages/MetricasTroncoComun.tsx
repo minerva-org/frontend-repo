@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
 import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
+import AppPageHeader from '../components/common/AppPageHeader.tsx';
 import VistaDirectorPlantel from '../components/estadisticas/vistas/VistaDirectorPlantel';
 import VistaCoordinador from '../components/estadisticas/vistas/VistaCoordinador';
 import VistaDireccionGeneral from '../components/estadisticas/vistas/VistaDirectorGeneral.tsx';
@@ -120,7 +121,9 @@ export default function MetricasTroncoComun() {
 
   if (cargando) {
     return (
-      <main
+      <>
+        <AppPageHeader title="Métricas" />
+        <main
         className="container-fluid d-flex align-items-center justify-content-center p-5"
         style={{
           backgroundColor: 'var(--seige-fondo)',
@@ -128,13 +131,16 @@ export default function MetricasTroncoComun() {
         }}
       >
         Cargando estadísticas...
-      </main>
+        </main>
+      </>
     );
   }
 
   if (!generales) {
     return (
-      <main
+      <>
+        <AppPageHeader title="Métricas" />
+        <main
         className="container-fluid p-4"
         style={{ backgroundColor: 'var(--seige-fondo)' }}
       >
@@ -151,7 +157,8 @@ export default function MetricasTroncoComun() {
         >
           {error || 'No hay estadísticas disponibles.'}
         </p>
-      </main>
+        </main>
+      </>
     );
   }
 
@@ -179,7 +186,9 @@ export default function MetricasTroncoComun() {
   };
 
   return (
-    <main
+    <>
+      <AppPageHeader title="Métricas" />
+      <main
       className="container-fluid p-4"
       style={{
         backgroundColor: 'var(--seige-fondo)',
@@ -191,7 +200,7 @@ export default function MetricasTroncoComun() {
       <header className="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-4">
         <article>
           <h1 className="h3 fw-bold mb-1" style={{ color: 'var(--ar-profundo)' }}>
-            Estadísticas de quizzes
+            Estadísticas de Institución
           </h1>
           <p className="mb-0 small" style={{ color: 'var(--seige-texto-secundario)' }}>
             {subtitulo}
@@ -284,6 +293,7 @@ export default function MetricasTroncoComun() {
       {(role === 'directorPlantel' || role === 'coordinador') && (
         <MinervaMetricsAssistant scope="PLANTEL" />
       )}
-    </main>
+      </main>
+    </>
   );
 }

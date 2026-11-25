@@ -49,7 +49,7 @@ export default function VistaDireccionGeneral({
           <GraficaAprobacionPlanteles planteles={planteles} />
         </article>
         <article className="col-12 col-xl-6">
-          <GraficaTendencia quizzes={tendencia} />
+          <GraficaTendencia quizzes={tendencia} mostrarFechaCierre />
         </article>
       </section>
     </>

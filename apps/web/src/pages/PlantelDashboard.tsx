@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
 import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
+import AppPageHeader from '../components/common/AppPageHeader.tsx';
 import GraficaRendimiento from '../components/estadisticas/GraficaRendimiento';
 import GraficaResultados from '../components/estadisticas/GraficaResultados';
 import KpisGenerales from '../components/estadisticas/KpisGenerales';
@@ -55,21 +56,33 @@ export default function PlantelDashboard() {
   }, [plantelId]);
 
   if (cargando) {
-    return <main className="container-fluid p-4 text-secondary">Cargando métricas del plantel...</main>;
+    return (
+      <>
+        <AppPageHeader title="Métricas del plantel" />
+        <main className="container-fluid p-4 text-secondary">
+          Cargando métricas del plantel...
+        </main>
+      </>
+    );
   }
 
   if (error || !datos) {
     return (
-      <main className="container-fluid p-4">
+      <>
+        <AppPageHeader title="Métricas del plantel" />
+        <main className="container-fluid p-4">
         <p className="alert alert-danger" role="alert">
           {error || 'No hay métricas disponibles para este plantel.'}
         </p>
-      </main>
+        </main>
+      </>
     );
   }
 
   return (
-    <main
+    <>
+      <AppPageHeader title="Métricas del plantel" />
+      <main
       className="container-fluid p-4"
       style={{ backgroundColor: 'var(--seige-fondo)', minHeight: '100%' }}
     >
@@ -128,6 +141,7 @@ export default function PlantelDashboard() {
         scope="PLANTEL"
         entityId={String(datos.plantelId)}
       />
-    </main>
+      </main>
+    </>
   );
 }

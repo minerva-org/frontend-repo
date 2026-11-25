@@ -35,10 +35,10 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Supervisión Estratégica',
         items: [
+          { to: '/metricas-tronco-comun', label: 'Métricas Generales', icon: 'bi-bar-chart-line' },
           { to: '/planteles', label: 'Planteles', icon: 'bi-building' },
           { to: '/directores-planteles', label: 'Directores', icon: 'bi-people' },
           { to: '/materias', label: 'Materias', icon: 'bi-journal-bookmark' },
-          { to: '/metricas-tronco-comun', label: 'Métricas', icon: 'bi-bar-chart-line' },
         ],
       },
     ],
@@ -77,7 +77,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       },
       {
         label: 'Diagnóstico y Analítica',
-        items: [{ to: '/metricas-tronco-comun', label: 'Metricas', icon: 'bi-graph-up', end: true }],
+        items: [{ to: '/metricas-tronco-comun', label: 'Mis Metricas', icon: 'bi-graph-up', end: true }],
       },
       {
         label: 'Grupos Activos',
@@ -87,16 +87,13 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
       {
         label: 'Gestión Académica',
         items: [
-          { to: '/catalogo-grupos', label: 'Grupos', icon: 'bi-grid-3x3-gap' },
+          { to: '/catalogo-grupos', label: 'Grupos Plantel', icon: 'bi-grid-3x3-gap' },
           { to: '/catalogo-docentes', label: 'Docentes', icon: 'bi-people' },
           { to: '/catalogo-alumnos', label: 'Alumnos', icon: 'bi-people' },
           { to: '/materias', label: 'Materias', icon: 'bi-journal-bookmark' },
         ],
       },
-      {
-        label: 'Supervisión',
-        items: [{ to: '/avance-curricular', label: 'Avance Curricular', icon: 'bi-bar-chart-line' }],
-      },
+
     ],
   },
 
@@ -105,7 +102,7 @@ export const sidebarConfigByRole: Record<string, SidebarConfig> = {
     navGroups: [
       {
         label: 'Listado',
-        items: [{ to: '/grupos', label: 'Grupos', icon: 'bi-people' }],
+        items: [{ to: '/grupos', label: 'Mis Grupos', icon: 'bi-people' }],
       },
       {
         label: 'Diagnóstico y Analítica',

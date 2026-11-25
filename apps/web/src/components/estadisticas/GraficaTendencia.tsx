@@ -25,6 +25,7 @@ ChartJS.register(
 
 interface GraficaTendenciaProps {
   quizzes: EstadisticasTendencia[];
+  mostrarFechaCierre?: boolean;
 }
 
 const formatearFecha = (iso: string) =>
@@ -34,7 +35,10 @@ const formatearFecha = (iso: string) =>
     year: 'numeric',
   });
 
-export default function GraficaTendencia({ quizzes }: GraficaTendenciaProps) {
+export default function GraficaTendencia({
+  quizzes,
+  mostrarFechaCierre = false,
+}: GraficaTendenciaProps) {
   const [colores, setColores] = useState({
     azul: '#5289ad',
     texto: '#243c4c',
@@ -50,7 +54,11 @@ export default function GraficaTendencia({ quizzes }: GraficaTendenciaProps) {
   }, []);
 
   const data = {
-    labels: quizzes.map((q) => q.nombreQuiz),
+    labels: quizzes.map((q) =>
+      mostrarFechaCierre
+        ? formatearFecha(q.fechaFinalizacion)
+        : q.nombreQuiz,
+    ),
     datasets: [
       {
         label: 'Aprobación',

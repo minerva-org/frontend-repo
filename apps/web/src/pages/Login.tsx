@@ -4,6 +4,22 @@ import { useAuth } from '../context/AuthContext.tsx';
 import logo from '../assets/logo.webp';
 import { GRUPO_PENDIENTE_KEY } from './UnirseAGrupo.tsx'
 
+function initialDestination(role: string | null | undefined) {
+  switch (role) {
+    case 'alumno':
+      return '/alumno';
+    case 'directorGeneral':
+    case 'directorPlantel':
+    case 'coordinador':
+    case 'docente':
+      return role === 'directorPlantel'
+        ? '/plantel/dashboard'
+        : '/metricas-tronco-comun';
+    default:
+      return '/grupos';
+  }
+}
+
 export default function Login() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -22,14 +38,7 @@ export default function Login() {
         navigate(`/unirse?grupoId=${encodeURIComponent(pendiente)}`, { replace: true });
         return;
       }
-      const destination = role === 'alumno'
-        ? '/alumno'
-        : role === 'directorGeneral'
-          ? '/planteles'
-          : role === 'directorPlantel'
-            ? '/plantel/directorio-docente'
-            : '/grupos';
-      navigate(destination, { replace: true });
+      navigate(initialDestination(role), { replace: true });
     }
   }, [isAuthenticated, location.pathname, navigate, role]);
 
@@ -56,18 +65,12 @@ export default function Login() {
 
       const pendiente = sessionStorage.getItem(GRUPO_PENDIENTE_KEY);
       if(pendiente){
-        navigate(`/unirse?grupoId=${encodeURIComponent(pendiente)}, { replace: true}`);
+        navigate(`/unirse?grupoId=${encodeURIComponent(pendiente)}`, {
+          replace: true,
+        });
         return;
       }
-      const destination = loginRole === 'alumno'
-        ? '/alumno'
-        : loginRole === 'directorGeneral'
-          ? '/planteles'
-          : loginRole === 'directorPlantel'
-            ? '/plantel/dashboard'
-            : '/grupos';
-
-      navigate(destination, { replace: true });
+      navigate(initialDestination(loginRole), { replace: true });
     } catch (err) {
       setModalMessage(err instanceof Error ? err.message : 'Ocurrió un error inesperado');
       setPassword('');

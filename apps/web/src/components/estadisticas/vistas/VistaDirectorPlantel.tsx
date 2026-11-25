@@ -17,7 +17,7 @@ export default function VistaDirectorPlantel({
 
       <section className="row g-3 mb-4">
         <article className="col-12 col-xl-6">
-          <GraficaTendencia quizzes={tendencia} />
+          <GraficaTendencia quizzes={tendencia} mostrarFechaCierre />
         </article>
         <article className="col-12 col-xl-6">
           <ListaFocoMaterias materias={materias} />

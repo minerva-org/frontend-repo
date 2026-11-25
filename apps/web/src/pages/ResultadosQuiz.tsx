@@ -6,6 +6,7 @@ import GraficaResultados from '../components/estadisticas/GraficaResultados';
 import GraficaIncidenciasPreguntas from '../components/estadisticas/GraficaIncidenciasPreguntas';
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
 import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
+import AppPageHeader from '../components/common/AppPageHeader.tsx';
 
 interface ResumenQuiz {
   grupoNombre: string;
@@ -200,6 +201,8 @@ export default function ResultadosQuiz() {
   )?.respuestas ?? [];
 
   return (
+    <>
+    <AppPageHeader title="Resultados del quiz" />
     <main className="container-fluid p-4" style={{ backgroundColor: 'var(--seige-fondo)', minHeight: '100%' }}>
       <button
         type="button"
@@ -417,5 +420,6 @@ export default function ResultadosQuiz() {
         </>
       )}
     </main>
+    </>
   );
 }

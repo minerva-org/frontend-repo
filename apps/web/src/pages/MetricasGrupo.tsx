@@ -6,6 +6,7 @@ import GraficaTendencia from '../components/estadisticas/GraficaTendencia';
 import KpisGenerales from '../components/estadisticas/KpisGenerales';
 import ExplicacionIncidenciasFoco from '../components/estadisticas/ExplicacionIncidenciasFoco';
 import MinervaMetricsAssistant from '../components/estadisticas/MinervaMetricsAssistant';
+import AppPageHeader from '../components/common/AppPageHeader.tsx';
 import { apiClient } from '../services/ApiClient';
 import {
   obtenerEstadisticasGrupo,
@@ -83,14 +84,19 @@ export default function MetricasGrupo() {
 
   if (cargando) {
     return (
+      <>
+      <AppPageHeader title="Métricas del grupo" />
       <main className="container-fluid p-4">
         <p className="text-secondary">Cargando métricas del grupo...</p>
       </main>
+      </>
     );
   }
 
   if (!datos) {
     return (
+      <>
+      <AppPageHeader title="Métricas del grupo" />
       <main className="container-fluid p-4">
         <button
           type="button"
@@ -104,11 +110,14 @@ export default function MetricasGrupo() {
           {error || 'No hay métricas disponibles.'}
         </p>
       </main>
+      </>
     );
   }
 
   return (
-    <main
+    <>
+      <AppPageHeader title="Métricas del grupo" />
+      <main
       className="container-fluid p-4"
       style={{ backgroundColor: 'var(--seige-fondo)', minHeight: '100%' }}
     >
@@ -194,6 +203,7 @@ export default function MetricasGrupo() {
       </section>
 
       <MinervaMetricsAssistant scope="GRUPO" entityId={code} />
-    </main>
+      </main>
+    </>
   );
 }
