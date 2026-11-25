@@ -29,8 +29,6 @@ import type {
   QuizGenerationTaskStatus,
 } from '../types/QuizTypes';
 
-type TipoQuiz = 'unico' | 'acumulativo';
-
 interface GrupoQuizBackend {
   id: string;
   nombre: string;
@@ -78,9 +76,6 @@ export default function QuizNuevo() {
   const [temas, setTemas] = useState<TemaCatalogo[]>([]);
   const [conceptos, setConceptos] = useState<ConceptoCatalogo[]>([]);
   const [titulo, setTitulo] = useState('');
-  const [tipo, setTipo] = useState<TipoQuiz>('unico');
-  const [unidadUnicaId, setUnidadUnicaId] = useState('');
-  const [temaUnicoId, setTemaUnicoId] = useState('');
   const [fechaApertura, setFechaApertura] = useState('');
   const [horaApertura, setHoraApertura] = useState('');
   const [fechaCierre, setFechaCierre] = useState('');
@@ -140,11 +135,27 @@ export default function QuizNuevo() {
       return;
     }
 
-    const generated = resultado.questions.map((question) => {
+    const preguntasIncompletas = resultado.questions.find(
+      (question) => !question.question?.trim()
+        || !question.conceptName?.trim()
+        || !question.conceptId?.trim(),
+    );
+    if (preguntasIncompletas) {
+      setError('El modelo devolvió una pregunta incompleta.');
+      void quizPolling.cancel();
+      return;
+    }
+
+    const mappedQuestions = resultado.questions.map((question) => {
       const concepto = conceptos.find(
         (item) =>
           item.id === question.conceptId
-          || item.idConceptoOrigen === question.conceptId,
+          || item.idConceptoOrigen === question.conceptId
+          || (!!question.conceptName && item.nombre.localeCompare(
+            question.conceptName,
+            'es',
+            { sensitivity: 'base' },
+          ) === 0),
       );
       const tema = concepto
         ? temas.find((item) => item.id === concepto.temaId)
@@ -152,12 +163,25 @@ export default function QuizNuevo() {
       const unidad = tema
         ? unidades.find((item) => item.id === tema.unidadId)
         : undefined;
+      return { question, concepto, tema, unidad };
+    });
+    const noAsociada = mappedQuestions.find(
+      ({ concepto }) => !concepto,
+    );
+    if (noAsociada) {
+      setError(
+        `No se pudo asociar la pregunta generada al concepto "${noAsociada.question.conceptName || noAsociada.question.conceptId}".`,
+      );
+      void quizPolling.cancel();
+      return;
+    }
 
+    const generated = mappedQuestions.map(({ question, concepto, tema, unidad }) => {
       return {
         id: newId('preg'),
-        unidadId: unidad?.id ?? unidadUnicaId,
-        temaId: tema?.id ?? temaUnicoId,
-        conceptoId: concepto?.id ?? '',
+        unidadId: unidad?.id ?? '',
+        temaId: tema?.id ?? '',
+        conceptoId: concepto!.id,
         enunciado: question.question,
         opciones: question.options.map((option) => ({
           id: newId('op'),
@@ -196,15 +220,9 @@ export default function QuizNuevo() {
         setTemas(temasData);
         setConceptos(conceptosData);
 
-        const firstUnidad = unidadesData[0];
-        const firstTema = firstUnidad ? temasData.find((tema) => tema.unidadId === firstUnidad.id) : undefined;
-
-        setUnidadUnicaId((current) => current || (firstUnidad?.id ?? ''));
-        setTemaUnicoId((current) => current || (firstTema?.id ?? ''));
-
         if (!esEdicion) {
           setPreguntas([
-            emptyPregunta(firstUnidad?.id ?? '', firstTema?.id ?? ''),
+            emptyPregunta(),
           ]);
         }
       } catch {
@@ -277,8 +295,6 @@ export default function QuizNuevo() {
         const fechaFinalizacion = quiz.fechaFinalizacion ? new Date(quiz.fechaFinalizacion) : null;
 
         setTitulo(quiz.nombre ?? '');
-        setTipo(questionList.length > 1 ? 'acumulativo' : 'unico');
-
         setFechaApertura(
           fechaInicio && !Number.isNaN(fechaInicio.getTime())
             ? `${fechaInicio.getFullYear()}-${String(fechaInicio.getMonth() + 1).padStart(2, '0')}-${String(fechaInicio.getDate()).padStart(2, '0')}`
@@ -303,10 +319,6 @@ export default function QuizNuevo() {
             : ''
         );
         setPreguntas(preguntaMap.length > 0 ? preguntaMap : [emptyPregunta()]);
-        if (preguntaMap[0]) {
-          setUnidadUnicaId(preguntaMap[0].unidadId);
-          setTemaUnicoId(preguntaMap[0].temaId);
-        }
       } catch (error) {
         console.error('Error loading quiz:', error);
         setError('No se pudo cargar el quiz para editarlo.');
@@ -317,25 +329,6 @@ export default function QuizNuevo() {
 
     void cargarQuizExistente();
   }, [esEdicion, quizId, conceptos, temas, unidades,quizCargado]);
-
-  function handleCambiarTipo(nuevoTipo: TipoQuiz) {
-    setTipo(nuevoTipo);
-    if (nuevoTipo === 'unico') {
-      setPreguntas((prev) => prev.map((pregunta) => ({ ...pregunta, unidadId: unidadUnicaId, temaId: temaUnicoId, conceptoId: '' })));
-    }
-  }
-
-  function handleCambiarUnidadUnica(unidadId: string) {
-    const nuevoTema = temasDeUnidad(unidadId)[0]?.id ?? '';
-    setUnidadUnicaId(unidadId);
-    setTemaUnicoId(nuevoTema);
-    setPreguntas((prev) => prev.map((pregunta) => ({ ...pregunta, unidadId, temaId: nuevoTema, conceptoId: '' })));
-  }
-
-  function handleCambiarTemaUnico(temaId: string) {
-    setTemaUnicoId(temaId);
-    setPreguntas((prev) => prev.map((pregunta) => ({ ...pregunta, temaId, conceptoId: '' })));
-  }
 
   function updatePregunta(id: string, cambios: Partial<Pregunta>) {
     setPreguntas((prev) => prev.map((pregunta) => (pregunta.id === id ? { ...pregunta, ...cambios } : pregunta)));
@@ -403,7 +396,7 @@ export default function QuizNuevo() {
   function addQuestion() {
     setPreguntas((prev) => [
       ...prev,
-      emptyPregunta(tipo === 'unico' ? unidadUnicaId : '', tipo === 'unico' ? temaUnicoId : ''),
+      emptyPregunta(),
     ]);
   }
 
@@ -471,10 +464,7 @@ export default function QuizNuevo() {
     opcionesActuales: Opcion[],
     esPreguntaNueva: boolean
   ) {
-    const opcionesOrdenadas = [
-      ...opcionesActuales.filter((opcion) => !opcion.esCorrecta),
-      ...opcionesActuales.filter((opcion) => opcion.esCorrecta),
-    ];
+    const opcionesOrdenadas = [...opcionesActuales];
 
     if (esPreguntaNueva) {
       for (const opcion of opcionesOrdenadas) {
@@ -527,10 +517,6 @@ export default function QuizNuevo() {
     if (!titulo.trim()) return 'El quiz necesita un título.';
     if (!code) return 'No se pudo identificar el grupo del quiz.';
 
-    if (tipo === 'unico' && (!unidadUnicaId || !temaUnicoId)) {
-      return 'Selecciona la unidad y el tema del quiz.';
-    }
-
     const apertura = combinarFechaHora(fechaApertura, horaApertura);
     const cierre = combinarFechaHora(fechaCierre, horaCierre);
     if (!apertura || !cierre) return 'Define la fecha y hora de apertura y de cierre.';
@@ -540,7 +526,7 @@ export default function QuizNuevo() {
 
     for (let i = 0; i < preguntas.length; i += 1) {
       const pregunta = preguntas[i];
-      if (tipo === 'acumulativo' && (!pregunta.unidadId || !pregunta.temaId)) {
+      if (!pregunta.unidadId || !pregunta.temaId) {
         return `Selecciona unidad y tema en la pregunta ${i + 1}.`;
       }
       if (!pregunta.conceptoId) return `Selecciona el concepto de la pregunta ${i + 1}.`;
@@ -740,37 +726,11 @@ export default function QuizNuevo() {
           <article className="qn-field">
             <span className="qn-field-label">Tipo de quiz</span>
             <article className="qn-tipo-toggle">
-              <button type="button" className={`qn-tipo-btn ${tipo === 'unico' ? 'active' : ''}`} onClick={() => handleCambiarTipo('unico')}>
-                Un solo tema
-              </button>
-              <button type="button" className={`qn-tipo-btn ${tipo === 'acumulativo' ? 'active' : ''}`} onClick={() => handleCambiarTipo('acumulativo')}>
+              <span className="qn-tipo-btn active">
                 Acumulativo / diagnóstico
-              </button>
+              </span>
             </article>
           </article>
-
-          {tipo === 'unico' && (
-            <article className="qn-field-row">
-              <label className="qn-field">
-                <span className="qn-field-label">Unidad</span>
-                <select className="qn-input" value={unidadUnicaId} onChange={(e) => handleCambiarUnidadUnica(e.target.value)}>
-                  <option value="">Selecciona una unidad</option>
-                  {unidades.map((unidad) => (
-                    <option key={unidad.id} value={unidad.id}>{unidad.nombre}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="qn-field">
-                <span className="qn-field-label">Tema</span>
-                <select className="qn-input" value={temaUnicoId} onChange={(e) => handleCambiarTemaUnico(e.target.value)} disabled={!unidadUnicaId}>
-                  <option value="">{unidadUnicaId ? 'Selecciona un tema' : 'Primero elige una unidad'}</option>
-                  {temasDeUnidad(unidadUnicaId).map((tema) => (
-                    <option key={tema.id} value={tema.id}>{tema.nombre}</option>
-                  ))}
-                </select>
-              </label>
-            </article>
-          )}
 
           <article className="qn-field-row">
             <label className="qn-field">
@@ -833,8 +793,8 @@ export default function QuizNuevo() {
           </article>
 
           {preguntas.map((pregunta, index) => {
-            const unidadPregunta = tipo === 'unico' ? unidadUnicaId : pregunta.unidadId;
-            const temaPregunta = tipo === 'unico' ? temaUnicoId : pregunta.temaId;
+            const unidadPregunta = pregunta.unidadId;
+            const temaPregunta = pregunta.temaId;
 
             return (
               <article key={pregunta.id} className="qn-pregunta">
@@ -845,8 +805,7 @@ export default function QuizNuevo() {
                   </button>
                 </article>
 
-                {tipo === 'acumulativo' && (
-                  <article className="qn-field-row">
+                <article className="qn-field-row">
                     <label className="qn-field">
                       <span className="qn-field-label">Unidad</span>
                       <select className="qn-input" value={unidadPregunta} onChange={(e) => handleCambiarUnidadPregunta(pregunta.id, e.target.value)}>
@@ -865,8 +824,7 @@ export default function QuizNuevo() {
                         ))}
                       </select>
                     </label>
-                  </article>
-                )}
+                </article>
 
                 <label className="qn-field">
                   <span className="qn-field-label">Enunciado</span>
@@ -885,6 +843,9 @@ export default function QuizNuevo() {
 
                 <article className="qn-field">
                   <span className="qn-field-label">Opciones de respuesta — cada pregunta tiene una sola respuesta válida</span>
+                  <small className="text-secondary d-block mb-2">
+                    Las opciones se muestran a los alumnos en un orden aleatorio.
+                  </small>
                   {pregunta.opciones.map((opcion, opIndex) => (
                     <article key={opcion.id} className="qn-opcion-row">
                       <input className="qn-input qn-opcion-input" type="text" placeholder="Texto de la opción..." value={opcion.texto} onChange={(e) => updateOption(pregunta.id, opcion.id, e.target.value)} />

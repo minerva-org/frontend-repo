@@ -14,8 +14,8 @@ export async function createQuizGenerationTask(
   request: QuizGenerationRequest,
 ) {
   const response = await apiClient.post<{ tareaId: string }>(
-    `/api/quizzes/generar?grupoId=${encodeURIComponent(grupoId)}`,
-    request,
+    `/api/quizzes/generar/${encodeURIComponent(grupoId)}`,
+    { prompt: request.prompt },
   );
   return response.data.tareaId;
 }

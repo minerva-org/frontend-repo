@@ -169,6 +169,7 @@ export interface QuizGenerationOption {
 
 export interface QuizGenerationQuestion {
   conceptId: string;
+  conceptName?: string;
   question: string;
   evidence: string;
   options: QuizGenerationOption[];
