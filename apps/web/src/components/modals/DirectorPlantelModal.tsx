@@ -155,7 +155,7 @@ export default function DirectorPlantelModal({
                     value={form.numeroTelefono}
                     maxLength={10}
                     pattern="[0-9]{10}"
-                    placeholder="10 dígitos"
+                    placeholder="XXX-XXXX-XXX"
                     required
                     disabled={loading}
                     onChange={(e) =>
@@ -175,7 +175,7 @@ export default function DirectorPlantelModal({
                     value={form.codigoPostal ?? ''}
                     maxLength={5}
                     pattern="[0-9]{5}"
-                    placeholder='Ejemplo: 81150'
+                    placeholder='XXXXX'
                     required
                     disabled={loading || buscandoCP}
                     onChange={(e) =>{
@@ -192,6 +192,12 @@ export default function DirectorPlantelModal({
                     onKeyDown={(e) =>  {
                       if(e.key === 'Enter'){
                         e.preventDefault();
+                        handleConsultarCP();
+                      }
+            
+                    }}
+                    onBlur={() => {
+                      if ((form.codigoPostal ?? '').length === 5 && !form.municipio && !buscandoCP){
                         handleConsultarCP();
                       }
                     }}

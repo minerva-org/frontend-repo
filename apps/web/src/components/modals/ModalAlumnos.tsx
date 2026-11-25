@@ -180,7 +180,7 @@ export function ModalAlumnos({
                           .slice(0, 10),
                       })
                     }
-                    placeholder="667 156 7815"
+                    placeholder="XXX-XXXX-XXX"
                     inputMode="numeric"
                     maxLength={10}
                     pattern="[0-9]{10}"
@@ -197,7 +197,7 @@ export function ModalAlumnos({
                     value={form.codigoPostal ?? ''}
                     maxLength={5}
                     pattern="[0-9]{5}"
-                    placeholder='Ejemplo: 80150'
+                    placeholder='XXXXX'
                     required
                     disabled={loading || buscandoCP}
                     onChange={(e) =>{
@@ -214,6 +214,11 @@ export function ModalAlumnos({
                     onKeyDown={(e) =>  {
                       if(e.key === 'Enter'){
                         e.preventDefault();
+                        handleConsultarCP();
+                      }
+                    }}
+                    onBlur={() => {
+                      if ((form.codigoPostal ?? '').length === 5 && !form.municipio && !buscandoCP){
                         handleConsultarCP();
                       }
                     }}

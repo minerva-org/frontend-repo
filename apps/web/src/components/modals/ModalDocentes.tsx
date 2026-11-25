@@ -150,7 +150,7 @@ export function DocenteModal({
                     maxLength={10}
                     pattern="[0-9]{10}"
                     title="El teléfono debe contener exactamente 10 dígitos."
-                    placeholder='667 152 4236'
+                    placeholder='XXX-XXXX-XXX'
                   />
                 </article>
 
@@ -162,7 +162,7 @@ export function DocenteModal({
                     value={form.codigoPostal ?? ''}
                     maxLength={5}
                     pattern="[0-9]{5}"
-                    placeholder='Ejemplo: 80150'
+                    placeholder='XXXXX'
                     required
                     disabled={loading || buscandoCP}
                     onChange={(e) =>{
@@ -179,6 +179,11 @@ export function DocenteModal({
                     onKeyDown={(e) =>  {
                       if(e.key === 'Enter'){
                         e.preventDefault();
+                        handleConsultarCP();
+                      }
+                    }}
+                    onBlur={() => {
+                      if ((form.codigoPostal ?? '').length === 5 && !form.municipio && !buscandoCP){
                         handleConsultarCP();
                       }
                     }}

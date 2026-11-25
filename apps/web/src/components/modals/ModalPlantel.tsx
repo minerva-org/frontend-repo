@@ -70,13 +70,6 @@ export function PlantelModal({
               </p>
             </article>
 
-            <button
-              type="button"
-              className="btn-close btn-close-white"
-              aria-label="Cerrar"
-              onClick={onClose}
-              disabled={loading}
-            />
           </article>
 
           <form id="form-plantel" onSubmit={onSubmit}>
@@ -106,7 +99,7 @@ export function PlantelModal({
                     value={form.codigoPostal ?? ''}
                     maxLength={5}
                     pattern="[0-9]{5}"
-                    placeholder='Ejemplo: 80150'
+                    placeholder='XXXXX'
                     required
                     disabled={loading || buscandoCP}
                     onChange={(e) =>{
@@ -123,6 +116,11 @@ export function PlantelModal({
                     onKeyDown={(e) =>  {
                       if(e.key === 'Enter'){
                         e.preventDefault();
+                        handleConsultarCP();
+                      }
+                    }}
+                    onBlur={() => {
+                      if ((form.codigoPostal ?? '').length === 5 && !form.municipio && !buscandoCP){
                         handleConsultarCP();
                       }
                     }}
