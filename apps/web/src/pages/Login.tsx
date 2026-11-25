@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type SubmitEvent } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import logo from '../assets/logo.webp';
+import { GRUPO_PENDIENTE_KEY } from './UnirseAGrupo.tsx'
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -16,6 +17,11 @@ export default function Login() {
 
   useEffect(() => {
     if (isAuthenticated && location.pathname === '/login') {
+      const pendiente = sessionStorage.getItem(GRUPO_PENDIENTE_KEY);
+      if (pendiente) {
+        navigate(`/unirse?grupoId=${encodeURIComponent(pendiente)}`, { replace: true });
+        return;
+      }
       const destination = role === 'alumno'
         ? '/alumno'
         : role === 'directorGeneral'
@@ -48,6 +54,11 @@ export default function Login() {
       const data = await login(trimmedUsername, password);
       const loginRole = data.role ?? role;
 
+      const pendiente = sessionStorage.getItem(GRUPO_PENDIENTE_KEY);
+      if(pendiente){
+        navigate(`/unirse?grupoId=${encodeURIComponent(pendiente)}, { replace: true}`);
+        return;
+      }
       const destination = loginRole === 'alumno'
         ? '/alumno'
         : loginRole === 'directorGeneral'

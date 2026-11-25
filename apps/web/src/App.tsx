@@ -20,6 +20,7 @@ import DirectorioDocentes from './pages/DirectorioDocentes.tsx';
 import CatalogoAlumnos from './pages/CatalogoAlumnos.tsx';
 import LaboratorioAgente from './pages/LaboratorioAgente.tsx';
 import MiPerfil from './pages/MiPerfil.tsx'
+import UnirseAGrupo from './pages/UnirseAGrupo.tsx'
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/unirse" element={<UnirseAGrupo />} />
 
           <Route element={<AppLayout />}>
             <Route path="/laboratorio-agente" element={
@@ -150,6 +152,7 @@ export default function App() {
           </Route>
 
           <Route path="*" element={<Navigate to="/login" replace />} />
+          
         </Routes>
       </BrowserRouter>
     </AuthProvider>
